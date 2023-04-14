@@ -28,7 +28,7 @@ def get_db_connection(cfg: DictConfig, open_ai_token: str) -> Chroma:
     """
     embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)
     vector_db = Chroma(persist_directory=cfg.chroma.persist_directory, embedding_function=embedding)
-
+    logger.info("SUCCESS: Chroma DB initialized.")
     return vector_db
 
 
@@ -52,8 +52,9 @@ def embedd_documents(cfg: DictConfig, dir: str, open_ai_token: str) -> None:
     texts = [doc.page_content for doc in docs]
     metadatas = [doc.metadata for doc in docs]
     vector_db.add_texts(texts=texts, metadatas=metadatas)
-
+    logger.info("SUCCESS: Texts embedded.")
     vector_db.persist()
+    logger.info("SUCCESS: Database Persistent.")
 
 
 def search_documents(open_ai_token: str, query: str) -> List[Tuple[Document, float]]:
@@ -69,7 +70,7 @@ def search_documents(open_ai_token: str, query: str) -> List[Tuple[Document, flo
     vector_db = get_db_connection(open_ai_token=open_ai_token)
 
     docs = vector_db.similarity_search_with_score(query, k=3)
-
+    logger.info("SUCCESS: Documents found.")
     return docs
 
 
