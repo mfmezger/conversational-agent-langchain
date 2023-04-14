@@ -6,13 +6,24 @@ authors = ["Marc Mezger <marc.mezger@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.10.10"
-langchain = "^0.0.129"
+python = "3.10.9"
+langchain = "^0.0.139"
 streamlit = "^1.20.0"
 loguru = "^0.6.0"
 omegaconf = "^2.3.0"
+qdrant-client = "^1.1.4"
+unstructured = {extras = ["local-inference"], version = "^0.5.12"}
+aleph-alpha-client = "^3.1.0"
+pypdf = "^3.7.1"
+fastapi = "^0.95.1"
+openai = "^0.27.4"
+chromadb = "^0.3.21"
+tiktoken = "^0.3.3"
 
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[settings]
+known_third_party = ["backend", "dotenv", "fastapi", "langchain", "loguru", "omegaconf", "qdrant_client", "streamlit"]

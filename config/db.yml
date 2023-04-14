@@ -1,4 +1,4 @@
 qdrant:
-  host: localhost
-  port: 6334
+  url: localhost
+  port: 6333
   api_key:

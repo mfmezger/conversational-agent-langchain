@@ -1,0 +1,2 @@
+chroma:
+  persist_directory: "./chroma_db"
