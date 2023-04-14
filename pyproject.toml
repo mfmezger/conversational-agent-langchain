@@ -26,4 +26,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [settings]
-known_third_party = ["backend", "dotenv", "fastapi", "langchain", "loguru", "omegaconf", "qdrant_client", "streamlit"]
+known_third_party = ["backend", "dotenv", "fastapi", "langchain", "loguru", "omegaconf", "streamlit"]

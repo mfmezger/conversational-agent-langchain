@@ -132,3 +132,4 @@ data/
 logs/
 qdrant_storage/
 chroma_db/
+chroma_db_aa/
