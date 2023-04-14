@@ -50,14 +50,13 @@ repos:
 #         # Bandit does not need to run on test code
 #         exclude: tests/
 
-
-# -   repo: https://github.com/PyCQA/pydocstyle
-#     rev: 6.1.1
-#     hooks:
-#     -   id: pydocstyle
-#         additional_dependencies: ["toml"]
-#         args:
-#         - --ignore=D401, D213, D211, D203, D404
+-   repo: https://github.com/PyCQA/pydocstyle
+    rev: 6.1.1
+    hooks:
+    -   id: pydocstyle
+        additional_dependencies: ["toml"]
+        args:
+        - --ignore=D401, D213, D211, D203, D404
 
 -   repo: https://github.com/btford/write-good
     rev: v1.0.8

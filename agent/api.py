@@ -1,3 +1,4 @@
+"""FastAPI Backend for the Knowledge Agent."""
 from fastapi import FastAPI
 
 # initialize the Fast API Application.
@@ -12,3 +13,15 @@ def read_root():
     :rtype: string
     """
     return "Welcome to the Simple Aleph Alpha FastAPI Backend!"
+
+
+@app.post("/documents")
+def documents():
+    """_summary_."""
+    pass
+
+
+@app.get("/search")
+def search():
+    """_summary_."""
+    pass
