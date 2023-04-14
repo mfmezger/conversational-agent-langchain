@@ -12,6 +12,7 @@ st.set_page_config(page_title="Information Retrieval Embedding Demo", page_icon=
 # create title
 st.title("Information Retrieval Embedding Demo")
 
+
 def start_embedding(file_path, token):
     embedd_files(path_to_dir=file_path, token=token)
 
@@ -42,7 +43,6 @@ def initialize():
         start_embedding(save_path_input, aleph_alpha_api_key)
         # delete the contents of the data folder
         # TODO:
-
 
     # create a textfield for the search query
     search_query = st.text_input("Search Query")

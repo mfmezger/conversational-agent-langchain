@@ -1,9 +1,9 @@
-FROM python:3.10.10
+FROM python:3.10.9
 
 
 # install tesseract
-RUN apt-get update
-RUN apt-get install -y tesseract-ocr tesseract-ocr-eng tesseract-ocr-deu poppler-utils ffmpeg
+# RUN apt-get update
+# RUN apt-get install -y tesseract-ocr tesseract-ocr-eng tesseract-ocr-deu poppler-utils ffmpeg
 
 # install poetry and dependencies
 # Install Poetry

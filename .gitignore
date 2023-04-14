@@ -128,3 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 .vscode/
+data/
+logs/
+qdrant_storage/
+chroma_db/
+chroma_db_aa/
