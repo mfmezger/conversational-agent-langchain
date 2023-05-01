@@ -12,7 +12,6 @@ streamlit = "^1.20.0"
 loguru = "^0.6.0"
 omegaconf = "^2.3.0"
 qdrant-client = "^1.1.4"
-unstructured = {extras = ["local-inference"], version = "^0.5.12"}
 aleph-alpha-client = "^3.1.0"
 pypdf = "^3.7.1"
 fastapi = "^0.95.1"
