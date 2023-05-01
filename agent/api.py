@@ -27,3 +27,23 @@ def documents() -> None:
 def search() -> None:
     """_summary_."""
     pass
+
+
+# from enum import Enum
+# from pydantic import BaseModel, validator
+
+
+# class Profession(str, Enum):
+#    DS = "data scientist"
+#    MLE = "machine learning scientist"
+#    RS = "research scientist"
+
+# class NewHire(BaseModel):
+#     profession: Profession
+#     name: str
+    
+#     @validator('name')
+#     def name_must_contain_space(cls, v):
+#         if ' ' not in v:
+#             raise ValueError('Name must contain a space for first and last name.')
+#         return v
