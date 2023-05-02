@@ -34,8 +34,7 @@ def get_db_connection(cfg: DictConfig, open_ai_token: str) -> Chroma:
     return vector_db
 
 
-@load_config(location="config/chroma_db.yml")
-def embedd_documents_openai(cfg: DictConfig, dir: str, open_ai_token: str) -> None:
+def embedd_documents_openai(dir: str, open_ai_token: str) -> None:
     """embedd_documents embedds the documents in the given directory.
 
     :param cfg: Configuration from the file
@@ -45,7 +44,7 @@ def embedd_documents_openai(cfg: DictConfig, dir: str, open_ai_token: str) -> No
     :param open_ai_token: OpenAI API Token
     :type open_ai_token: str
     """
-    vector_db = get_db_connection(open_ai_token=open_ai_token)
+    vector_db: Chroma = get_db_connection(open_ai_token=open_ai_token)
 
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
     docs = loader.load()
@@ -69,7 +68,7 @@ def search_documents_openai(open_ai_token: str, query: str) -> List[Tuple[Docume
     :return: List of Results.
     :rtype: List[Tuple[Document, float]]
     """
-    vector_db = get_db_connection(open_ai_token=open_ai_token)
+    vector_db: Chroma = get_db_connection(open_ai_token=open_ai_token)
 
     docs = vector_db.similarity_search_with_score(query, k=3)
     logger.info("SUCCESS: Documents found.")
