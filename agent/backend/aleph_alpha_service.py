@@ -26,7 +26,7 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Chroma:
     :return: Chroma DB connection.
     :rtype: Chroma
     """
-    embedding = AlephAlphaAsymmetricSemanticEmbedding()
+    embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)
     vector_db = Chroma(persist_directory=cfg.chroma.persist_directory_aa, embedding_function=embedding)
 
     logger.info("SUCCESS: Chroma DB initialized.")
@@ -34,8 +34,7 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Chroma:
     return vector_db
 
 
-@load_config(location="config/chroma_db.yml")
-def embedd_documents_aleph_alpha(cfg: DictConfig, dir: str, aleph_alpha_token: str) -> None:
+def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
     """embedd_documents embedds the documents in the given directory.
 
     This method uses the Directory Loader for PDFs and the PyPDFLoader to load the documents.
