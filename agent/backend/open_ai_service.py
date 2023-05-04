@@ -1,5 +1,6 @@
 """This script is used to initialize the chroma db backend with Azure OpenAI."""
 import os
+from typing import List, Tuple
 
 from dotenv import load_dotenv
 from langchain.docstore.document import Document
@@ -8,11 +9,12 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from loguru import logger
 from omegaconf import DictConfig
-from typings import List, Tuple
 
 from agent.utils.configuration import load_config
 
 load_dotenv()
+os.environ["OPENAI_API_TYPE"] = "azure"
+os.environ["OPENAI_API_BASE"] = "https://openaiendpoint.openai.azure.com/"
 
 
 @load_config(location="config/chroma_db.yml")
@@ -33,7 +35,7 @@ def get_db_connection(cfg: DictConfig, open_ai_token: str) -> Chroma:
 
 
 @load_config(location="config/chroma_db.yml")
-def embedd_documents(cfg: DictConfig, dir: str, open_ai_token: str) -> None:
+def embedd_documents_openai(cfg: DictConfig, dir: str, open_ai_token: str) -> None:
     """embedd_documents embedds the documents in the given directory.
 
     :param cfg: Configuration from the file
@@ -57,7 +59,7 @@ def embedd_documents(cfg: DictConfig, dir: str, open_ai_token: str) -> None:
     logger.info("SUCCESS: Database Persistent.")
 
 
-def search_documents(open_ai_token: str, query: str) -> List[Tuple[Document, float]]:
+def search_documents_openai(open_ai_token: str, query: str) -> List[Tuple[Document, float]]:
     """search_documents searches the documents in the Chroma DB with a specific query.
 
     :param open_ai_token: OpenAI Token
@@ -75,9 +77,8 @@ def search_documents(open_ai_token: str, query: str) -> List[Tuple[Document, flo
 
 
 if __name__ == "__main__":
-    os.environ["OPENAI_API_TYPE"] = "azure"
-    os.environ["OPENAI_API_BASE"] = "https://openaiendpoint.openai.azure.com/"
-    embedd_documents("data", os.getenv("OPENAI_API_KEY"))
 
-    DOCS = search_documents(open_ai_token="", query="Muss ich mein Mietwagen volltanken?")
+    embedd_documents_openai("data", os.getenv("OPENAI_API_KEY"))
+
+    DOCS = search_documents_openai(open_ai_token="", query="Muss ich mein Mietwagen volltanken?")
     print(DOCS)
