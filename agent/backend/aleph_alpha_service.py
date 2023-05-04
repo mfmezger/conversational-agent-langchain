@@ -35,7 +35,7 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Chroma:
 
 
 @load_config(location="config/chroma_db.yml")
-def embedd_documents(cfg: DictConfig, dir: str, aleph_alpha_token: str) -> None:
+def embedd_documents_aleph_alpha(cfg: DictConfig, dir: str, aleph_alpha_token: str) -> None:
     """embedd_documents embedds the documents in the given directory.
 
     This method uses the Directory Loader for PDFs and the PyPDFLoader to load the documents.
@@ -61,7 +61,7 @@ def embedd_documents(cfg: DictConfig, dir: str, aleph_alpha_token: str) -> None:
     logger.info("SUCCESS: Database Persistent.")
 
 
-def search_documents(aleph_alpha_token: str, query: str) -> List[Tuple[Document, float]]:
+def search_documents_aleph_alpha(aleph_alpha_token: str, query: str) -> List[Tuple[Document, float]]:
     """search_documents takes a query and searchs the Chroma DB for similar documents.
 
     :param aleph_alpha_token: Aleph Alpha API Token
@@ -79,9 +79,9 @@ def search_documents(aleph_alpha_token: str, query: str) -> List[Tuple[Document,
 
 
 if __name__ == "__main__":
-    embedd_documents("data", os.getenv("AA_Token"))
+    embedd_documents_aleph_alpha("data", os.getenv("AA_Token"))
 
     # os.environ["ALEPH_ALPHA_API_KEY"] = os.getenv("AA_Token")
 
-    DOCS = search_documents(aleph_alpha_token=os.getenv("AA_Token"), query="Muss ich mein Mietwagen volltanken?")
+    DOCS = search_documents_aleph_alpha(aleph_alpha_token=os.getenv("AA_Token"), query="Muss ich mein Mietwagen volltanken?")
     print(DOCS)
