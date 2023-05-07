@@ -9,7 +9,6 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from loguru import logger
 from omegaconf import DictConfig
-
 from utils.configuration import load_config
 
 load_dotenv()

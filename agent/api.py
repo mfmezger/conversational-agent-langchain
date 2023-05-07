@@ -7,9 +7,14 @@ from fastapi import FastAPI, File, UploadFile
 from loguru import logger
 from starlette.responses import JSONResponse
 
-from agent.backend.aleph_alpha_service import embedd_documents_aleph_alpha, search_documents_aleph_alpha
-from agent.backend.openai_service import embedd_documents_openai, search_documents_openai
-
+from agent.backend.aleph_alpha_service import (
+    embedd_documents_aleph_alpha,
+    search_documents_aleph_alpha,
+)
+from agent.backend.openai_service import (
+    embedd_documents_openai,
+    search_documents_openai,
+)
 
 # initialize the Fast API Application.
 app = FastAPI(debug=True)
@@ -26,7 +31,7 @@ def read_root() -> str:
 
 
 async def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", token: str = None):
-    """_summary_.
+    """Call the right embedding function for the choosen backend.
 
     :param folder_name: _description_
     :type folder_name: str
@@ -38,7 +43,7 @@ async def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai
     """
     if aa_or_openai == "aleph-alpha":
         # Embedd the documents with Aleph Alpha
-        embedd_documents_aleph_alpha(dir=folder_name, aleph_alpha_token=atoken)
+        embedd_documents_aleph_alpha(dir=folder_name, aleph_alpha_token=token)
     elif aa_or_openai == "openai":
         embedd_documents_openai(dir=folder_name, open_ai_token=token)
         # Embedd the documents with OpenAI#
@@ -47,7 +52,7 @@ async def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai
 
 
 async def create_tmp_folder() -> str:
-    """creates a temporary folder for files to store.
+    """Creates a temporary folder for files to store.
 
     :return: The directory name
     :rtype: str
@@ -86,7 +91,7 @@ async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: st
 
 @app.post("/embedd_document/")
 async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", token: str = None):
-    """_summary_.
+    """Upload one document to the backend.
 
     :param file: _description_
     :type file: UploadFile
@@ -109,7 +114,16 @@ async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", to
 
 @app.get("/search")
 def search(query: str, aa_or_openai: str = "openai", token: str = None) -> None:
+    """Search for a query in the vector database.
 
+    :param query: The search query
+    :type query: str
+    :param aa_or_openai: The LLM Provider, defaults to "openai"
+    :type aa_or_openai: str, optional
+    :param token: Token for the LLM Provider, defaults to None
+    :type token: str, optional
+    :raises ValueError: If the LLM Provider is not implemented yet
+    """
     if aa_or_openai == "aleph-alpha":
         # Embedd the documents with Aleph Alpha
         search_documents_aleph_alpha(aleph_alpha_token=token, query=query)

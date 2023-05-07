@@ -1,5 +1,6 @@
 """The script to initialize the chroma db backend with aleph alpha."""
 import os
+from typing import List, Tuple
 
 from dotenv import load_dotenv
 from langchain.docstore.document import Document
@@ -8,7 +9,6 @@ from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
 from langchain.vectorstores import Chroma
 from loguru import logger
 from omegaconf import DictConfig
-from typing import List, Tuple
 
 from agent.utils.configuration import load_config
 

@@ -1,3 +1,4 @@
+"""The main gui."""
 from pathlib import Path
 
 import streamlit as st
@@ -14,11 +15,13 @@ st.title("Information Retrieval Embedding Demo")
 
 
 def start_embedding(file_path, token):
+    """start_embedding starts the embedding process."""
     embedd_files(path_to_dir=file_path, token=token)
 
 
 # @load_config("conf/main_conf.yml") cfg: DictConfig
 def initialize():
+    """Initialize initializes the gui."""
     save_path_input = "data/"
 
     # create the folder structure
