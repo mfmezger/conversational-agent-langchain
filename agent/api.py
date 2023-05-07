@@ -7,8 +7,9 @@ from fastapi import FastAPI, File, UploadFile
 from loguru import logger
 from starlette.responses import JSONResponse
 
-from agent.backend.aleph_alpha_service import embedd_documents_aleph_alpha
-from agent.backend.openai_service import embedd_documents_openai
+from agent.backend.aleph_alpha_service import embedd_documents_aleph_alpha, search_documents_aleph_alpha
+from agent.backend.openai_service import embedd_documents_openai, search_documents_openai
+
 
 # initialize the Fast API Application.
 app = FastAPI(debug=True)
@@ -24,7 +25,7 @@ def read_root() -> str:
     return "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
-async def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", aleph_alpha_token: str = None):
+async def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", token: str = None):
     """_summary_.
 
     :param folder_name: _description_
@@ -37,18 +38,18 @@ async def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai
     """
     if aa_or_openai == "aleph-alpha":
         # Embedd the documents with Aleph Alpha
-        embedd_documents_aleph_alpha(dir=folder_name, aleph_alpha_token=aleph_alpha_token)
+        embedd_documents_aleph_alpha(dir=folder_name, aleph_alpha_token=atoken)
     elif aa_or_openai == "openai":
-        embedd_documents_openai(dir=folder_name)
+        embedd_documents_openai(dir=folder_name, open_ai_token=token)
         # Embedd the documents with OpenAI#
     else:
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
 
 async def create_tmp_folder() -> str:
-    """_summary_.
+    """creates a temporary folder for files to store.
 
-    :return: _description_
+    :return: The directory name
     :rtype: str
     """
     # Create a temporary folder to save the files
@@ -59,7 +60,7 @@ async def create_tmp_folder() -> str:
 
 
 @app.post("/embedd_documents")
-async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", aleph_alpha_token: str = None):
+async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: str = None):
     """Upload multiple documents to the backend.
 
     :param files: Uploaded files, defaults to File(...)
@@ -79,12 +80,12 @@ async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: st
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
 
-    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=aa_or_openai, aleph_alpha_token=aleph_alpha_token)
+    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=aa_or_openai, aleph_alpha_token=token)
     return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
 
 
 @app.post("/embedd_document/")
-async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", aleph_alpha_token: str = None):
+async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", token: str = None):
     """_summary_.
 
     :param file: _description_
@@ -102,31 +103,18 @@ async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", al
     with open(os.path.join(tmp_dir, file.file_name), "wb") as f:
         f.write(await file.read())
 
-    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=aa_or_openai, aleph_alpha_token=aleph_alpha_token)
+    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=aa_or_openai, aleph_alpha_token=token)
     return JSONResponse(content={"message": "File received and saved.", "filenames": file.file_name})
 
 
 @app.get("/search")
-def search(query: str) -> None:
-    """_summary_."""
-    pass
+def search(query: str, aa_or_openai: str = "openai", token: str = None) -> None:
 
-
-# from enum import Enum
-# from pydantic import BaseModel, validator
-
-
-# class Profession(str, Enum):
-#    DS = "data scientist"
-#    MLE = "machine learning scientist"
-#    RS = "research scientist"
-
-# class NewHire(BaseModel):
-#     profession: Profession
-#     name: str
-
-#     @validator('name')
-#     def name_must_contain_space(cls, v):
-#         if ' ' not in v:
-#             raise ValueError('Name must contain a space for first and last name.')
-#         return v
+    if aa_or_openai == "aleph-alpha":
+        # Embedd the documents with Aleph Alpha
+        search_documents_aleph_alpha(aleph_alpha_token=token, query=query)
+    elif aa_or_openai == "openai":
+        search_documents_openai(open_ai_token=token, query=query)
+        # Embedd the documents with OpenAI#
+    else:
+        raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
