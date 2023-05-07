@@ -4,7 +4,7 @@ import shutil
 
 import pytest
 from fastapi.testclient import TestClient
-from main import app, create_tmp_folder, embedd_documents_wrapper
+from agent.api import app, create_tmp_folder, embedd_documents_wrapper
 
 client = TestClient(app)
 
