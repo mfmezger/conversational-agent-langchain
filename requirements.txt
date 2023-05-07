@@ -355,7 +355,7 @@ cmake==3.26.3 ; platform_system == "Linux" and platform_machine == "x86_64" and 
     --hash=sha256:cf910bbb488659d300c86b1dac77e44eeb0457bde2cf76a42d7e51f691544b21 \
     --hash=sha256:d3017a08e6ba53ec2486d89a7953a81d4c4a068fc9f29d83e209f295dd9c59f3 \
     --hash=sha256:e0ed796530641c8a21a423f9bb7882117dbbeee11ec78dbc335402a678d937ae
-colorama==0.4.6 ; sys_platform == "win32" and python_full_version == "3.11.3" or platform_system == "Windows" and python_full_version == "3.11.3" \
+colorama==0.4.6 ; python_full_version == "3.11.3" and sys_platform == "win32" or python_full_version == "3.11.3" and platform_system == "Windows" \
     --hash=sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44 \
     --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
 dataclasses-json==0.5.7 ; python_full_version == "3.11.3" \
@@ -505,7 +505,7 @@ gitdb==4.0.10 ; python_full_version == "3.11.3" \
 gitpython==3.1.31 ; python_full_version == "3.11.3" \
     --hash=sha256:8ce3bcf69adfdf7c7d503e78fd3b1c492af782d58893b650adb2ac8912ddd573 \
     --hash=sha256:f04893614f6aa713a60cbbe1e6a97403ef633103cdd0ef5eb6efe0deb98dbe8d
-greenlet==2.0.2 ; platform_machine == "aarch64" and python_full_version == "3.11.3" or platform_machine == "ppc64le" and python_full_version == "3.11.3" or platform_machine == "x86_64" and python_full_version == "3.11.3" or platform_machine == "amd64" and python_full_version == "3.11.3" or platform_machine == "AMD64" and python_full_version == "3.11.3" or platform_machine == "win32" and python_full_version == "3.11.3" or platform_machine == "WIN32" and python_full_version == "3.11.3" \
+greenlet==2.0.2 ; python_full_version == "3.11.3" and platform_machine == "aarch64" or python_full_version == "3.11.3" and platform_machine == "ppc64le" or python_full_version == "3.11.3" and platform_machine == "x86_64" or python_full_version == "3.11.3" and platform_machine == "amd64" or python_full_version == "3.11.3" and platform_machine == "AMD64" or python_full_version == "3.11.3" and platform_machine == "win32" or python_full_version == "3.11.3" and platform_machine == "WIN32" \
     --hash=sha256:03a8f4f3430c3b3ff8d10a2a86028c660355ab637cee9333d63d66b56f09d52a \
     --hash=sha256:0bf60faf0bc2468089bdc5edd10555bab6e85152191df713e2ab1fcc86382b5a \
     --hash=sha256:18a7f18b82b52ee85322d7a7874e676f34ab319b9f8cce5de06067384aa8ff43 \
