@@ -66,5 +66,3 @@ def test_search(aa_or_openai):
     query = "example query"
     response = client.get("/search", params={"query": query, "aa_or_openai": aa_or_openai})
     assert response.status_code == 200
-
-
