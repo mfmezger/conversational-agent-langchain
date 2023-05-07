@@ -1,4 +1,4 @@
-FROM python:3.10.9
+FROM python:3.11
 
 
 # install tesseract
