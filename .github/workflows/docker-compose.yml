@@ -1,22 +1,9 @@
-name: Build Docker Container
-
-on:
-  push:
-    branches:
-      - main
-
+name: docker-compose-actions-workflow
+on: push
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Install Docker and Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker.io docker-compose
-
-      - name: Build Docker container
-        run: |
-          docker-compose build
+      - uses: actions/checkout@v3
+      - name: Build the stack
+        run: docker-compose up -d
