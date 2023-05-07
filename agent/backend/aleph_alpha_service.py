@@ -8,7 +8,7 @@ from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
 from langchain.vectorstores import Chroma
 from loguru import logger
 from omegaconf import DictConfig
-from typings import List, Tuple
+from typing import List, Tuple
 
 from agent.utils.configuration import load_config
 

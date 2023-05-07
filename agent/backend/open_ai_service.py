@@ -10,7 +10,7 @@ from langchain.vectorstores import Chroma
 from loguru import logger
 from omegaconf import DictConfig
 
-from agent.utils.configuration import load_config
+from utils.configuration import load_config
 
 load_dotenv()
 os.environ["OPENAI_API_TYPE"] = "azure"
