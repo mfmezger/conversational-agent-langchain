@@ -93,14 +93,18 @@ async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: st
 async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", token: str = None):
     """Upload one document to the backend.
 
-    :param file: _description_
+    To embedd the document in
+    the database it is necessary to provide the name of the backend
+    as well as the fitting token for that backend.
+
+    :param file: File that is uploaded, should be a pdf file.
     :type file: UploadFile
-    :param aa_or_openai: _description_, defaults to "openai"
+    :param aa_or_openai: Backend to use, defaults to "openai"
     :type aa_or_openai: str, optional
-    :param aleph_alpha_token: _description_, defaults to None
+    :param aleph_alpha_token: , defaults to None
     :type aleph_alpha_token: str, optional
-    :return: _description_
-    :rtype: _type_
+    :return: Response which Files were recieved and saved.
+    :rtype: JSON Response
     """
     # Create a temporary folder to save the files
     tmp_dir = create_tmp_folder()
