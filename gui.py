@@ -2,7 +2,7 @@
 from pathlib import Path
 
 import streamlit as st
-from backend import embedd_files, retrieve_documents
+from backend import embedd_files
 from loguru import logger
 
 logger.info("Starting Aplication.")
@@ -45,19 +45,7 @@ def initialize():
         logger.debug("Embedding was started")
         start_embedding(save_path_input, aleph_alpha_api_key)
         # delete the contents of the data folder
-        # TODO:
-
-    # create a textfield for the search query
-    search_query = st.text_input("Search Query")
-    # if the button search is clicked search
-    if st.button("Start Search"):
-        # search the documents
-        logger.debug("Search was started")
-        documents, qa = retrieve_documents(query=search_query, token=aleph_alpha_api_key)
-        # show the top 3 documents
-        st.text_area("QA", value=qa)
-
-        st.text_area("Document", value=documents, height=500)
+        # TODO: do something
 
 
 # start the gui app

@@ -31,7 +31,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [settings]
-known_third_party = ["backend", "dotenv", "fastapi", "langchain", "loguru", "main", "omegaconf", "pytest", "starlette", "streamlit", "utils"]
+known_third_party = ["backend", "dotenv", "fastapi", "langchain", "loguru", "omegaconf", "pytest", "starlette", "streamlit", "utils"]
 
 [mypy]
 # Disallow dynamic typing
