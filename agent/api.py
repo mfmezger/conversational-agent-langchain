@@ -11,7 +11,7 @@ from agent.backend.aleph_alpha_service import (
     embedd_documents_aleph_alpha,
     search_documents_aleph_alpha,
 )
-from agent.backend.openai_service import (
+from agent.backend.open_ai_service import (
     embedd_documents_openai,
     search_documents_openai,
 )
