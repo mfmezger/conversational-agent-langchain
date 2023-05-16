@@ -60,7 +60,7 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
     logger.info("SUCCESS: Database Persistent.")
 
 
-def search_documents_aleph_alpha(aleph_alpha_token: str, query: str) -> List[Tuple[Document, float]]:
+def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int) -> List[Tuple[Document, float]]:
     """search_documents takes a query and searchs the Chroma DB for similar documents.
 
     :param aleph_alpha_token: Aleph Alpha API Token
@@ -72,7 +72,7 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str) -> List[Tup
     """
     vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
 
-    docs = vector_db.similarity_search_with_score(query, k=3)
+    docs = vector_db.similarity_search_with_score(query, k=amount)
     logger.info("SUCCESS: Documents found.")
     return docs
 

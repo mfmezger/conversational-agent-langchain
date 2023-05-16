@@ -58,7 +58,7 @@ def embedd_documents_openai(dir: str, open_ai_token: str) -> None:
     logger.info("SUCCESS: Database Persistent.")
 
 
-def search_documents_openai(open_ai_token: str, query: str) -> List[Tuple[Document, float]]:
+def search_documents_openai(open_ai_token: str, query: str, amount: int) -> List[Tuple[Document, float]]:
     """search_documents searches the documents in the Chroma DB with a specific query.
 
     :param open_ai_token: OpenAI Token
@@ -70,9 +70,20 @@ def search_documents_openai(open_ai_token: str, query: str) -> List[Tuple[Docume
     """
     vector_db: Chroma = get_db_connection(open_ai_token=open_ai_token)
 
-    docs = vector_db.similarity_search_with_score(query, k=3)
+    docs = vector_db.similarity_search_with_score(query, k=amount)
     logger.info("SUCCESS: Documents found.")
     return docs
+
+
+def create_summarization(open_ai_token: str, documents):
+    """Generate a summary of the given documents.
+
+    :param open_ai_token: _description_
+    :type open_ai_token: str
+    :param documents: _description_
+    :type documents: _type_
+    """
+    pass
 
 
 if __name__ == "__main__":

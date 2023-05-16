@@ -122,7 +122,7 @@ async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", to
 
 
 @app.get("/search")
-def search(query: str, aa_or_openai: str = "openai", token: str = None) -> None:
+def search(query: str, aa_or_openai: str = "openai", token: str = None, amount: int = 3) -> None:
     """Search for a query in the vector database.
 
     :param query: The search query
@@ -133,16 +133,52 @@ def search(query: str, aa_or_openai: str = "openai", token: str = None) -> None:
     :type token: str, optional
     :raises ValueError: If the LLM Provider is not implemented yet
     """
-    if aa_or_openai == "aleph-alpha":
+    return search_db(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+
+
+@app.get("/qa")
+def question_answer(query: str, aa_or_openai: str = "openai", token: str = None, amount: int = 1):
+    """Answer a question based on the documents in the database.
+
+    :param query: _description_
+    :type query: str
+    :param aa_or_openai: _description_, defaults to "openai"
+    :type aa_or_openai: str, optional
+    :param token: _description_, defaults to None
+    :type token: str, optional
+    :param amount: _description_, defaults to 1
+    :type amount: int, optional
+    """
+    documents = search_db(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+
+    # create summary of the answers using the summarization endpoints.
+
+
+def search_db(query: str, aa_or_openai: str = "openai", token: str = None, amount: int = 3):
+    """Search the database for a query.
+
+    :param query: _description_
+    :type query: str
+    :param aa_or_openai: _description_, defaults to "openai"
+    :type aa_or_openai: str, optional
+    :param token: _description_, defaults to None
+    :type token: str, optional
+    :param amount: _description_, defaults to 3
+    :type amount: int, optional
+    :raises ValueError: _description_
+    :return: _description_
+    :rtype: _type_
+    """
+    if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
-        documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query)
+        documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query, amount=amount)
     elif aa_or_openai == "openai":
-        documents = search_documents_openai(open_ai_token=token, query=query)
+        documents = search_documents_openai(open_ai_token=token, query=query, amount=amount)
 
         # Embedd the documents with OpenAI#
     else:
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
-    logger.info(documents)
+    logger.info(f"Found {len(documents)} documents.")
 
     return documents
