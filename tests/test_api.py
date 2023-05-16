@@ -1,10 +1,14 @@
 """API Tests."""
 import os
 import shutil
+from io import BytesIO
 
+import httpx
 import pytest
+from fastapi import UploadFile
 from fastapi.testclient import TestClient
-from agent.api import app, create_tmp_folder, embedd_documents_wrapper
+
+from agent.api import app, create_tmp_folder
 
 client = TestClient(app)
 
@@ -23,46 +27,48 @@ def test_create_tmp_folder():
     shutil.rmtree(tmp_dir)
 
 
-def test_embedd_documents_wrapper_invalid_backend():
-    """Invalid Backend tests."""
-    with pytest.raises(ValueError):
-        embedd_documents_wrapper(folder_name="test_folder", aa_or_openai="invalid_backend")
+@pytest.mark.asyncio
+async def test_upload_documents():
+    """Testing the upload of multiple documents."""
+    async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
+        files = [
+            UploadFile("file1.txt", file=BytesIO(b"File 1 content")),
+            UploadFile("file2.txt", file=BytesIO(b"File 2 content")),
+        ]
+        response = await ac.post("/embedd_documents", files=[("files", file) for file in files])
 
-
-@pytest.mark.parametrize("aa_or_openai", ["openai", "aleph-alpha"])
-def test_upload_documents(aa_or_openai):
-    """Test the upload of multiple documents."""
-    files = [
-        ("file1.txt", "content1"),
-        ("file2.txt", "content2"),
-    ]
-    response = client.post(
-        "/embedd_documents",
-        params={"aa_or_openai": aa_or_openai},
-        files=[("files", (file_name, content)) for file_name, content in files],
-    )
     assert response.status_code == 200
-    assert response.json()["message"] == "Files received and saved."
-    assert sorted(response.json()["filenames"]) == sorted([file_name for file_name, _ in files])
+    assert response.json() == {
+        "message": "Files received and saved.",
+        "filenames": ["file1.txt", "file2.txt"],
+    }
+
+    # Clean up temporary folders
+    for entry in os.scandir():
+        if entry.name.startswith("tmp_") and entry.is_dir():
+            shutil.rmtree(entry.path)
 
 
-@pytest.mark.parametrize("aa_or_openai", ["openai", "aleph-alpha"])
-def test_embedd_one_document(aa_or_openai):
-    """Test the upload of only one document."""
-    files = ("file1.txt", "content1")
-    response = client.post(
-        "/embedd_document",
-        params={"aa_or_openai": aa_or_openai},
-        files=[("file", (files[0], files[1]))],
-    )
+@pytest.mark.asyncio
+async def test_embedd_one_document():
+    """Testing the upload of one document."""
+    async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
+        tmp_file = UploadFile("file1.txt", file=BytesIO(b"File 1 content"))
+        response = await ac.post("/embedd_document/", files=[("file", tmp_file)])
+
     assert response.status_code == 200
-    assert response.json()["message"] == "File received and saved."
-    assert response.json()["filenames"] == files[0]
+    assert response.json() == {
+        "message": "File received and saved.",
+        "filenames": "file1.txt",
+    }
+
+    # Clean up temporary folders
+    for entry in os.scandir():
+        if entry.name.startswith("tmp_") and entry.is_dir():
+            shutil.rmtree(entry.path)
 
 
-@pytest.mark.parametrize("aa_or_openai", ["openai", "aleph-alpha"])
-def test_search(aa_or_openai):
-    """Test the search."""
-    query = "example query"
-    response = client.get("/search", params={"query": query, "aa_or_openai": aa_or_openai})
+def test_search():
+    """Testing the search."""
+    response = client.get("/search?query=test")
     assert response.status_code == 200

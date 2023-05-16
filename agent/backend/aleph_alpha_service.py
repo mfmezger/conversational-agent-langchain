@@ -78,9 +78,7 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str) -> List[Tup
 
 
 if __name__ == "__main__":
-    embedd_documents_aleph_alpha("data", os.getenv("AA_Token"))
+    embedd_documents_aleph_alpha("data", os.getenv("ALEPH_ALPHA_API_KEY"))
 
-    # os.environ["ALEPH_ALPHA_API_KEY"] = os.getenv("AA_Token")
-
-    DOCS = search_documents_aleph_alpha(aleph_alpha_token=os.getenv("AA_Token"), query="Muss ich mein Mietwagen volltanken?")
+    DOCS = search_documents_aleph_alpha(aleph_alpha_token=os.getenv("ALEPH_ALPHA_API_KEY"), query="Muss ich mein Mietwagen volltanken?")
     print(DOCS)

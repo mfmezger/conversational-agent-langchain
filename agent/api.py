@@ -51,7 +51,7 @@ async def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
 
-async def create_tmp_folder() -> str:
+def create_tmp_folder() -> str:
     """Creates a temporary folder for files to store.
 
     :return: The directory name
@@ -85,7 +85,7 @@ async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: st
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
 
-    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=aa_or_openai, aleph_alpha_token=token)
+    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=aa_or_openai, token=token)
     return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
 
 
@@ -109,11 +109,16 @@ async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", to
     # Create a temporary folder to save the files
     tmp_dir = create_tmp_folder()
 
-    with open(os.path.join(tmp_dir, file.file_name), "wb") as f:
+    tmp_file_path = os.path.join(tmp_dir, str(file.filename))
+
+    logger.info(tmp_file_path)
+    print(tmp_file_path)
+
+    with open(tmp_file_path, "wb") as f:
         f.write(await file.read())
 
-    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=aa_or_openai, aleph_alpha_token=token)
-    return JSONResponse(content={"message": "File received and saved.", "filenames": file.file_name})
+    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=aa_or_openai, token=token)
+    return JSONResponse(content={"message": "File received and saved.", "filenames": file.filename})
 
 
 @app.get("/search")
