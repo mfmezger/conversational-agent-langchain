@@ -77,7 +77,7 @@ def search_documents_openai(open_ai_token: str, query: str) -> List[Tuple[Docume
 
 if __name__ == "__main__":
 
-    embedd_documents_openai("data", os.getenv("OPENAI_API_KEY"))
+    # embedd_documents_openai("data", os.getenv("OPENAI_API_KEY"))
 
-    DOCS = search_documents_openai(open_ai_token="", query="Muss ich mein Mietwagen volltanken?")
+    DOCS = search_documents_openai(open_ai_token="", query="Was ist Vanille?")
     print(DOCS)

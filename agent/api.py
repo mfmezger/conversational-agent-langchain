@@ -30,7 +30,7 @@ def read_root() -> str:
     return "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
-async def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", token: str = None):
+def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", token: str = None):
     """Call the right embedding function for the choosen backend.
 
     :param folder_name: _description_
@@ -45,8 +45,8 @@ async def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai
         # Embedd the documents with Aleph Alpha
         embedd_documents_aleph_alpha(dir=folder_name, aleph_alpha_token=token)
     elif aa_or_openai == "openai":
+        # Embedd the documents with OpenAI
         embedd_documents_openai(dir=folder_name, open_ai_token=token)
-        # Embedd the documents with OpenAI#
     else:
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
@@ -135,9 +135,14 @@ def search(query: str, aa_or_openai: str = "openai", token: str = None) -> None:
     """
     if aa_or_openai == "aleph-alpha":
         # Embedd the documents with Aleph Alpha
-        search_documents_aleph_alpha(aleph_alpha_token=token, query=query)
+        documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query)
     elif aa_or_openai == "openai":
-        search_documents_openai(open_ai_token=token, query=query)
+        documents = search_documents_openai(open_ai_token=token, query=query)
+
         # Embedd the documents with OpenAI#
     else:
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
+
+    logger.info(documents)
+
+    return documents
