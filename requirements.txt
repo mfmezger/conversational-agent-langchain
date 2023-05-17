@@ -1607,9 +1607,9 @@ tornado==6.3.2 ; python_full_version == "3.11.3" \
 tqdm==4.65.0 ; python_full_version == "3.11.3" \
     --hash=sha256:1871fb68a86b8fb3b59ca4cdd3dcccbc7e6d613eeed31f4c332531977b89beb5 \
     --hash=sha256:c4f53a17fe37e132815abceec022631be8ffe1b9381c2e6e30aa70edc99e9671
-transformers==4.29.1 ; python_full_version == "3.11.3" \
-    --hash=sha256:3dc9cd198918e140468edbf37d7edf3b7a75633655ce0771ce323bbf8c118c4d \
-    --hash=sha256:75f851f2420c26410edbdf4a2a1a5b434ab2b96aea36eb5931d06cc3b2e7b509
+transformers==4.29.2 ; python_full_version == "3.11.3" \
+    --hash=sha256:0ef158b99bad6f4e6652a0d8655fbbe58b4cb788ce7040f320b5d29c7c810a75 \
+    --hash=sha256:ed9467661f459f1ce49461d83f18f3b36b6a37f306182dc2ba272935f3b93ebb
 typing-extensions==4.5.0 ; python_full_version == "3.11.3" \
     --hash=sha256:5cb5f4a79139d699607b3ef622a1dedafa84e115ab0024e0d9c044a9479ca7cb \
     --hash=sha256:fb33085c39dd998ac16d1431ebc293a8b3eedd00fd4a32de0ff79002c19511b4

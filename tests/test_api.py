@@ -1,11 +1,9 @@
 """API Tests."""
 import os
 import shutil
-from io import BytesIO
 
 import httpx
 import pytest
-from fastapi import UploadFile
 from fastapi.testclient import TestClient
 
 from agent.api import app, create_tmp_folder
@@ -32,15 +30,15 @@ async def test_upload_documents():
     """Testing the upload of multiple documents."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
         files = [
-            UploadFile("file1.txt", file=BytesIO(b"File 1 content")),
-            UploadFile("file2.txt", file=BytesIO(b"File 2 content")),
+            open("tests/ressources/1706.03762v5.pdf", "rb"),
+            open("tests/ressources/1912.01703v1.pdf", "rb"),
         ]
         response = await ac.post("/embedd_documents", files=[("files", file) for file in files])
 
     assert response.status_code == 200
     assert response.json() == {
         "message": "Files received and saved.",
-        "filenames": ["file1.txt", "file2.txt"],
+        "filenames": ["1706.03762v5.pdf", "1912.01703v1.pdf"],
     }
 
     # Clean up temporary folders
@@ -53,13 +51,13 @@ async def test_upload_documents():
 async def test_embedd_one_document():
     """Testing the upload of one document."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
-        tmp_file = UploadFile("file1.txt", file=BytesIO(b"File 1 content"))
+        tmp_file = open("tests/ressources/1706.03762v5.pdf", "rb")
         response = await ac.post("/embedd_document/", files=[("file", tmp_file)])
 
     assert response.status_code == 200
     assert response.json() == {
         "message": "File received and saved.",
-        "filenames": "file1.txt",
+        "filenames": "1706.03762v5.pdf",
     }
 
     # Clean up temporary folders
@@ -68,7 +66,17 @@ async def test_embedd_one_document():
             shutil.rmtree(entry.path)
 
 
-def test_search():
-    """Testing the search."""
-    response = client.get("/search?query=test")
-    assert response.status_code == 200
+def test_search_route_invalid_provider():
+    """Testing with wrong backend."""
+    with pytest.raises(ValueError):
+        response = client.get(
+            "/search",
+            params={
+                "query": "example query",
+                "aa_or_openai": "invalid_provider",
+                "token": "example_token",
+                "amount": 3,
+            },
+        )
+        assert response.status_code == 400
+        assert "ValueError" in response.text

@@ -77,6 +77,25 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
     return docs
 
 
+def summarization(aleph_alpha_token: str, documents: List[Tuple[Document, float]]) -> List[str]:
+    """Summarization takes a list of documents and returns a list of summaries.
+
+    :param aleph_alpha_token: Aleph Alpha API Token
+    :type aleph_alpha_token: str
+    :param documents: List of documents
+    :type documents: List[Tuple[Document, float]]
+    :return: List of summaries
+    :rtype: List[str]
+    """
+    # extract the text from the documents
+    texts = [doc[0].page_content for doc in documents]
+
+    # summarize the texts
+    summaries = []
+    for text in texts:
+        pass
+
+
 if __name__ == "__main__":
     embedd_documents_aleph_alpha("data", os.getenv("ALEPH_ALPHA_API_KEY"))
 
