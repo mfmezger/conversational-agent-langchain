@@ -33,7 +33,7 @@ async def test_upload_documents():
             open("tests/ressources/1706.03762v5.pdf", "rb"),
             open("tests/ressources/1912.01703v1.pdf", "rb"),
         ]
-        response = await ac.post("/embedd_documents", files=[("files", file) for file in files])
+        response = await ac.post("/embedd_documents", files=[("files", file) for file in files], data={"aa_or_openai": "openai", "token": os.getenv("OPENAI_API_KEY")})
 
     assert response.status_code == 200
     assert response.json() == {
