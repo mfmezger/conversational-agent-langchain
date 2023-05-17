@@ -1,10 +1,5 @@
 FROM python:3.11
 
-
-# install tesseract
-# RUN apt-get update
-# RUN apt-get install -y tesseract-ocr tesseract-ocr-eng tesseract-ocr-deu poppler-utils ffmpeg
-
 # install poetry and dependencies
 # Install Poetry
 RUN curl -sSL https://install.python-poetry.org/ | POETRY_HOME=/opt/poetry python && \
@@ -19,6 +14,6 @@ RUN poetry install --no-root --no-dev
 
 COPY . .
 
-ENTRYPOINT ["streamlit", "run", "agent/gui.py", "--server.port=8001", "--server.address=0.0.0.0"]
+ENTRYPOINT ["streamlit", "run", "agent/api.py", "--server.port=8001", "--server.address=0.0.0.0"]
 # watch the logs
 # CMD ["tail", "-f", "/dev/null"]
