@@ -17,9 +17,6 @@ jobs:
 
     - name: Install dependencies
       run: |
-        curl -sSL https://install.python-poetry.org/ | POETRY_HOME=/opt/poetry python
-        cd /usr/local/bin && ln -s /opt/poetry/bin/poetry
-        poetry config virtualenvs.create false
-        poetry install --no-root
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Run tests
       run: pytest tests/
