@@ -9,6 +9,8 @@ from starlette.responses import JSONResponse
 
 from agent.backend.aleph_alpha_service import (
     embedd_documents_aleph_alpha,
+    explain_completion,
+    qa_aleph_alpha,
     search_documents_aleph_alpha,
 )
 from agent.backend.open_ai_service import (
@@ -137,7 +139,7 @@ def search(query: str, aa_or_openai: str = "openai", token: str = None, amount: 
 
 
 @app.get("/qa")
-def question_answer(query: str, aa_or_openai: str = "openai", token: str = None, amount: int = 1):
+def question_answer(query: str = None, aa_or_openai: str = "openai", token: str = None, amount: int = 1):
     """Answer a question based on the documents in the database.
 
     :param query: _description_
@@ -149,9 +151,34 @@ def question_answer(query: str, aa_or_openai: str = "openai", token: str = None,
     :param amount: _description_, defaults to 1
     :type amount: int, optional
     """
+    # if the query is not provided, raise an error
+    if query is None:
+        raise ValueError("Please provide a Question.")
+
     documents = search_db(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
 
-    # create summary of the answers using the summarization endpoints.
+    # call the qa function
+    answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)
+
+    return answer, prompt, meta_data
+
+
+@app.post("/explain")
+def explain_output(prompt: str, output: str, token: str = None):
+    """Explain the output of the question answering system.
+
+    :param prompt: _description_
+    :type prompt: str
+    :param answer: _description_
+    :type answer: str
+    :param token: _description_, defaults to None
+    :type token: str, optional
+    """
+    # explain the output
+    logger.info(f"OUtput {output}")
+    explanation = explain_completion(prompt=prompt, output=output, token=token)
+
+    return explanation
 
 
 def search_db(query: str, aa_or_openai: str = "openai", token: str = None, amount: int = 3):
