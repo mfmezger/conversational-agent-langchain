@@ -22,3 +22,6 @@ jobs:
         poetry install --with dev
     - name: Run tests
       run: pytest tests/
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} 
+        ALEPH_ALPHA_API_KEY: ${{ secrets.ALEPH_ALPHA_API_KEY }} 
