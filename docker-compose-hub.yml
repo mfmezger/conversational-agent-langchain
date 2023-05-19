@@ -1,0 +1,12 @@
+# create build for local docker file
+
+services:
+  image: mfmezger/conversational-agent-langchain:latest
+
+    volumes:
+      - ./data:/data
+      - ./logs:/logs
+
+    ports:
+      - "8001:8001"
+
