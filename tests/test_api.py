@@ -5,6 +5,7 @@ import shutil
 import httpx
 import pytest
 from fastapi.testclient import TestClient
+from loguru import logger
 
 from agent.api import app, create_tmp_folder
 
@@ -35,12 +36,14 @@ async def test_upload_documents(provider):
             open("tests/ressources/1912.01703v1.pdf", "rb"),
         ]
         if provider == "openai":
+            logger.warning("Using OpenAI API")
             response = await ac.post(
-                "/embedd_documents", files=[("files", file) for file in files], data={"aa_or_openai": "openai", "token": os.getenv("OPENAI_API_KEY")}
+                "/embedd_documents", params={"aa_or_openai": "openai", "token": os.getenv("OPENAI_API_KEY")}, files=[("files", file) for file in files]
             )
         else:
+            logger.warning("Using Aleph Alpha API")
             response = await ac.post(
-                "/embedd_documents", files=[("files", file) for file in files], data={"aa_or_openai": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}
+                "/embedd_documents", params={"aa_or_openai": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
             )
 
     assert response.status_code == 200

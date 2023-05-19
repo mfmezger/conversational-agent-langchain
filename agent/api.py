@@ -43,7 +43,7 @@ def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", tok
     :type aleph_alpha_token: str, optional
     :raises ValueError: _description_
     """
-    if aa_or_openai == "aleph-alpha":
+    if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
         embedd_documents_aleph_alpha(dir=folder_name, aleph_alpha_token=token)
     elif aa_or_openai == "openai":
