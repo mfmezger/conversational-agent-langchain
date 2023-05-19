@@ -26,14 +26,22 @@ def test_create_tmp_folder():
 
 
 @pytest.mark.asyncio
-async def test_upload_documents():
+@pytest.mark.parametrize("provider", ["openai", "aleph-alpha"])
+async def test_upload_documents(provider):
     """Testing the upload of multiple documents."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
         files = [
             open("tests/ressources/1706.03762v5.pdf", "rb"),
             open("tests/ressources/1912.01703v1.pdf", "rb"),
         ]
-        response = await ac.post("/embedd_documents", files=[("files", file) for file in files], data={"aa_or_openai": "openai", "token": os.getenv("OPENAI_API_KEY")})
+        if provider == "openai":
+            response = await ac.post(
+                "/embedd_documents", files=[("files", file) for file in files], data={"aa_or_openai": "openai", "token": os.getenv("OPENAI_API_KEY")}
+            )
+        else:
+            response = await ac.post(
+                "/embedd_documents", files=[("files", file) for file in files], data={"aa_or_openai": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}
+            )
 
     assert response.status_code == 200
     assert response.json() == {

@@ -127,6 +127,7 @@ def summarization(aleph_alpha_token: str, documents: List[Tuple[Document, float]
     :return: List of summaries
     :rtype: List[str]
     """
+    # TODO: Implement
     # extract the text from the documents
     texts = [doc[0].page_content for doc in documents]
 
@@ -156,6 +157,7 @@ def qa_aleph_alpha(aleph_alpha_token: str, documents: List[Tuple[Document, float
         texts = [doc[0].page_content for doc in documents]
         if summarization:
             # call summarization
+            # TODO: implement summarization
             pass
         else:
             # combine the texts to one text
@@ -174,14 +176,14 @@ def qa_aleph_alpha(aleph_alpha_token: str, documents: List[Tuple[Document, float
 def explain_completion(prompt: str, output: str, token: str):
     """Explain_completion takes a prompt and an output and returns the explanation.
 
-    :param prompt: _description_
+    :param prompt: The complete input in the model
     :type prompt: str
-    :param output: _description_
+    :param output: the answer of the model
     :type output: str
-    :param token: _description_
+    :param token: Aleph Alpha API Token
     :type token: str
-    :return: _description_
-    :rtype: _type_
+    :return: Key: Sentence, Value: Score
+    :rtype: dict
     """
     exp_req = ExplanationRequest(Prompt.from_text(prompt), output, control_factor=0.1, prompt_granularity="sentence")
     client = Client(token=token)
@@ -196,7 +198,7 @@ def explain_completion(prompt: str, output: str, token: str):
     explanations = sorted(explanations, key=lambda x: x.score, reverse=True)
 
     result = {}
-    # print the first 2 explanations
+    # extract the first 3 explanations
     for item in explanations[:3]:
         start = item.start
         end = item.start + item.length
@@ -206,7 +208,7 @@ def explain_completion(prompt: str, output: str, token: str):
 
 
 if __name__ == "__main__":
-    # embedd_documents_aleph_alpha("data", os.getenv("ALEPH_ALPHA_API_KEY"))
+    embedd_documents_aleph_alpha("data", os.getenv("ALEPH_ALPHA_API_KEY"))
 
     DOCS = search_documents_aleph_alpha(aleph_alpha_token=os.getenv("ALEPH_ALPHA_API_KEY"), query="Muss ich mein Mietwagen volltanken?")
     logger.info(DOCS)
