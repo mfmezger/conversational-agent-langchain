@@ -4,6 +4,23 @@
 ## Project Description
 
 
+## Deployment
+
+If you are working in an envoironment with internet connection the easiest way is to use this command:
+```bash
+docker compose -f docker-compose-hub.yml up
+```
+
+This will pull the image from docker hub and run it. Instead of building it on your local machine.
+
+If you want to build the image on your local machine you can use this command:
+```bash
+docker compose up
+```
+
+
+
+
 
 ## Development Backend
 

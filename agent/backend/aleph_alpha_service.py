@@ -127,6 +127,8 @@ def summarization(aleph_alpha_token: str, documents: List[Tuple[Document, float]
     :return: List of summaries
     :rtype: List[str]
     """
+    client = Client(token=aleph_alpha_token)
+
     # TODO: Implement
     # extract the text from the documents
     texts = [doc[0].page_content for doc in documents]

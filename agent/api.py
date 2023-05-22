@@ -35,13 +35,13 @@ def read_root() -> str:
 def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", token: str = None):
     """Call the right embedding function for the choosen backend.
 
-    :param folder_name: _description_
+    :param folder_name: Name of the temporary folder
     :type folder_name: str
-    :param aa_or_openai: _description_, defaults to "openai"
+    :param aa_or_openai: LLM provider, defaults to "openai"
     :type aa_or_openai: str, optional
-    :param aleph_alpha_token: _description_, defaults to None
-    :type aleph_alpha_token: str, optional
-    :raises ValueError: _description_
+    :param toke: Token for the LLM Provider of choice, defaults to None
+    :type token: str, optional
+    :raises ValueError: Raise error if not a valid LLM Provider is set
     """
     if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
