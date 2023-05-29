@@ -2,7 +2,10 @@
 
 
 ## Project Description
+This is a conversational Agent MVP using Aleph Alpha (https://www.aleph-alpha.com/) or Azure OpenAI.
 
+## Components
+It ueses Langchain, FastAPI and a Vectordatabase.
 
 ## Deployment
 
