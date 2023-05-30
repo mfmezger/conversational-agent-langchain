@@ -21,10 +21,6 @@ If you want to build the image on your local machine you can use this command:
 docker compose up
 ```
 
-
-
-
-
 ## Development Backend
 
 To run the Backend use this command in the root directory:

@@ -14,6 +14,6 @@ RUN poetry install --no-root --no-dev
 
 COPY . .
 
-ENTRYPOINT ["streamlit", "run", "agent/api.py", "--server.port=8001", "--server.address=0.0.0.0"]
+ENTRYPOINT ["uvicorn", "agent.api:app", "--host", "0.0.0.0", "--port", "8000"]
 # watch the logs
 # CMD ["tail", "-f", "/dev/null"]

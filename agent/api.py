@@ -3,6 +3,7 @@ import os
 import uuid
 from typing import List
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
 from loguru import logger
 from starlette.responses import JSONResponse
@@ -20,6 +21,28 @@ from agent.backend.open_ai_service import (
 
 # initialize the Fast API Application.
 app = FastAPI(debug=True)
+
+# load the token from the environment variables
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
+
+
+def get_token(token: str, aa_or_openai: str) -> str:
+    """Get the token from the environment variables or the parameter.
+
+    :param token: token from rest service
+    :type token: str
+    :param aa_or_openai: LLM provider, defaults to "openai"
+    :type aa_or_openai: str
+    :return: Token for the LLM Provider of choice
+    :rtype: str
+    """
+    env_token = ALEPH_ALPHA_API_KEY if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"} else OPENAI_API_KEY
+    return token if env_token is None else env_token
+
+
+load_dotenv()
+# TODO load dotenv and add method to get the token from the environment variables
 
 
 @app.get("/")
@@ -43,6 +66,8 @@ def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", tok
     :type token: str, optional
     :raises ValueError: Raise error if not a valid LLM Provider is set
     """
+    token = get_token(token, aa_or_openai)
+
     if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
         embedd_documents_aleph_alpha(dir=folder_name, aleph_alpha_token=token)
@@ -135,6 +160,7 @@ def search(query: str, aa_or_openai: str = "openai", token: str = None, amount: 
     :type token: str, optional
     :raises ValueError: If the LLM Provider is not implemented yet
     """
+    token = get_token(token, aa_or_openai)
     return search_db(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
 
 
@@ -155,6 +181,7 @@ def question_answer(query: str = None, aa_or_openai: str = "openai", token: str 
     if query is None:
         raise ValueError("Please provide a Question.")
 
+    token = get_token(token, aa_or_openai)
     documents = search_db(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
 
     # call the qa function
@@ -176,26 +203,27 @@ def explain_output(prompt: str, output: str, token: str = None):
     """
     # explain the output
     logger.info(f"OUtput {output}")
-    explanation = explain_completion(prompt=prompt, output=output, token=token)
-
-    return explanation
+    token = get_token(token, aa_or_openai="aa")
+    return explain_completion(prompt=prompt, output=output, token=token)
 
 
 def search_db(query: str, aa_or_openai: str = "openai", token: str = None, amount: int = 3):
     """Search the database for a query.
 
-    :param query: _description_
+    :param query: Search query
     :type query: str
-    :param aa_or_openai: _description_, defaults to "openai"
+    :param aa_or_openai: LLM Provider, defaults to "openai"
     :type aa_or_openai: str, optional
-    :param token: _description_, defaults to None
+    :param token: API Token, defaults to None
     :type token: str, optional
-    :param amount: _description_, defaults to 3
+    :param amount: Amount of search results, defaults to 3
     :type amount: int, optional
-    :raises ValueError: _description_
-    :return: _description_
-    :rtype: _type_
+    :raises ValueError: If the LLM Provider is not implemented yet
+    :return: Documents that match the query
+    :rtype: List
     """
+    token = get_token(token, aa_or_openai)
+
     if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
         documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query, amount=amount)
