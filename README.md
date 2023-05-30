@@ -2,16 +2,19 @@
 
 
 ## Project Description
+
 This is a conversational Agent MVP using Aleph Alpha (https://www.aleph-alpha.com/) or Azure OpenAI.
 
 ## Components
+
 It ueses Langchain, FastAPI and a Vectordatabase.
 
 ## Deployment
+
 If you want to use a default token for the LLM Provider you need to create a .env file. Do this by copying the .env-template file and add the necessary api keys.
 
-
 If you are working in an envoironment with internet connection the easiest way is to use this command:
+
 ```bash
 docker compose -f docker-compose-hub.yml up
 ```
@@ -19,6 +22,7 @@ docker compose -f docker-compose-hub.yml up
 This will pull the image from docker hub and run it. Instead of building it on your local machine.
 
 If you want to build the image on your local machine you can use this command:
+
 ```bash
 docker compose up
 ```
