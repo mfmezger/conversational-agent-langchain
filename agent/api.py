@@ -49,7 +49,6 @@ def get_token(token: str, aa_or_openai: str) -> str:
 
 
 load_dotenv()
-# TODO load dotenv and add method to get the token from the environment variables
 
 
 @app.get("/")
