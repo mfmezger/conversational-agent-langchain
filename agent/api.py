@@ -26,9 +26,13 @@ app = FastAPI(debug=True)
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
 
+
 class Backend(enum.Enum):
+    """Enum for the LLM Provider."""
+
     ALEPH_ALPHA = "aleph-alpha"
     OPENAI = "openai"
+
 
 def get_token(token: str, aa_or_openai: str) -> str:
     """Get the token from the environment variables or the parameter.
@@ -204,8 +208,6 @@ def explain_output(prompt: str, output: str, token: str = None):
     logger.info(f"OUtput {output}")
     token = get_token(token, aa_or_openai="aa")
     return explain_completion(prompt=prompt, output=output, token=token)
-
-
 
 
 def search_db(query: str, backend: Backend = Backend.OPENAI, token: str = None, amount: int = 3) -> List:

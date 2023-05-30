@@ -45,6 +45,7 @@ def generate_prompt(prompt_name: str, text: str, query: str) -> str:
 
     return prompt
 
+
 def send_completion_request(prompt: str, token: str) -> str:
     """Send a completion request to the OpenAI API.
 
@@ -62,10 +63,9 @@ def send_completion_request(prompt: str, token: str) -> str:
     if not response.completions:
         raise ValueError("API response is empty.")
 
-
     return response.completions[0].text
 
-    
+
 @load_config(location="config/chroma_db.yml")
 def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Chroma:
     """get_db_connection initializes the connection to the chroma db.
