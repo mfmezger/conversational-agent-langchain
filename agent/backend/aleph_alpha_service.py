@@ -28,33 +28,44 @@ def generate_prompt(prompt_name: str, text: str, query: str) -> str:
     :return: The generated prompt
     :rtype: str
     """
-    with open(os.path.join("prompts", prompt_name)) as f:
-        prompt = Template(f.read())
+    prompt_path = Path("prompts") / prompt_name
 
-    # replace the value text with jinja
-    # Render the template with your variable
-    prompt = prompt.render(text=text, query=query)
+    try:
+        with prompt_path.open() as f:
+            template = Template(f.read())
+    except FileNotFoundError:
+        raise ValueError(f"Prompt file {prompt_name} not found.")
+    except Exception as e:
+        raise ValueError(f"Error while reading prompt file {prompt_name}: {e}")
+
+    try:
+        prompt = template.render(text=text, query=query)
+    except Exception as e:
+        raise ValueError(f"Error while rendering prompt {prompt_name}: {e}")
 
     return prompt
 
+def send_completion_request(prompt: str, token: str) -> str:
+    """Send a completion request to the OpenAI API.
 
-def send_completion_request(text: str, token: str) -> str:
-    """Send the request to the luminous api.
-
-    :param text: The prompt to be sent to the api
-    :type text: str
-    :param token: The token for the luminous api
+    :param prompt: The prompt to be sent to the API
+    :type prompt: str
+    :param token: The API token
     :type token: str
-    :return: The response from the api
+    :return: The response from the API
     :rtype: str
     """
-    client = Client(token=token)
-    request = CompletionRequest(prompt=Prompt.from_text(text), maximum_tokens=256, stop_sequences=["###"])
-    response = client.complete(request, model="luminous-supreme-control")
+    with Client(token=token) as client:
+        request = CompletionRequest(prompt=Prompt.from_text(prompt), maximum_tokens=256, stop_sequences=["###"])
+        response = client.complete(request, model="text-davinci-002")
 
-    return response.completions[0].completion
+    if not response.completions:
+        raise ValueError("API response is empty.")
 
 
+    return response.completions[0].text
+
+    
 @load_config(location="config/chroma_db.yml")
 def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Chroma:
     """get_db_connection initializes the connection to the chroma db.

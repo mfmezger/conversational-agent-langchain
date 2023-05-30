@@ -83,7 +83,22 @@ def create_summarization(open_ai_token: str, documents):
     :param documents: _description_
     :type documents: _type_
     """
-    pass
+    text = "\n".join(documents)
+
+    # Use the OpenAI GPT-3 language model to generate a summary
+    response = openai.Completion.create(
+        engine="text-davinci-002",
+        prompt=f"Please summarize the following text:\n{text}\n\nSummary:",
+        max_tokens=100,
+        n=1,
+        stop=None,
+        temperature=0.5,
+    )
+
+    # Extract the summary from the response
+    summary = response.choices[0].text.strip()
+
+    return summary
 
 
 if __name__ == "__main__":
