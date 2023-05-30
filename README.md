@@ -8,6 +8,8 @@ This is a conversational Agent MVP using Aleph Alpha (https://www.aleph-alpha.co
 It ueses Langchain, FastAPI and a Vectordatabase.
 
 ## Deployment
+If you want to use a default token for the LLM Provider you need to create a .env file. Do this by copying the .env-template file and add the necessary api keys.
+
 
 If you are working in an envoironment with internet connection the easiest way is to use this command:
 ```bash
