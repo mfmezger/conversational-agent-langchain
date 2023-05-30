@@ -168,14 +168,17 @@ def search(query: str, aa_or_openai: str = "openai", token: str = None, amount: 
 def question_answer(query: str = None, aa_or_openai: str = "openai", token: str = None, amount: int = 1):
     """Answer a question based on the documents in the database.
 
-    :param query: _description_
-    :type query: str
-    :param aa_or_openai: _description_, defaults to "openai"
-    :type aa_or_openai: str, optional
-    :param token: _description_, defaults to None
-    :type token: str, optional
-    :param amount: _description_, defaults to 1
-    :type amount: int, optional
+    Args:
+        query (str, optional): _description_. Defaults to None.
+        aa_or_openai (str, optional): _description_. Defaults to "openai".
+        token (str, optional): _description_. Defaults to None.
+        amount (int, optional): _description_. Defaults to 1.
+
+    Raises:
+        ValueError: _description_
+
+    Returns:
+        _type_: _description_
     """
     # if the query is not provided, raise an error
     if query is None:
