@@ -13,18 +13,18 @@ It ueses Langchain, FastAPI and a Vectordatabase.
 
 If you want to use a default token for the LLM Provider you need to create a .env file. Do this by copying the .env-template file and add the necessary api keys.
 
-If you are working in an envoironment with internet connection the easiest way is to use this command:
+<!-- If you are working in an envoironment with internet connection the easiest way is to use this command:
 
 ```bash
 docker compose -f docker-compose-hub.yml up
 ```
 
-This will pull the image from docker hub and run it. Instead of building it on your local machine.
+This will pull the image from docker hub and run it. Instead of building it on your local machine. -->
 
-If you want to build the image on your local machine you can use this command:
+To start the application use this command:
 
 ```bash
-docker compose up
+docker compose up -d
 ```
 
 ## Development Backend

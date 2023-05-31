@@ -2,6 +2,7 @@
 import os
 import uuid
 from typing import List
+import enum
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile

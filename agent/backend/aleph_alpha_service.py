@@ -12,6 +12,7 @@ from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
 from langchain.vectorstores import Chroma
 from loguru import logger
 from omegaconf import DictConfig
+from pathlib import Path
 
 from agent.utils.configuration import load_config
 
