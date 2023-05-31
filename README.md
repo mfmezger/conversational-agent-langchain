@@ -2,8 +2,12 @@
 
 
 ## Project Description
+This project is a conversational agent that uses Aleph Alpha and OpenAI Large Language Models to generate responses to user queries. The agent also includes a vector database and a REST API built with FastAPI.
 
-This is a conversational Agent MVP using Aleph Alpha (https://www.aleph-alpha.com/) or Azure OpenAI.
+Features
+- Uses Aleph Alpha and OpenAI Large Language Models to generate responses to user queries.
+- Includes a vector database to store and retrieve information.
+- Provides a REST API built with FastAPI for easy integration with other applications.
 
 ## Components
 
