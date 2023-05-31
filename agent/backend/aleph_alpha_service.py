@@ -222,9 +222,6 @@ def explain_completion(prompt: str, output: str, token: str):
 
     explanations = response_explain[1][0].items[0][0]
 
-    # remove the first explanation because it is the prompt
-    # explanations = explanations[3:]
-
     # sort the explanations by score
     explanations = sorted(explanations, key=lambda x: x.score, reverse=True)
 
