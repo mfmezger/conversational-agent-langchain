@@ -48,7 +48,13 @@ def send_completion_request(text: str, token: str) -> str:
     :return: The response from the api
     :rtype: str
     """
+    if not text:
+        raise ValueError("Text cannot be None or empty.")
+    if not token:
+        raise ValueError("Token cannot be None or empty.")
+
     client = Client(token=token)
+
     request = CompletionRequest(prompt=Prompt.from_text(text), maximum_tokens=256, stop_sequences=["###"])
     response = client.complete(request, model="luminous-supreme-control")
 
@@ -167,7 +173,7 @@ def qa_aleph_alpha(aleph_alpha_token: str, documents: List[Tuple[Document, float
         meta_data = [doc[0].metadata for doc in documents]
 
     # load the prompt
-    prompt = generate_prompt("qa.txt", text=text, query=query)
+    prompt = generate_prompt("qa.j2", text=text, query=query)
     # call the luminous api
     answer = send_completion_request(prompt, aleph_alpha_token)
 
