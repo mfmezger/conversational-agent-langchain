@@ -619,9 +619,9 @@ joblib==1.2.0 ; python_full_version == "3.11.3" \
 jsonschema==4.17.3 ; python_full_version == "3.11.3" \
     --hash=sha256:0f864437ab8b6076ba6707453ef8f98a6a0d512a80e93f8abdb676f737ecb60d \
     --hash=sha256:a870ad254da1a8ca84b6a2905cac29d265f805acc57af304784962a2aa6508f6
-langchain==0.0.171 ; python_full_version == "3.11.3" \
-    --hash=sha256:ac014d1912bdbadf608120b29981e4177f293bcdf50e0987f682c1f34f3d3b3e \
-    --hash=sha256:d32dba400c35a71221bb7e903175ee5ea4e9decf4354cedd070adf95fb1e4d16
+langchain==0.0.186 ; python_full_version == "3.11.3" \
+    --hash=sha256:36d6d3872727a6f7d6db1b05b13caac35fed19a0d395d2264ed82aae53cfddfd \
+    --hash=sha256:c53ac8943351602dbde84759d32d57fe2e6599279576935a004688e43ee8ffbf
 loguru==0.7.0 ; python_full_version == "3.11.3" \
     --hash=sha256:1612053ced6ae84d7959dd7d5e431a0532642237ec21f7fd83ac73fe539e03e1 \
     --hash=sha256:b93aa30099fa6860d4727f1b81f8718e965bb96253fa190fab2077aaad6d15d3
@@ -877,9 +877,9 @@ numpy==1.24.3 ; python_full_version == "3.11.3" \
 omegaconf==2.3.0 ; python_full_version == "3.11.3" \
     --hash=sha256:7b4df175cdb08ba400f45cae3bdcae7ba8365db4d165fc65fd04b050ab63b46b \
     --hash=sha256:d5d4b6d29955cc50ad50c46dc269bcd92c6e00f5f90d23ab5fee7bfca4ba4cc7
-openai==0.27.6 ; python_full_version == "3.11.3" \
-    --hash=sha256:1f07ed06f1cfc6c25126107193726fe4cf476edcc4e1485cd9eb708f068f2606 \
-    --hash=sha256:63ca9f6ac619daef8c1ddec6d987fe6aa1c87a9bfdce31ff253204d077222375
+openai==0.27.7 ; python_full_version == "3.11.3" \
+    --hash=sha256:788fb7fa85bf7caac6c1ed7eea5984254a1bdaf09ef485acf0e5718c8b2dc25a \
+    --hash=sha256:bca95fd4c3054ef38924def096396122130454442ec52005915ecf8269626b1d
 openapi-schema-pydantic==1.2.4 ; python_full_version == "3.11.3" \
     --hash=sha256:3e22cf58b74a69f752cc7e5f1537f6e44164282db2700cbbcd3bb99ddd065196 \
     --hash=sha256:a932ecc5dcbb308950282088956e94dea069c9823c84e507d64f6b622222098c
@@ -1133,9 +1133,9 @@ pygments==2.15.1 ; python_full_version == "3.11.3" \
 pympler==1.0.1 ; python_full_version == "3.11.3" \
     --hash=sha256:993f1a3599ca3f4fcd7160c7545ad06310c9e12f70174ae7ae8d4e25f6c5d3fa \
     --hash=sha256:d260dda9ae781e1eab6ea15bacb84015849833ba5555f141d2d9b7b7473b307d
-pypdf==3.8.1 ; python_full_version == "3.11.3" \
-    --hash=sha256:0c34620e4bbceaf9632b6b7a8ec6d4a4d5b0cdee6e39bdb86dc91a8c44cb0f19 \
-    --hash=sha256:761ad6dc33abb78d358b4ae42206c5f185798f8b537be9b8fdecd9ee834a894d
+pypdf==3.9.0 ; python_full_version == "3.11.3" \
+    --hash=sha256:06136b9ed99525159482a1397a49f3fc0fd55ffd700d1ad4393e3f42d192a035 \
+    --hash=sha256:a2a0859483687deb01c29180587a5028bc3595402001107c870085a1976131e3
 pyrsistent==0.19.3 ; python_full_version == "3.11.3" \
     --hash=sha256:016ad1afadf318eb7911baa24b049909f7f3bb2c5b1ed7b6a8f21db21ea3faa8 \
     --hash=sha256:1a2994773706bbb4995c31a97bc94f1418314923bd1048c6d964837040376440 \
