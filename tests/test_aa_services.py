@@ -4,7 +4,11 @@ import os
 import pytest
 from dotenv import load_dotenv
 
-from agent.backend.aleph_alpha_service import generate_prompt, send_completion_request
+from agent.backend.aleph_alpha_service import (
+    generate_prompt,
+    search_documents_aleph_alpha,
+    send_completion_request,
+)
 
 load_dotenv()
 
@@ -60,3 +64,18 @@ def test_send_completion_request():
     completion = send_completion_request(prompt, token)
     assert isinstance(completion, str)
     assert len(completion) > 0
+
+
+def test_search_documents_aleph_alpha_wrong_token():
+    """Test that search_documents_aleph_alpha raises an error when the token is invalid."""
+    # Test with an empty query
+    aleph_alpha_token = "example_token"
+    query = ""
+    with pytest.raises(ValueError, match="Query cannot be None or empty."):
+        search_documents_aleph_alpha(aleph_alpha_token, query)
+
+    # Test with an empty token
+    aleph_alpha_token = ""
+    query = "This should raise an error."
+    with pytest.raises(ValueError, match="Token cannot be None or empty."):
+        search_documents_aleph_alpha(aleph_alpha_token, query)
