@@ -17,7 +17,7 @@ os.environ["OPENAI_API_TYPE"] = "azure"
 os.environ["OPENAI_API_BASE"] = "https://openaiendpoint.openai.azure.com/"
 
 
-@load_config(location="config/chroma_db.yml")
+@load_config(config_file_path="config/chroma_db.yml")
 def get_db_connection(cfg: DictConfig, open_ai_token: str) -> Chroma:
     """get_db_connection initializes the connection to the chroma db.
 

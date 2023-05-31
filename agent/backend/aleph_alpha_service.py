@@ -1,5 +1,6 @@
 """The script to initialize the chroma db backend with aleph alpha."""
 import os
+from pathlib import Path
 from typing import List, Tuple
 
 import numpy as np
@@ -12,7 +13,6 @@ from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
 from langchain.vectorstores import Chroma
 from loguru import logger
 from omegaconf import DictConfig
-from pathlib import Path
 
 from agent.utils.configuration import load_config
 
@@ -67,8 +67,8 @@ def send_completion_request(prompt: str, token: str) -> str:
     return response.completions[0].text
 
 
-@load_config(location="config/chroma_db.yml")
-def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Chroma:
+@load_config(config_file_path="config/chroma_db.yml")
+def get_db_connection(aleph_alpha_token: str, cfg: DictConfig) -> Chroma:
     """get_db_connection initializes the connection to the chroma db.
 
     :param cfg: Configuration file loaded via OmegaConf.
