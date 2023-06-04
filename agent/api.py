@@ -154,6 +154,23 @@ async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", to
     return JSONResponse(content={"message": "File received and saved.", "filenames": file.filename})
 
 
+@app.post("/embedd_text/")
+async def embedd_text(text: str, aa_or_openai: str = "openai", token: str = None, seperator="###"):
+
+@app.post("/embedd_text_file/")
+async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: str = None, seperator="###"):
+    tmp_dir = create_tmp_folder()
+
+    file_names = []
+
+    for file in files:
+        file_name = file.filename
+        file_names.append(file_name)
+
+        # Save the file to the temporary folder
+        with open(os.path.join(tmp_dir, file_name), "wb") as f:
+            f.write(await file.read())
+
 @app.get("/search")
 def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> None:
     """Searches for a query in the vector database.

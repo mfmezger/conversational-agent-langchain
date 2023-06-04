@@ -114,6 +114,30 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
     logger.info("SUCCESS: Database Persistent.")
 
 
+def embedd_text(text: str, aleph_alpha_token:str, seperator: str) -> None:
+    """embedd_text embedds the given text.
+
+    :param text: Text to be embedded
+    :type text: str
+    :param aleph_alpha_token: Aleph Alpha API Token
+    :type aleph_alpha_token: str
+    """
+    vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
+
+    # split the text at the seperator
+    text = text.split(seperator)
+    
+    # metadata = 
+    metadata = ""
+
+
+    vector_db.add_text(text=text, metadata=metadata)
+    logger.info("SUCCESS: Text embedded.")
+    vector_db.persist()
+    logger.info("SUCCESS: Database Persistent.")
+
+
+
 def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int = 1) -> List[Tuple[Document, float]]:
     """Searches the Aleph Alpha service for similar documents.
 
