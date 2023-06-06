@@ -1,4 +1,5 @@
 """This script is used to initialize the chroma db backend with Azure OpenAI."""
+import os
 from typing import List, Tuple
 
 from dotenv import load_dotenv
