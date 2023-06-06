@@ -2,12 +2,16 @@
 
 
 ## Project Description
+This project is a conversational agent that uses Aleph Alpha and OpenAI Large Language Models to generate responses to user queries. The agent also includes a vector database and a REST API built with FastAPI.
 
-This is a conversational Agent MVP using Aleph Alpha (https://www.aleph-alpha.com/) or Azure OpenAI.
+Features
+- Uses Aleph Alpha and OpenAI Large Language Models to generate responses to user queries.
+- Includes a vector database to store and retrieve information.
+- Provides a REST API built with FastAPI for easy integration with other applications.
 
 ## Components
 
-It ueses Langchain, FastAPI and a Vectordatabase.
+Langchain is a library for natural language processing and machine learning. FastAPI is a modern, fast (high-performance) web framework for building APIs with Python 3.7+ based on standard Python type hints. A Vectordatabase is a database that stores vectors, which can be used for similarity searches and other machine learning tasks.
 
 ## Deployment
 
@@ -38,7 +42,7 @@ poetry run uvicorn agent.api:app --reload
 To run the tests you can use this command:
 
 ```bash
-poetry run coverage run -m pytest tests log_cli=true
+poetry run coverage run -m pytest -o log_cli=true -vvv tests
 ```
 
 ## Development Frontend

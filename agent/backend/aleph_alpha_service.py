@@ -48,9 +48,23 @@ def send_completion_request(text: str, token: str) -> str:
     :return: The response from the api
     :rtype: str
     """
+    if not text:
+        raise ValueError("Text cannot be None or empty.")
+    if not token:
+        raise ValueError("Token cannot be None or empty.")
+
     client = Client(token=token)
+
     request = CompletionRequest(prompt=Prompt.from_text(text), maximum_tokens=256, stop_sequences=["###"])
     response = client.complete(request, model="luminous-supreme-control")
+
+    # ensure that the response is not empty
+    if not response.completions:
+        raise ValueError("Response is empty.")
+
+    # ensure that the completion is not empty
+    if not response.completions[0].completion:
+        raise ValueError("Completion is empty.")
 
     return response.completions[0].completion
 
@@ -101,31 +115,46 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
 
 
 def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int = 1) -> List[Tuple[Document, float]]:
-    """search_documents takes a query and searchs the Chroma DB for similar documents.
+    """Searches the Aleph Alpha service for similar documents.
 
-    :param aleph_alpha_token: Aleph Alpha API Token
-    :type aleph_alpha_token: str
-    :param query: The Query that should be searched for.
-    :type query: str
-    :return: Multiple Documents
-    :rtype: List[Tuple[Document, float]]
+    Args:
+        aleph_alpha_token (str): Aleph Alpha API Token.
+        query (str): The query that should be searched for.
+        amount (int, optional): The number of documents to return. Defaults to 1.
+
+    Returns
+    -------
+        List[Tuple[Document, float]]: A list of tuples containing the documents and their similarity scores.
+
     """
-    vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
+    if not aleph_alpha_token:
+        raise ValueError("Token cannot be None or empty.")
+    if not query:
+        raise ValueError("Query cannot be None or empty.")
+    if amount < 1:
+        raise ValueError("Amount must be greater than 0.")
 
-    docs = vector_db.similarity_search_with_score(query, k=amount)
-    logger.info("SUCCESS: Documents found.")
-    return docs
+    try:
+        vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
+        docs = vector_db.similarity_search_with_score(query, k=amount)
+        logger.info("SUCCESS: Documents found.")
+        return docs
+    except Exception as e:
+        logger.error(f"ERROR: Failed to search documents: {e}")
+        raise
 
 
 def summarization(aleph_alpha_token: str, documents: List[Tuple[Document, float]]) -> List[str]:
-    """Summarization takes a list of documents and returns a list of summaries.
+    """Summarizes a list of documents and returns a list of summaries.
 
-    :param aleph_alpha_token: Aleph Alpha API Token
-    :type aleph_alpha_token: str
-    :param documents: List of documents
-    :type documents: List[Tuple[Document, float]]
-    :return: List of summaries
-    :rtype: List[str]
+    Args:
+        aleph_alpha_token (str): Aleph Alpha API Token.
+        documents (List[Tuple[Document, float]]): A list of tuples containing the documents and their similarity scores.
+
+    Returns
+    -------
+        List[str]: A list of summaries.
+
     """
     client = Client(token=aleph_alpha_token)
 
@@ -167,7 +196,7 @@ def qa_aleph_alpha(aleph_alpha_token: str, documents: List[Tuple[Document, float
         meta_data = [doc[0].metadata for doc in documents]
 
     # load the prompt
-    prompt = generate_prompt("qa.txt", text=text, query=query)
+    prompt = generate_prompt("qa.j2", text=text, query=query)
     # call the luminous api
     answer = send_completion_request(prompt, aleph_alpha_token)
 
@@ -192,9 +221,6 @@ def explain_completion(prompt: str, output: str, token: str):
     response_explain = client.explain(exp_req, model="luminous-supreme-control")
 
     explanations = response_explain[1][0].items[0][0]
-
-    # remove the first explanation because it is the prompt
-    # explanations = explanations[3:]
 
     # sort the explanations by score
     explanations = sorted(explanations, key=lambda x: x.score, reverse=True)
