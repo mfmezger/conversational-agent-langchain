@@ -1,5 +1,4 @@
 """This script is used to initialize the chroma db backend with Azure OpenAI."""
-import os
 from typing import List, Tuple
 
 from dotenv import load_dotenv
@@ -13,8 +12,6 @@ from omegaconf import DictConfig
 from agent.utils.configuration import load_config
 
 load_dotenv()
-os.environ["OPENAI_API_TYPE"] = "azure"
-os.environ["OPENAI_API_BASE"] = "https://openaiendpoint.openai.azure.com/"
 
 
 @load_config(location="config/chroma_db.yml")
