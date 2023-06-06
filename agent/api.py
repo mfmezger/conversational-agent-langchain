@@ -171,8 +171,12 @@ def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None
     """
     if token is None:
         raise ValueError("Please provide a token for the LLM Provider of choice.")
+
+    if aa_or_openai is None:
+        raise ValueError("Please provide a LLM Provider of choice.")
+
     token = get_token(token, aa_or_openai)
-    return search_db(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+    return search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
 
 
 @app.get("/qa")
@@ -197,7 +201,7 @@ def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", t
 
     if token:
         token = get_token(token, aa_or_openai)
-        documents = search_db(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+        documents = search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
 
         # call the qa function
         answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)
