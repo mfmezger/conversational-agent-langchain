@@ -1,7 +1,7 @@
 """FastAPI Backend for the Knowledge Agent."""
 import os
 import uuid
-from typing import List
+from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
@@ -27,7 +27,7 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
 
 
-def get_token(token: str, aa_or_openai: str) -> str:
+def get_token(token: Optional[str], aa_or_openai: str) -> Optional[str]:
     """Get the token from the environment variables or the parameter.
 
     :param token: token from rest service
@@ -55,7 +55,7 @@ def read_root() -> str:
     return "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
-def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", token: str = None):
+def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", token: Optional[str] = None):
     """Call the right embedding function for the choosen backend.
 
     :param folder_name: Name of the temporary folder
@@ -67,6 +67,8 @@ def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", tok
     :raises ValueError: Raise error if not a valid LLM Provider is set
     """
     token = get_token(token, aa_or_openai)
+    if token is None:
+        raise ValueError("Please provide a token for the LLM Provider of choice.")
 
     if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
@@ -92,7 +94,7 @@ def create_tmp_folder() -> str:
 
 
 @app.post("/embedd_documents")
-async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: str = None):
+async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None):
     """Upload multiple documents to the backend.
 
     :param files: Uploaded files, defaults to File(...)
@@ -109,6 +111,12 @@ async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: st
         file_names.append(file_name)
 
         # Save the file to the temporary folder
+        if tmp_dir is None or not os.path.exists(tmp_dir):
+            raise ValueError("Please provide a temporary folder to save the files.")
+
+        if file_name is None:
+            raise ValueError("Please provide a file to save.")
+
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
 
@@ -117,21 +125,19 @@ async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: st
 
 
 @app.post("/embedd_document/")
-async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", token: str = None):
-    """Upload one document to the backend.
+async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", token: Optional[str] = None) -> JSONResponse:
+    """Uploads one document to the backend and embeds it in the database.
 
-    To embedd the document in
-    the database it is necessary to provide the name of the backend
-    as well as the fitting token for that backend.
+    Args:
+        file (UploadFile): The file to upload. Should be a PDF file.
+        aa_or_openai (str, optional): The backend to use. Defaults to "openai".
+        token (str, optional): The API token. Defaults to None.
 
-    :param file: File that is uploaded, should be a pdf file.
-    :type file: UploadFile
-    :param aa_or_openai: Backend to use, defaults to "openai"
-    :type aa_or_openai: str, optional
-    :param aleph_alpha_token: , defaults to None
-    :type aleph_alpha_token: str, optional
-    :return: Response which Files were recieved and saved.
-    :rtype: JSON Response
+    Raises:
+        ValueError: If the backend is not implemented yet.
+
+    Returns:
+        JSONResponse: A response indicating which files were received and saved.
     """
     # Create a temporary folder to save the files
     tmp_dir = create_tmp_folder()
@@ -149,23 +155,32 @@ async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", to
 
 
 @app.get("/search")
-def search(query: str, aa_or_openai: str = "openai", token: str = None, amount: int = 3) -> None:
-    """Search for a query in the vector database.
+def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> None:
+    """Searches for a query in the vector database.
 
-    :param query: The search query
-    :type query: str
-    :param aa_or_openai: The LLM Provider, defaults to "openai"
-    :type aa_or_openai: str, optional
-    :param token: Token for the LLM Provider, defaults to None
-    :type token: str, optional
-    :raises ValueError: If the LLM Provider is not implemented yet
+    Args:
+        query (str): The search query.
+        aa_or_openai (str, optional): The LLM provider. Defaults to "openai".
+        token (str, optional): Token for the LLM provider. Defaults to None.
+
+    Raises:
+        ValueError: If the LLM provider is not implemented yet.
+
+    Returns:
+        List[str]: A list of matching documents.
     """
+    if token is None:
+        raise ValueError("Please provide a token for the LLM Provider of choice.")
+
+    if aa_or_openai is None:
+        raise ValueError("Please provide a LLM Provider of choice.")
+
     token = get_token(token, aa_or_openai)
-    return search_db(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+    return search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
 
 
 @app.get("/qa")
-def question_answer(query: str = None, aa_or_openai: str = "openai", token: str = None, amount: int = 1):
+def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 1):
     """Answer a question based on the documents in the database.
 
     Args:
@@ -175,68 +190,84 @@ def question_answer(query: str = None, aa_or_openai: str = "openai", token: str 
         amount (int, optional): _description_. Defaults to 1.
 
     Raises:
-        ValueError: _description_
+        ValueError: Error if no query or token is provided.
 
     Returns:
-        _type_: _description_
+        Tuple: Answer, Prompt and Meta Data
     """
     # if the query is not provided, raise an error
     if query is None:
         raise ValueError("Please provide a Question.")
 
-    token = get_token(token, aa_or_openai)
-    documents = search_db(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+    if token:
+        token = get_token(token, aa_or_openai)
+        documents = search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
 
-    # call the qa function
-    answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)
+        # call the qa function
+        answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)
 
-    return answer, prompt, meta_data
+        return answer, prompt, meta_data
+
+    else:
+        raise ValueError("Please provide a token.")
 
 
 @app.post("/explain")
-def explain_output(prompt: str, output: str, token: str = None):
+def explain_output(prompt: str, output: str, token: Optional[str] = None) -> Dict[str, float]:
     """Explain the output of the question answering system.
 
-    :param prompt: _description_
-    :type prompt: str
-    :param answer: _description_
-    :type answer: str
-    :param token: _description_, defaults to None
-    :type token: str, optional
+    Args:
+        prompt (str): The prompt used to generate the output.
+        output (str): The output to be explained.
+        token (str, optional): The Aleph Alpha API token. Defaults to None.
+
+    Raises:
+        ValueError: If no token is provided.
+
+    Returns:
+        Dict[str, float]: A dictionary containing the prompt and the score of the output.
     """
     # explain the output
-    logger.info(f"OUtput {output}")
-    token = get_token(token, aa_or_openai="aa")
-    return explain_completion(prompt=prompt, output=output, token=token)
-
-
-def search_db(query: str, aa_or_openai: str = "openai", token: str = None, amount: int = 3):
-    """Search the database for a query.
-
-    :param query: Search query
-    :type query: str
-    :param aa_or_openai: LLM Provider, defaults to "openai"
-    :type aa_or_openai: str, optional
-    :param token: API Token, defaults to None
-    :type token: str, optional
-    :param amount: Amount of search results, defaults to 3
-    :type amount: int, optional
-    :raises ValueError: If the LLM Provider is not implemented yet
-    :return: Documents that match the query
-    :rtype: List
-    """
-    token = get_token(token, aa_or_openai)
-
-    if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
-        # Embedd the documents with Aleph Alpha
-        documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query, amount=amount)
-    elif aa_or_openai == "openai":
-        documents = search_documents_openai(open_ai_token=token, query=query, amount=amount)
-
-        # Embedd the documents with OpenAI#
+    logger.info(f"Output {output}")
+    if token:
+        token = get_token(token, aa_or_openai="aa")
+        return explain_completion(prompt=prompt, output=output, token=token)
     else:
-        raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
+        raise ValueError("Please provide a token.")
 
-    logger.info(f"Found {len(documents)} documents.")
 
-    return documents
+def search_database(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> List:
+    """Searches the database for a query.
+
+    Args:
+        query (str): The search query.
+        aa_or_openai (str, optional): The LLM provider. Defaults to "openai".
+        token (str, optional): The API token. Defaults to None.
+        amount (int, optional): The amount of search results. Defaults to 3.
+
+    Raises:
+        ValueError: If the LLM provider is not implemented yet.
+
+    Returns:
+        List: A list of documents that match the query.
+    """
+    if token:
+
+        token = get_token(token, aa_or_openai)
+
+        if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
+            # Embedd the documents with Aleph Alpha
+            documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query, amount=amount)
+        elif aa_or_openai == "openai":
+            documents = search_documents_openai(open_ai_token=token, query=query, amount=amount)
+
+            # Embedd the documents with OpenAI#
+        else:
+            raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
+
+        logger.info(f"Found {len(documents)} documents.")
+
+        return documents
+
+    else:
+        raise ValueError("Please provide a token.")

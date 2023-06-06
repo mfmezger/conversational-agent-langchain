@@ -1,6 +1,6 @@
 """The script to initialize the chroma db backend with aleph alpha."""
 import os
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 import numpy as np
 from aleph_alpha_client import Client, CompletionRequest, ExplanationRequest, Prompt
@@ -35,7 +35,7 @@ def generate_prompt(prompt_name: str, text: str, query: str) -> str:
     # Render the template with your variable
     prompt = prompt.render(text=text, query=query)
 
-    return prompt
+    return str(prompt)
 
 
 def send_completion_request(text: str, token: str) -> str:
@@ -144,31 +144,35 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
         raise
 
 
-def summarization(aleph_alpha_token: str, documents: List[Tuple[Document, float]]) -> List[str]:
-    """Summarizes a list of documents and returns a list of summaries.
+# def summarization(aleph_alpha_token: str, documents: List[Tuple[Document, float]]) -> List[str]:
+#     """Summarizes a list of documents and returns a list of summaries.
 
-    Args:
-        aleph_alpha_token (str): Aleph Alpha API Token.
-        documents (List[Tuple[Document, float]]): A list of tuples containing the documents and their similarity scores.
+#     Args:
+#         aleph_alpha_token (str): Aleph Alpha API Token.
+#         documents (List[Tuple[Document, float]]): A list of tuples containing the documents and their similarity scores.
 
-    Returns
-    -------
-        List[str]: A list of summaries.
+#     Returns
+#     -------
+#         List[str]: A list of summaries.
 
-    """
-    client = Client(token=aleph_alpha_token)
+#     """
+#     client = Client(token=aleph_alpha_token)
 
-    # TODO: Implement
-    # extract the text from the documents
-    texts = [doc[0].page_content for doc in documents]
+#     # TODO: Implement
+#     # extract the text from the documents
+#     texts = [doc[0].page_content for doc in documents]
 
-    # summarize the texts
-    summaries = []
-    for text in texts:
-        pass
+#     # summarize the texts
+#     summaries = []
+#     for text in texts:
+#         pass
+
+#     return ["None"]
 
 
-def qa_aleph_alpha(aleph_alpha_token: str, documents: List[Tuple[Document, float]], query: str, summarization: bool = False) -> List[str]:
+def qa_aleph_alpha(
+    aleph_alpha_token: str, documents: List[Tuple[Document, float]], query: str, summarization: bool = False
+) -> Tuple[str, str, dict[Any, Any] | list[dict[Any, Any]]]:
     """Qa takes a list of documents and returns a list of answers.
 
     :param aleph_alpha_token: Aleph Alpha API Token
@@ -189,7 +193,7 @@ def qa_aleph_alpha(aleph_alpha_token: str, documents: List[Tuple[Document, float
         if summarization:
             # call summarization
             # TODO: implement summarization
-            pass
+            text = ""
         else:
             # combine the texts to one text
             text = " ".join(texts)
@@ -236,12 +240,12 @@ def explain_completion(prompt: str, output: str, token: str):
 
 
 if __name__ == "__main__":
-    embedd_documents_aleph_alpha("data", os.getenv("ALEPH_ALPHA_API_KEY"))
+    embedd_documents_aleph_alpha("data", str(os.getenv("ALEPH_ALPHA_API_KEY")))
 
-    DOCS = search_documents_aleph_alpha(aleph_alpha_token=os.getenv("ALEPH_ALPHA_API_KEY"), query="Muss ich mein Mietwagen volltanken?")
+    DOCS = search_documents_aleph_alpha(aleph_alpha_token=str(os.getenv("ALEPH_ALPHA_API_KEY")), query="Muss ich mein Mietwagen volltanken?")
     logger.info(DOCS)
-    answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=os.getenv("ALEPH_ALPHA_API_KEY"), documents=DOCS, query="Muss ich mein Mietwagen volltanken?")
+    answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=str(os.getenv("ALEPH_ALPHA_API_KEY")), documents=DOCS, query="Muss ich mein Mietwagen volltanken?")
     logger.info(f"Answer: {answer}")
-    explanations = explain_completion(prompt, answer, os.getenv("ALEPH_ALPHA_API_KEY"))
+    explanations = explain_completion(prompt, answer, str(os.getenv("ALEPH_ALPHA_API_KEY")))
 
     print(explanations)
