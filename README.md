@@ -34,6 +34,15 @@ If you want to build the image on your local machine you can use this command:
 docker compose up
 ```
 
+## Secret Management
+
+Two ways to manage your api keys are available, the easiest approach is to sent the api token in the request as the token.
+Another possiblity is to create a .env file and add the api token there.
+If you use OpenAI from Azure or OpenAI directly you need to set the correct parameters in the .env file.
+
+
+
+
 ## Development Backend
 
 To run the Backend use this command in the root directory:
