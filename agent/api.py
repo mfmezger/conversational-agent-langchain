@@ -27,7 +27,7 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
 
 
-def get_token(token: str, aa_or_openai: str) -> str:
+def get_token(token: Optional[str], aa_or_openai: str) -> Optional[str]:
     """Get the token from the environment variables or the parameter.
 
     :param token: token from rest service
@@ -66,9 +66,9 @@ def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", tok
     :type token: str, optional
     :raises ValueError: Raise error if not a valid LLM Provider is set
     """
+    token = get_token(token, aa_or_openai)
     if token is None:
         raise ValueError("Please provide a token for the LLM Provider of choice.")
-    token = get_token(token, aa_or_openai)
 
     if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
