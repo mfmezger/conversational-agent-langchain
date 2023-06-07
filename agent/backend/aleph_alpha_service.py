@@ -19,17 +19,24 @@ load_dotenv()
 
 
 def generate_prompt(prompt_name: str, text: str, query: str) -> str:
-    """Generate the prompt for the luminous api out of a jinja template.
+    """Generates a prompt for the Luminous API using a Jinja template.
 
-    :param prompt_name: Name of the File with the jinja template
-    :type prompt_name: str
-    :param text: The text to be inserted into the template
-    :type text: str
-    :return: The generated prompt
-    :rtype: str
+    Args:
+        prompt_name (str): The name of the file containing the Jinja template.
+        text (str): The text to be inserted into the template.
+        query (str): The query to be inserted into the template.
+
+    Returns:
+        str: The generated prompt.
+
+    Raises:
+        FileNotFoundError: If the specified prompt file cannot be found.
     """
-    with open(os.path.join("prompts", prompt_name)) as f:
-        prompt = Template(f.read())
+    try:
+        with open(os.path.join("prompts", prompt_name)) as f:
+            prompt = Template(f.read())
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Prompt file '{prompt_name}' not found.")
 
     # replace the value text with jinja
     # Render the template with your variable
@@ -39,14 +46,17 @@ def generate_prompt(prompt_name: str, text: str, query: str) -> str:
 
 
 def send_completion_request(text: str, token: str) -> str:
-    """Send the request to the luminous api.
+    """Sends a completion request to the Luminous API.
 
-    :param text: The prompt to be sent to the api
-    :type text: str
-    :param token: The token for the luminous api
-    :type token: str
-    :return: The response from the api
-    :rtype: str
+    Args:
+        text (str): The prompt to be sent to the API.
+        token (str): The token for the Luminous API.
+
+    Returns:
+        str: The response from the API.
+
+    Raises:
+        ValueError: If the text or token is None or empty, or if the response or completion is empty.
     """
     if not text:
         raise ValueError("Text cannot be None or empty.")
@@ -71,14 +81,14 @@ def send_completion_request(text: str, token: str) -> str:
 
 @load_config(location="config/chroma_db.yml")
 def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Chroma:
-    """get_db_connection initializes the connection to the chroma db.
+    """Initializes a connection to the Chroma DB.
 
-    :param cfg: Configuration file loaded via OmegaConf.
-    :type cfg: DictConfig
-    :param aleph_alpha_token: Aleph Alpha API Token.
-    :type aleph_alpha_token: str
-    :return: Chroma DB connection.
-    :rtype: Chroma
+    Args:
+        cfg (DictConfig): The configuration file loaded via OmegaConf.
+        aleph_alpha_token (str): The Aleph Alpha API token.
+
+    Returns:
+        Chroma: The Chroma DB connection.
     """
     embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)
     vector_db = Chroma(persist_directory=cfg.chroma.persist_directory_aa, embedding_function=embedding)
@@ -89,16 +99,17 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Chroma:
 
 
 def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
-    """embedd_documents embedds the documents in the given directory.
+    """Embeds the documents in the given directory in the Aleph Alpha database.
 
     This method uses the Directory Loader for PDFs and the PyPDFLoader to load the documents.
-    The documents are then added to the Chroma DB which embedds them without deleting the old collection.
-    :param cfg: Configuration from the file
-    :type cfg: DictConfig
-    :param dir: PDF Directory
-    :type dir: str
-    :param aleph_alpha_token: Aleph Alpha API Token
-    :type aleph_alpha_token: str
+    The documents are then added to the Chroma DB which embeds them without deleting the old collection.
+
+    Args:
+        dir (str): The directory containing the PDFs to embed.
+        aleph_alpha_token (str): The Aleph Alpha API token.
+
+    Returns:
+        None
     """
     vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
 
@@ -115,12 +126,14 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
 
 
 def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, seperator: str) -> None:
-    """embedd_text embedds the given text.
+    """Embeds the given text in the Aleph Alpha database.
 
-    :param text: Text to be embedded
-    :type text: str
-    :param aleph_alpha_token: Aleph Alpha API Token
-    :type aleph_alpha_token: str
+    Args:
+        text (str): The text to be embedded.
+        aleph_alpha_token (str): The Aleph Alpha API token.
+
+    Returns:
+        None
     """
     vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
 
@@ -180,9 +193,7 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
         amount (int, optional): The number of documents to return. Defaults to 1.
 
     Returns
-    -------
         List[Tuple[Document, float]]: A list of tuples containing the documents and their similarity scores.
-
     """
     if not aleph_alpha_token:
         raise ValueError("Token cannot be None or empty.")
@@ -268,16 +279,18 @@ def qa_aleph_alpha(
 
 
 def explain_completion(prompt: str, output: str, token: str):
-    """Explain_completion takes a prompt and an output and returns the explanation.
+    """Returns an explanation of the given completion.
 
-    :param prompt: The complete input in the model
-    :type prompt: str
-    :param output: the answer of the model
-    :type output: str
-    :param token: Aleph Alpha API Token
-    :type token: str
-    :return: Key: Sentence, Value: Score
-    :rtype: dict
+    Args:
+        prompt (str): The complete input in the model.
+        output (str): The answer of the model.
+        token (str): The Aleph Alpha API Token.
+
+    Returns:
+        dict: A dictionary containing the explanation. The keys are sentences from the prompt, and the values are the scores.
+
+    Raises:
+        ValueError: If the prompt, output, or token is None or empty.
     """
     exp_req = ExplanationRequest(Prompt.from_text(prompt), output, control_factor=0.1, prompt_granularity="sentence")
     client = Client(token=token)
