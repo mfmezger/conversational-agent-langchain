@@ -24,6 +24,8 @@ from agent.backend.open_ai_service import (
 # initialize the Fast API Application.
 app = FastAPI(debug=True)
 
+load_dotenv()
+
 # load the token from the environment variables
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
@@ -41,10 +43,6 @@ def get_token(token: Optional[str], aa_or_openai: str) -> Optional[str]:
     """
     env_token = ALEPH_ALPHA_API_KEY if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"} else OPENAI_API_KEY
     return token if env_token is None else env_token
-
-
-load_dotenv()
-# TODO load dotenv and add method to get the token from the environment variables
 
 
 @app.get("/")

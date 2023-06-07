@@ -152,6 +152,11 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator
 
     # iterate over the files in the folder
     for file in os.listdir(folder):
+
+        # read the text from the file
+        with open(os.path.join(folder, file)) as f:
+            text = f.read()
+
         text_list: List = text.split(seperator)
 
         # get the name of the file
@@ -299,8 +304,9 @@ if __name__ == "__main__":
     with open("data/brustkrebs_input.txt") as f:
         text = f.read()
 
-    embedd_text_aleph_alpha(text, "file1", str(os.getenv("ALEPH_ALPHA_API_KEY")), "###")
-    DOCS = search_documents_aleph_alpha(aleph_alpha_token=str(os.getenv("ALEPH_ALPHA_API_KEY")), query="Muss ich mein Mietwagen volltanken?")
+    # embedd_text_aleph_alpha(text, "file1", str(os.getenv("ALEPH_ALPHA_API_KEY")), "###")
+    embedd_text_files_aleph_alpha("data/", str(os.getenv("ALEPH_ALPHA_API_KEY")), "###")
+    DOCS = search_documents_aleph_alpha(aleph_alpha_token=str(os.getenv("ALEPH_ALPHA_API_KEY")), query="Was sind meine Vorteile?")
     logger.info(DOCS)
     answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=str(os.getenv("ALEPH_ALPHA_API_KEY")), documents=DOCS, query="Muss ich mein Mietwagen volltanken?")
     logger.info(f"Answer: {answer}")
