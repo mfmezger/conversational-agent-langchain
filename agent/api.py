@@ -10,6 +10,8 @@ from starlette.responses import JSONResponse
 
 from agent.backend.aleph_alpha_service import (
     embedd_documents_aleph_alpha,
+    embedd_text_aleph_alpha,
+    embedd_text_files_aleph_alpha,
     explain_completion,
     qa_aleph_alpha,
     search_documents_aleph_alpha,
@@ -155,10 +157,49 @@ async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", to
 
 
 @app.post("/embedd_text/")
-async def embedd_text(text: str, aa_or_openai: str = "openai", token: str = None, seperator="###"):
+async def embedd_text(text: str, file_name: str, aa_or_openai: str = "openai", token: Optional[str] = None, seperator: str = "###") -> JSONResponse:
+    """Embeds text in the database.
+
+    Args:
+        text (str): The text to embed.
+        file_name (str): The name of the file to save the embedded text to.
+        aa_or_openai (str, optional): The LLM provider to use. Defaults to "openai".
+        token (str, optional): The API token. Defaults to None.
+        seperator (str, optional): The separator to use when splitting the text into chunks. Defaults to "###".
+
+    Raises:
+        ValueError: If no token is provided or if no LLM provider is specified.
+
+    Returns:
+        JSONResponse: A response indicating that the text was received and saved, along with the name of the file it was saved to.
+    """
+    token = get_token(token, aa_or_openai)
+    if token is None:
+        raise ValueError("Please provide a token for the LLM Provider of choice.")
+
+    if aa_or_openai is None:
+        raise ValueError("Please provide a LLM Provider of choice.")
+
+    embedd_text_aleph_alpha(text=text, file_name=file_name, aleph_alpha_token=token, seperator=seperator)
+    return JSONResponse(content={"message": "Text received and saved.", "filenames": file_name})
+
 
 @app.post("/embedd_text_file/")
-async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: str = None, seperator="###"):
+async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: str = None, seperator: str = "###") -> JSONResponse:
+    """Embeds text files in the database.
+
+    Args:
+        files (List[UploadFile], optional): A list of files to embed. Defaults to File(...).
+        aa_or_openai (str, optional): The LLM provider to use. Defaults to "openai".
+        token (str, optional): The API token. Defaults to None.
+        seperator (str, optional): The separator to use when splitting the text into chunks. Defaults to "###".
+
+    Raises:
+        ValueError: If a file does not have a valid name, if no temporary folder is provided, or if no token or LLM provider is specified.
+
+    Returns:
+        JSONResponse: A response indicating that the files were received and saved, along with the names of the files they were saved to.
+    """
     tmp_dir = create_tmp_folder()
 
     file_names = []
@@ -167,9 +208,27 @@ async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: s
         file_name = file.filename
         file_names.append(file_name)
 
-        # Save the file to the temporary folder
+        if file_name is None:
+            raise ValueError("File does not have a valid name.")
+
+        # Save the files to the temporary folder
+        if tmp_dir is None or not os.path.exists(tmp_dir):
+            raise ValueError("Please provide a temporary folder to save the files.")
+
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
+
+    token = get_token(token, aa_or_openai)
+    if token is None:
+        raise ValueError("Please provide a token for the LLM Provider of choice.")
+
+    if aa_or_openai is None:
+        raise ValueError("Please provide a LLM Provider of choice.")
+
+    embedd_text_files_aleph_alpha(folder=tmp_dir, aleph_alpha_token=token, seperator=seperator)
+
+    return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
+
 
 @app.get("/search")
 def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> None:
@@ -186,13 +245,13 @@ def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None
     Returns:
         List[str]: A list of matching documents.
     """
+    token = get_token(token, aa_or_openai)
     if token is None:
         raise ValueError("Please provide a token for the LLM Provider of choice.")
 
     if aa_or_openai is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
-    token = get_token(token, aa_or_openai)
     return search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
 
 

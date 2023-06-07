@@ -1,6 +1,6 @@
 """The script to initialize the chroma db backend with aleph alpha."""
 import os
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 from aleph_alpha_client import Client, CompletionRequest, ExplanationRequest, Prompt
@@ -114,7 +114,7 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
     logger.info("SUCCESS: Database Persistent.")
 
 
-def embedd_text(text: str, aleph_alpha_token:str, seperator: str) -> None:
+def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, seperator: str) -> None:
     """embedd_text embedds the given text.
 
     :param text: Text to be embedded
@@ -125,17 +125,45 @@ def embedd_text(text: str, aleph_alpha_token:str, seperator: str) -> None:
     vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
 
     # split the text at the seperator
-    text = text.split(seperator)
-    
-    # metadata = 
-    metadata = ""
+    text_list: List = text.split(seperator)
 
+    metadata = file_name
+    # add _ and an incrementing number to the metadata
+    metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
 
-    vector_db.add_text(text=text, metadata=metadata)
+    vector_db.add_texts(texts=text_list, metadata=metadata_list)
     logger.info("SUCCESS: Text embedded.")
     vector_db.persist()
     logger.info("SUCCESS: Database Persistent.")
 
+
+def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator: str) -> None:
+    """Embeds text files in the Aleph Alpha database.
+
+    Args:
+        folder (str): The folder containing the text files to embed.
+        aleph_alpha_token (str): The Aleph Alpha API token.
+        seperator (str): The separator to use when splitting the text into chunks.
+
+    Returns:
+        None
+    """
+    vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
+
+    # iterate over the files in the folder
+    for file in os.listdir(folder):
+        text_list: List = text.split(seperator)
+
+        # get the name of the file
+        metadata = os.path.splitext(file)[0]
+        # add _ and an incrementing number to the metadata
+        metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
+
+        vector_db.add_texts(texts=text_list, metadata=metadata_list)
+
+    logger.info("SUCCESS: Text embedded.")
+    vector_db.persist()
+    logger.info("SUCCESS: Database Persistent.")
 
 
 def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int = 1) -> List[Tuple[Document, float]]:
@@ -196,15 +224,17 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
 
 def qa_aleph_alpha(
     aleph_alpha_token: str, documents: List[Tuple[Document, float]], query: str, summarization: bool = False
-) -> Tuple[str, str, dict[Any, Any] | list[dict[Any, Any]]]:
-    """Qa takes a list of documents and returns a list of answers.
+) -> Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]:
+    """QA takes a list of documents and returns a list of answers.
 
-    :param aleph_alpha_token: Aleph Alpha API Token
-    :type aleph_alpha_token: str
-    :param documents: List of documents
-    :type documents: List[Tuple[Document, float]]
-    :return: List of answers
-    :rtype: List[str]
+    Args:
+        aleph_alpha_token (str): The Aleph Alpha API token.
+        documents (List[Tuple[Document, float]]): A list of tuples containing the document and its relevance score.
+        query (str): The query to ask.
+        summarization (bool, optional): Whether to use summarization. Defaults to False.
+
+    Returns:
+        Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]: A tuple containing the answer, the prompt, and the metadata for the documents.
     """
     # if the list of documents contains only one document extract the text directly
     if len(documents) == 1:
@@ -264,8 +294,12 @@ def explain_completion(prompt: str, output: str, token: str):
 
 
 if __name__ == "__main__":
-    embedd_documents_aleph_alpha("data", str(os.getenv("ALEPH_ALPHA_API_KEY")))
+    # embedd_documents_aleph_alpha("data", str(os.getenv("ALEPH_ALPHA_API_KEY")))
+    # open the text file and read the text
+    with open("data/brustkrebs_input.txt") as f:
+        text = f.read()
 
+    embedd_text_aleph_alpha(text, "file1", str(os.getenv("ALEPH_ALPHA_API_KEY")), "###")
     DOCS = search_documents_aleph_alpha(aleph_alpha_token=str(os.getenv("ALEPH_ALPHA_API_KEY")), query="Muss ich mein Mietwagen volltanken?")
     logger.info(DOCS)
     answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=str(os.getenv("ALEPH_ALPHA_API_KEY")), documents=DOCS, query="Muss ich mein Mietwagen volltanken?")
