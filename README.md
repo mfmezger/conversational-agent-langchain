@@ -1,5 +1,5 @@
 # Conversational Agent
-
+This is a Backend to chat with your Data with Semantic Search.
 
 ## Project Description
 This project is a conversational agent that uses Aleph Alpha and OpenAI Large Language Models to generate responses to user queries. The agent also includes a vector database and a REST API built with FastAPI.
