@@ -7,23 +7,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: 3.11
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.11
 
-    - name: Install dependencies
-      run: |
-        pip install poetry
-        poetry config virtualenvs.create false
-        poetry install --with dev
-    - name: Run tests
-      run: pytest tests/
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        ALEPH_ALPHA_API_KEY: ${{ secrets.ALEPH_ALPHA_API_KEY }}
-        OPENAI_API_TYPE: azure
-        OPENAI_API_BASE: https://openaiendpoint.openai.azure.com/
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry install --with dev
+      - name: Run tests
+        run: pytest tests/
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ALEPH_ALPHA_API_KEY: ${{ secrets.ALEPH_ALPHA_API_KEY }}
+          OPENAI_API_TYPE: azure
+          OPENAI_API_BASE: https://openaiendpoint.openai.azure.com/
