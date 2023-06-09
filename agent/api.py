@@ -304,7 +304,17 @@ def explain_output(prompt: str, output: str, token: Optional[str] = None) -> Dic
         Dict[str, float]: A dictionary containing the prompt and the score of the output.
     """
     # explain the output
-    logger.info(f"Output {output}")
+    logger.error(f"Output {output}")
+    logger.error(f"Prompt {prompt}")
+
+    # fail if prompt or output are not provided
+    if prompt is None or output is None:
+        raise ValueError("Please provide a prompt and output.")
+
+    # fail if prompt or output are empty
+    if prompt == "" or output == "":
+        raise ValueError("Please provide a prompt and output.")
+
     if token:
         token = get_token(token, aa_or_openai="aa")
         return explain_completion(prompt=prompt, output=output, token=token)
