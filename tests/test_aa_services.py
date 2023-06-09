@@ -5,6 +5,7 @@ import pytest
 from dotenv import load_dotenv
 
 from agent.backend.aleph_alpha_service import (
+    embedd_text_aleph_alpha,
     generate_prompt,
     get_db_connection,
     search_documents_aleph_alpha,
@@ -65,6 +66,12 @@ def test_send_completion_request():
     completion = send_completion_request(prompt, token)
     assert isinstance(completion, str)
     assert len(completion) > 0
+
+
+def test_embedd_text_aleph_alpha():
+    """Test that embedd_text_aleph_alpha does not raise an error."""
+    # assert that it does not raise an error
+    embedd_text_aleph_alpha("This is a test", "file", os.getenv("ALEPH_ALPHA_API_KEY"), " ")
 
 
 def test_search_documents_aleph_alpha_wrong_token():
