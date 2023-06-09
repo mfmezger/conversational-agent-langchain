@@ -12,6 +12,8 @@ Features
 ## Architecture Semantic Search
 ![Semantic Search Architecture](resources/Architecture.png)
 
+Semantic search is an advanced search technique that aims to understand the meaning and context of a user's query, rather than matching keywords. It involves natural language processing (NLP) and machine learning algorithms to analyze and interpret user intent, synonyms, relationships between words, and the structure of content. By considering these factors, semantic search improves the accuracy and relevance of search results, providing a more intuitive and personalized user experience.
+
 ## Components
 
 Langchain is a library for natural language processing and machine learning. FastAPI is a modern, fast (high-performance) web framework for building APIs with Python 3.7+ based on standard Python type hints. A Vectordatabase is a database that stores vectors, which can be used for similarity searches and other machine learning tasks.
@@ -58,3 +60,9 @@ poetry run coverage run -m pytest -o log_cli=true -vvv tests
 ```
 
 ## Development Frontend
+
+To run the Frontend use this command in the root directory:
+
+```bash
+poetry run streamlit run gui.py
+```
