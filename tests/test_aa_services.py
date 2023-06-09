@@ -5,6 +5,9 @@ import pytest
 from dotenv import load_dotenv
 
 from agent.backend.aleph_alpha_service import (
+    embedd_text_aleph_alpha,
+    embedd_text_files_aleph_alpha,
+    explain_completion,
     generate_prompt,
     get_db_connection,
     search_documents_aleph_alpha,
@@ -67,6 +70,12 @@ def test_send_completion_request():
     assert len(completion) > 0
 
 
+def test_embedd_text_aleph_alpha():
+    """Test that embedd_text_aleph_alpha does not raise an error."""
+    # assert that it does not raise an error
+    embedd_text_aleph_alpha("This is a test", "file", os.getenv("ALEPH_ALPHA_API_KEY"), " ")
+
+
 def test_search_documents_aleph_alpha_wrong_token():
     """Test that search_documents_aleph_alpha raises an error when the token is invalid."""
     # Test with an empty query
@@ -98,6 +107,16 @@ def test_search_documents_aleph_alpha_empty():
     query = "This should raise an error."
     with pytest.raises(ValueError, match="Token cannot be None or empty."):
         search_documents_aleph_alpha(aleph_alpha_token, query)
+
+
+def test_embedd_text_files_aleph_alpha():
+    """Tests that embedd_text_files_aleph_alpha does not raise an error."""
+    embedd_text_files_aleph_alpha(folder="tests/ressources", aleph_alpha_token=os.getenv("ALEPH_ALPHA_API_KEY"), separator=" ")
+
+
+def test_explain_completion():
+    """Test that explain_completion does not raise an error."""
+    explain_completion("This is a test", " ", str(os.getenv("ALEPH_ALPHA_API_KEY")))
 
 
 def test_search_documents_aleph_alpha():

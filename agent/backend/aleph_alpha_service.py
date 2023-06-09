@@ -150,13 +150,13 @@ def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, s
     logger.info("SUCCESS: Database Persistent.")
 
 
-def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator: str) -> None:
+def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, separator: str) -> None:
     """Embeds text files in the Aleph Alpha database.
 
     Args:
         folder (str): The folder containing the text files to embed.
         aleph_alpha_token (str): The Aleph Alpha API token.
-        seperator (str): The separator to use when splitting the text into chunks.
+        separator (str): The separator to use when splitting the text into chunks.
 
     Returns:
         None
@@ -165,12 +165,15 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator
 
     # iterate over the files in the folder
     for file in os.listdir(folder):
+        # check if the file is a .txt or .md file
+        if not file.endswith((".txt", ".md")):
+            continue
 
         # read the text from the file
         with open(os.path.join(folder, file)) as f:
             text = f.read()
 
-        text_list: List = text.split(seperator)
+        text_list: List = text.split(separator)
 
         # get the name of the file
         metadata = os.path.splitext(file)[0]

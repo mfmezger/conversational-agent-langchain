@@ -91,3 +91,19 @@ def test_search_route_invalid_provider():
         )
         assert response.status_code == 400
         assert "ValueError" in response.text
+
+
+def test_explain_output():
+    """Test the function with valid arguments."""
+    response = client.post("/explain", params={"prompt": "What is the capital of France?", "output": "Paris", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
+    assert response.status_code == 200
+
+
+def test_wrong_input_explain_output():
+    """Test the function with wrong arguments."""
+    with pytest.raises(ValueError):
+        client.post("/explain", params={"prompt": "", "output": "", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
+    with pytest.raises(ValueError):
+        client.post("/explain", params={"prompt": "", "output": "asdfasdf", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
+    with pytest.raises(ValueError):
+        client.post("/explain", params={"prompt": "asdfasdf", "output": "", "token": os.getenv("ALEPH_ALPHA_API_KEY")})

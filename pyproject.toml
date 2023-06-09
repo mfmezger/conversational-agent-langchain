@@ -6,7 +6,7 @@ authors = ["Marc Mezger <marc.mezger@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.11.3"
+python = "^3.11"
 langchain = "^0.0.191"
 streamlit = "^1.23.1"
 loguru = "^0.7.0"

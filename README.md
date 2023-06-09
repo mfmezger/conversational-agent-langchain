@@ -1,5 +1,5 @@
 # Conversational Agent
-
+This is a Backend to chat with your Data with Semantic Search.
 
 ## Project Description
 This project is a conversational agent that uses Aleph Alpha and OpenAI Large Language Models to generate responses to user queries. The agent also includes a vector database and a REST API built with FastAPI.
@@ -11,6 +11,8 @@ Features
 
 ## Architecture Semantic Search
 ![Semantic Search Architecture](resources/Architecture.png)
+
+Semantic search is an advanced search technique that aims to understand the meaning and context of a user's query, rather than matching keywords. It involves natural language processing (NLP) and machine learning algorithms to analyze and interpret user intent, synonyms, relationships between words, and the structure of content. By considering these factors, semantic search improves the accuracy and relevance of search results, providing a more intuitive and personalized user experience.
 
 ## Components
 
@@ -58,3 +60,9 @@ poetry run coverage run -m pytest -o log_cli=true -vvv tests
 ```
 
 ## Development Frontend
+
+To run the Frontend use this command in the root directory:
+
+```bash
+poetry run streamlit run gui.py
+```

@@ -31,7 +31,7 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
 
 
-def get_token(token: Optional[str], aa_or_openai: str) -> Optional[str]:
+def get_token(token: Optional[str], aa_or_openai: str) -> str:
     """Get the token from the environment variables or the parameter.
 
     :param token: token from rest service
@@ -42,6 +42,8 @@ def get_token(token: Optional[str], aa_or_openai: str) -> Optional[str]:
     :rtype: str
     """
     env_token = ALEPH_ALPHA_API_KEY if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"} else OPENAI_API_KEY
+    if env_token is None and token is None:
+        raise ValueError("No token provided.")
     return token if env_token is None else env_token
 
 
@@ -183,7 +185,7 @@ async def embedd_text(text: str, file_name: str, aa_or_openai: str = "openai", t
 
 
 @app.post("/embedd_text_file/")
-async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: str = None, seperator: str = "###") -> JSONResponse:
+async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None, seperator: str = "###") -> JSONResponse:
     """Embeds text files in the database.
 
     Args:
@@ -302,7 +304,17 @@ def explain_output(prompt: str, output: str, token: Optional[str] = None) -> Dic
         Dict[str, float]: A dictionary containing the prompt and the score of the output.
     """
     # explain the output
-    logger.info(f"Output {output}")
+    logger.error(f"Output {output}")
+    logger.error(f"Prompt {prompt}")
+
+    # fail if prompt or output are not provided
+    if prompt is None or output is None:
+        raise ValueError("Please provide a prompt and output.")
+
+    # fail if prompt or output are empty
+    if prompt == "" or output == "":
+        raise ValueError("Please provide a prompt and output.")
+
     if token:
         token = get_token(token, aa_or_openai="aa")
         return explain_completion(prompt=prompt, output=output, token=token)
