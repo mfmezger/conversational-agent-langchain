@@ -140,6 +140,12 @@ def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, s
     # split the text at the seperator
     text_list: List = text.split(seperator)
 
+    # check if first and last element are empty
+    if not text_list[0]:
+        text_list.pop(0)
+    if not text_list[-1]:
+        text_list.pop(-1)
+
     metadata = file_name
     # add _ and an incrementing number to the metadata
     metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
