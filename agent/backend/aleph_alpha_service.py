@@ -3,10 +3,17 @@ import os
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
-from aleph_alpha_client import Client, CompletionRequest, ExplanationRequest, Prompt
+from aleph_alpha_client import (
+    Client,
+    CompletionRequest,
+    Document,
+    ExplanationRequest,
+    Prompt,
+    SummarizationRequest,
+)
 from dotenv import load_dotenv
 from jinja2 import Template
-from langchain.docstore.document import Document
+from langchain.docstore.document import Document as LangchainDocument
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
 from langchain.vectorstores import Chroma
@@ -43,6 +50,24 @@ def generate_prompt(prompt_name: str, text: str, query: str) -> str:
     prompt = prompt.render(text=text, query=query)
 
     return str(prompt)
+
+
+def summarize_text(text: str, token: str) -> str:
+    """Summarizes the given text using the Luminous API.
+
+    Args:
+        text (str): The text to be summarized.
+        token (str): The token for the Luminous API.
+
+    Returns:
+        str: The summary of the text.
+    """
+    client = Client(token=token)
+    document = Document.from_text(text=text)
+    request = SummarizationRequest(document=Document.from_text(document))
+    response = client.summarize(request=request, model="luminous-extended")
+
+    return response.summary
 
 
 def send_completion_request(text: str, token: str) -> str:
@@ -204,7 +229,7 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, separator
     logger.info("SUCCESS: Database Persistent.")
 
 
-def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int = 1) -> List[Tuple[Document, float]]:
+def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int = 1) -> List[Tuple[LangchainDocument, float]]:
     """Searches the Aleph Alpha service for similar documents.
 
     Args:
@@ -259,7 +284,7 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
 
 
 def qa_aleph_alpha(
-    aleph_alpha_token: str, documents: List[Tuple[Document, float]], query: str, summarization: bool = False
+    aleph_alpha_token: str, documents: List[Tuple[LangchainDocument, float]], query: str, summarization: bool = False
 ) -> Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]:
     """QA takes a list of documents and returns a list of answers.
 
@@ -291,8 +316,25 @@ def qa_aleph_alpha(
 
     # load the prompt
     prompt = generate_prompt("qa.j2", text=text, query=query)
-    # call the luminous api
-    answer = send_completion_request(prompt, aleph_alpha_token)
+
+    try:
+
+        # call the luminous api
+        answer = send_completion_request(prompt, aleph_alpha_token)
+
+    except ValueError as e:
+        # if the code is PROMPT_TOO_LONG, split it into chunks
+        if e.args[0] == "PROMPT_TOO_LONG":
+            logger.info("Prompt too long. Summarizing.")
+
+            # summarize the text
+            short_text = summarize_text(text, aleph_alpha_token)
+
+            # generate the prompt
+            prompt = generate_prompt("qa.j2", text=short_text, query=query)
+
+            # call the luminous api
+            answer = send_completion_request(prompt, aleph_alpha_token)
 
     # extract the answer
     return answer, prompt, meta_data
