@@ -175,6 +175,17 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, separator
 
         text_list: List = text.split(separator)
 
+        # check if first and last element are empty
+        if not text_list[0]:
+            text_list.pop(0)
+        if not text_list[-1]:
+            text_list.pop(-1)
+
+        # ensure that the text is not empty
+        if not text_list:
+            raise ValueError("Text is empty.")
+
+        logger.info(f"Loaded {text_list} documents.")
         # get the name of the file
         metadata = os.path.splitext(file)[0]
         # add _ and an incrementing number to the metadata

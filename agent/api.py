@@ -185,7 +185,7 @@ async def embedd_text(text: str, file_name: str, aa_or_openai: str = "openai", t
 
 
 @app.post("/embedd_text_file/")
-async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None, seperator: str = "###") -> JSONResponse:
+async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None, separator: str = "###") -> JSONResponse:
     """Embeds text files in the database.
 
     Args:
@@ -225,7 +225,7 @@ async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: s
     if aa_or_openai is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
-    embedd_text_files_aleph_alpha(folder=tmp_dir, aleph_alpha_token=token, seperator=seperator)
+    embedd_text_files_aleph_alpha(folder=tmp_dir, aleph_alpha_token=token, separator=separator)
 
     return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
 
