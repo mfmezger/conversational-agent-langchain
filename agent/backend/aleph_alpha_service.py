@@ -25,7 +25,7 @@ from agent.utils.configuration import load_config
 load_dotenv()
 
 
-def generate_prompt(prompt_name: str, text: str, query: str) -> str:
+def generate_prompt(prompt_name: str, text: str, query: str) -> Template:
     """Generates a prompt for the Luminous API using a Jinja template.
 
     Args:
@@ -284,7 +284,7 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
 
 
 def qa_aleph_alpha(
-    aleph_alpha_token: str, documents: List[Tuple[LangchainDocument, float]], query: str, summarization: bool = False
+    aleph_alpha_token: str, documents: list[tuple[LangchainDocument, float]], query: str, summarization: bool = False
 ) -> Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]:
     """QA takes a list of documents and returns a list of answers.
 

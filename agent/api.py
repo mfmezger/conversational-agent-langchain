@@ -1,7 +1,7 @@
 """FastAPI Backend for the Knowledge Agent."""
 import os
 import uuid
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
@@ -57,7 +57,7 @@ def read_root() -> str:
     return "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
-def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", token: Optional[str] = None):
+def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", token: Optional[str] = None) -> None:
     """Call the right embedding function for the choosen backend.
 
     :param folder_name: Name of the temporary folder
@@ -96,7 +96,7 @@ def create_tmp_folder() -> str:
 
 
 @app.post("/embedd_documents")
-async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None):
+async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None) -> JSONResponse:
     """Upload multiple documents to the backend.
 
     :param files: Uploaded files, defaults to File(...)
@@ -231,7 +231,7 @@ async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: s
 
 
 @app.get("/search")
-def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> None:
+def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> JSONResponse:
     """Searches for a query in the vector database.
 
     Args:
@@ -252,11 +252,13 @@ def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None
     if aa_or_openai is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
-    return search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+    DOCS = search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+
+    return JSONResponse(content={"documents": DOCS})
 
 
 @app.get("/qa")
-def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 1):
+def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 1) -> JSONResponse:
     """Answer a question based on the documents in the database.
 
     Args:
@@ -282,14 +284,14 @@ def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", t
         # call the qa function
         answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)
 
-        return answer, prompt, meta_data
+        return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
 
     else:
         raise ValueError("Please provide a token.")
 
 
 @app.post("/explain")
-def explain_output(prompt: str, output: str, token: Optional[str] = None) -> Dict[str, float]:
+def explain_output(prompt: str, output: str, token: Optional[str] = None) -> JSONResponse:
     """Explain the output of the question answering system.
 
     Args:
@@ -317,12 +319,13 @@ def explain_output(prompt: str, output: str, token: Optional[str] = None) -> Dic
 
     if token:
         token = get_token(token, aa_or_openai="aa")
-        return explain_completion(prompt=prompt, output=output, token=token)
+        explanations = explain_completion(prompt=prompt, output=output, token=token)
+        return JSONResponse(content={"explanations": explanations})
     else:
         raise ValueError("Please provide a token.")
 
 
-def search_database(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> List:
+def search_database(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> JSONResponse:
     """Searches the database for a query.
 
     Args:
@@ -353,7 +356,7 @@ def search_database(query: str, aa_or_openai: str = "openai", token: Optional[st
 
         logger.info(f"Found {len(documents)} documents.")
 
-        return documents
+        return JSONResponse(content={"documents": documents})
 
     else:
         raise ValueError("Please provide a token.")
