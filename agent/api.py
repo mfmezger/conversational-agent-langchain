@@ -231,7 +231,7 @@ async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: s
 
 
 @app.get("/search")
-def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> None:
+def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> JSONResponse:
     """Searches for a query in the vector database.
 
     Args:
@@ -243,7 +243,7 @@ def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None
         ValueError: If the LLM provider is not implemented yet.
 
     Returns:
-        List[str]: A list of matching documents.
+        JSON Object: A list of matching documents in JSON Format.
     """
     token = get_token(token, aa_or_openai)
     if token is None:
@@ -252,11 +252,11 @@ def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None
     if aa_or_openai is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
-    return search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
-
+    matching_documents = search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+    return JSONResponse(content={"Matching Documents Found:": matching_documents})
 
 @app.get("/qa")
-def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 1):
+def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 1) -> JSONResponse:
     """Answer a question based on the documents in the database.
 
     Args:
@@ -269,7 +269,7 @@ def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", t
         ValueError: Error if no query or token is provided.
 
     Returns:
-        Tuple: Answer, Prompt and Meta Data
+        JSON Object: Return Answer, Prompt and Meta Data in JSON Format
     """
     # if the query is not provided, raise an error
     if query is None:
@@ -282,7 +282,12 @@ def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", t
         # call the qa function
         answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)
 
-        return answer, prompt, meta_data
+        response_data = {
+            "answer": answer,
+            "prompt": prompt,
+            "meta_data": meta_data
+        }
+        return JSONResponse(content=response_data)
 
     else:
         raise ValueError("Please provide a token.")
@@ -322,7 +327,7 @@ def explain_output(prompt: str, output: str, token: Optional[str] = None) -> Dic
         raise ValueError("Please provide a token.")
 
 
-def search_database(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> List:
+def search_database(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> JSONResponse:
     """Searches the database for a query.
 
     Args:
@@ -335,7 +340,7 @@ def search_database(query: str, aa_or_openai: str = "openai", token: Optional[st
         ValueError: If the LLM provider is not implemented yet.
 
     Returns:
-        List: A list of documents that match the query.
+        JSON Object: Returns JSON Response of documents that match the query.
     """
     if token:
 
@@ -353,7 +358,7 @@ def search_database(query: str, aa_or_openai: str = "openai", token: Optional[st
 
         logger.info(f"Found {len(documents)} documents.")
 
-        return documents
+        return JSONResponse(content={"Documents Found": documents})
 
     else:
         raise ValueError("Please provide a token.")
