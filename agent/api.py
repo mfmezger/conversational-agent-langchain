@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
 from loguru import logger
 from starlette.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 
 from agent.backend.aleph_alpha_service import (
     embedd_documents_aleph_alpha,
@@ -33,7 +34,6 @@ ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
 
 def get_token(token: Optional[str], aa_or_openai: str) -> str:
     """Get the token from the environment variables or the parameter.
-
     :param token: token from rest service
     :type token: str
     :param aa_or_openai: LLM provider, defaults to "openai"
@@ -50,7 +50,6 @@ def get_token(token: Optional[str], aa_or_openai: str) -> str:
 @app.get("/")
 def read_root() -> str:
     """Root Message.
-
     :return: Welcome Message
     :rtype: string
     """
@@ -59,7 +58,6 @@ def read_root() -> str:
 
 def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", token: Optional[str] = None):
     """Call the right embedding function for the choosen backend.
-
     :param folder_name: Name of the temporary folder
     :type folder_name: str
     :param aa_or_openai: LLM provider, defaults to "openai"
@@ -84,7 +82,6 @@ def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", tok
 
 def create_tmp_folder() -> str:
     """Creates a temporary folder for files to store.
-
     :return: The directory name
     :rtype: str
     """
@@ -98,7 +95,6 @@ def create_tmp_folder() -> str:
 @app.post("/embedd_documents")
 async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None):
     """Upload multiple documents to the backend.
-
     :param files: Uploaded files, defaults to File(...)
     :type files: List[UploadFile], optional
     :return: Return as JSON
@@ -129,15 +125,12 @@ async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: st
 @app.post("/embedd_document/")
 async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", token: Optional[str] = None) -> JSONResponse:
     """Uploads one document to the backend and embeds it in the database.
-
     Args:
         file (UploadFile): The file to upload. Should be a PDF file.
         aa_or_openai (str, optional): The backend to use. Defaults to "openai".
         token (str, optional): The API token. Defaults to None.
-
     Raises:
         ValueError: If the backend is not implemented yet.
-
     Returns:
         JSONResponse: A response indicating which files were received and saved.
     """
@@ -159,17 +152,14 @@ async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", to
 @app.post("/embedd_text/")
 async def embedd_text(text: str, file_name: str, aa_or_openai: str = "openai", token: Optional[str] = None, seperator: str = "###") -> JSONResponse:
     """Embeds text in the database.
-
     Args:
         text (str): The text to embed.
         file_name (str): The name of the file to save the embedded text to.
         aa_or_openai (str, optional): The LLM provider to use. Defaults to "openai".
         token (str, optional): The API token. Defaults to None.
         seperator (str, optional): The separator to use when splitting the text into chunks. Defaults to "###".
-
     Raises:
         ValueError: If no token is provided or if no LLM provider is specified.
-
     Returns:
         JSONResponse: A response indicating that the text was received and saved, along with the name of the file it was saved to.
     """
@@ -187,16 +177,13 @@ async def embedd_text(text: str, file_name: str, aa_or_openai: str = "openai", t
 @app.post("/embedd_text_file/")
 async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None, seperator: str = "###") -> JSONResponse:
     """Embeds text files in the database.
-
     Args:
         files (List[UploadFile], optional): A list of files to embed. Defaults to File(...).
         aa_or_openai (str, optional): The LLM provider to use. Defaults to "openai".
         token (str, optional): The API token. Defaults to None.
         seperator (str, optional): The separator to use when splitting the text into chunks. Defaults to "###".
-
     Raises:
         ValueError: If a file does not have a valid name, if no temporary folder is provided, or if no token or LLM provider is specified.
-
     Returns:
         JSONResponse: A response indicating that the files were received and saved, along with the names of the files they were saved to.
     """
@@ -233,17 +220,14 @@ async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: s
 @app.get("/search")
 def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> JSONResponse:
     """Searches for a query in the vector database.
-
     Args:
         query (str): The search query.
         aa_or_openai (str, optional): The LLM provider. Defaults to "openai".
         token (str, optional): Token for the LLM provider. Defaults to None.
-
     Raises:
         ValueError: If the LLM provider is not implemented yet.
-
     Returns:
-        JSON Object: A list of matching documents in JSON Format.
+        List[str]: A list of matching documents.
     """
     token = get_token(token, aa_or_openai)
     if token is None:
@@ -252,24 +236,24 @@ def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None
     if aa_or_openai is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
-    matching_documents = search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
-    return JSONResponse(content={"Matching Documents Found:": matching_documents})
+    documents = search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+    data = {"documents": documents}
+
+    return JSONResponse(content={"Response:": jsonable_encoder(data)})
+
 
 @app.get("/qa")
 def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 1) -> JSONResponse:
     """Answer a question based on the documents in the database.
-
     Args:
         query (str, optional): _description_. Defaults to None.
         aa_or_openai (str, optional): _description_. Defaults to "openai".
         token (str, optional): _description_. Defaults to None.
         amount (int, optional): _description_. Defaults to 1.
-
     Raises:
         ValueError: Error if no query or token is provided.
-
     Returns:
-        JSON Object: Return Answer, Prompt and Meta Data in JSON Format
+        Tuple: Answer, Prompt and Meta Data
     """
     # if the query is not provided, raise an error
     if query is None:
@@ -281,13 +265,14 @@ def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", t
 
         # call the qa function
         answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)
-
+        
         response_data = {
             "answer": answer,
             "prompt": prompt,
             "meta_data": meta_data
         }
-        return JSONResponse(content=response_data)
+
+        return JSONResponse(content={"Response:": jsonable_encoder(response_data)})
 
     else:
         raise ValueError("Please provide a token.")
@@ -296,15 +281,12 @@ def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", t
 @app.post("/explain")
 def explain_output(prompt: str, output: str, token: Optional[str] = None) -> Dict[str, float]:
     """Explain the output of the question answering system.
-
     Args:
         prompt (str): The prompt used to generate the output.
         output (str): The output to be explained.
         token (str, optional): The Aleph Alpha API token. Defaults to None.
-
     Raises:
         ValueError: If no token is provided.
-
     Returns:
         Dict[str, float]: A dictionary containing the prompt and the score of the output.
     """
@@ -327,20 +309,17 @@ def explain_output(prompt: str, output: str, token: Optional[str] = None) -> Dic
         raise ValueError("Please provide a token.")
 
 
-def search_database(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> JSONResponse:
+def search_database(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> List:
     """Searches the database for a query.
-
     Args:
         query (str): The search query.
         aa_or_openai (str, optional): The LLM provider. Defaults to "openai".
         token (str, optional): The API token. Defaults to None.
         amount (int, optional): The amount of search results. Defaults to 3.
-
     Raises:
         ValueError: If the LLM provider is not implemented yet.
-
     Returns:
-        JSON Object: Returns JSON Response of documents that match the query.
+        List: A list of documents that match the query.
     """
     if token:
 
@@ -358,7 +337,7 @@ def search_database(query: str, aa_or_openai: str = "openai", token: Optional[st
 
         logger.info(f"Found {len(documents)} documents.")
 
-        return JSONResponse(content={"Documents Found": documents})
+        return documents
 
     else:
         raise ValueError("Please provide a token.")
