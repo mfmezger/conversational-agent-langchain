@@ -148,7 +148,7 @@ def create_tmp_folder() -> str:
     return tmp_dir
 
 
-@app.post("/upload_documents")
+@app.post("/embedd_documents")
 async def upload_documents(request: UploadDocumentsRequest) -> JSONResponse:
     """Uploads multiple documents to the backend.
 
@@ -373,7 +373,10 @@ def search_database(query: str, aa_or_openai: str = "openai", token: Optional[st
     """Searches the database for a query.
 
     Args:
-        request (SearchRequest): The search request.
+        query (str): The search query.
+        aa_or_openai (str, optional): The LLM provider. Defaults to "openai".
+        token (str, optional): The API token. Defaults to None.
+        amount (int, optional): The amount of search results. Defaults to 3.
 
     Raises:
         ValueError: If the LLM provider is not implemented yet.
@@ -381,15 +384,15 @@ def search_database(query: str, aa_or_openai: str = "openai", token: Optional[st
     Returns:
         List: A list of documents that match the query.
     """
-    if request.token:
+    if token:
 
-        token = get_token(request.token, request.aa_or_openai)
+        token = get_token(token, aa_or_openai)
 
-        if request.aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
+        if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
             # Embedd the documents with Aleph Alpha
-            documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=request.query, amount=request.amount)
-        elif request.aa_or_openai == "openai":
-            documents = search_documents_openai(open_ai_token=token, query=request.query, amount=request.amount)
+            documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query, amount=amount)
+        elif aa_or_openai == "openai":
+            documents = search_documents_openai(open_ai_token=token, query=query, amount=amount)
 
             # Embedd the documents with OpenAI#
         else:
