@@ -177,6 +177,9 @@ async def embedd_text(text: str, file_name: str, aa_or_openai: str = "openai", t
     if token is None:
         raise ValueError("Please provide a token for the LLM Provider of choice.")
 
+    if aa_or_openai == "openai":
+        raise ValueError("Not implemented yet.")
+
     if aa_or_openai is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
