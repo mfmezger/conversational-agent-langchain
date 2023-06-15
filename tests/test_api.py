@@ -1,4 +1,5 @@
 """API Tests."""
+import io
 import os
 import shutil
 
@@ -62,10 +63,10 @@ async def test_upload_documents(provider):
 async def test_embedd_one_document():
     """Testing the upload of one document."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
-        tmp_file = open("tests/ressources/1706.03762v5.pdf", "rb")
-        response = await ac.post(
-            "/embedd_document/", files=[("file", tmp_file)], json={"aa_or_openai": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY"), "file": tmp_file}
-        )
+        with open("tests/ressources/1706.03762v5.pdf", "rb") as f:
+            file_contents = f.read()
+        tmp_file = io.BytesIO(file_contents)
+        response = await ac.post("/embedd_document/", files=[("file", tmp_file)], json={"aa_or_openai": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
 
     assert response.status_code == 200
     assert response.json() == {
