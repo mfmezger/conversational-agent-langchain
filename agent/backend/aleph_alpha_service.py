@@ -257,32 +257,6 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
         raise
 
 
-# def summarization(aleph_alpha_token: str, documents: List[Tuple[Document, float]]) -> List[str]:
-#     """Summarizes a list of documents and returns a list of summaries.
-
-#     Args:
-#         aleph_alpha_token (str): Aleph Alpha API Token.
-#         documents (List[Tuple[Document, float]]): A list of tuples containing the documents and their similarity scores.
-
-#     Returns
-#     -------
-#         List[str]: A list of summaries.
-
-#     """
-#     client = Client(token=aleph_alpha_token)
-
-#     # TODO: Implement
-#     # extract the text from the documents
-#     texts = [doc[0].page_content for doc in documents]
-
-#     # summarize the texts
-#     summaries = []
-#     for text in texts:
-#         pass
-
-#     return ["None"]
-
-
 def qa_aleph_alpha(
     aleph_alpha_token: str, documents: list[tuple[LangchainDocument, float]], query: str, summarization: bool = False
 ) -> Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]:
