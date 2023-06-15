@@ -148,12 +148,15 @@ def create_tmp_folder() -> str:
     return tmp_dir
 
 
-@app.post("/embedd_documents")
-async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None) -> JSONResponse:
+@app.post("/upload_documents")
+async def upload_documents(request: UploadDocumentsRequest) -> JSONResponse:
     """Uploads multiple documents to the backend.
 
     Args:
-        files (List[UploadFile], optional): Uploaded files. Defaults to File(...).
+        request (UploadDocumentsRequest): The request parameters.
+
+    Raises:
+        ValueError: If the backend is not implemented yet.
 
     Returns:
         JSONResponse: The response as JSON.
@@ -162,7 +165,7 @@ async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: st
 
     file_names = []
 
-    for file in files:
+    for file in request.files:
         file_name = file.filename
         file_names.append(file_name)
 
@@ -176,18 +179,16 @@ async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: st
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
 
-    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=aa_or_openai, token=token)
+    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=request.aa_or_openai, token=request.token)
     return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
 
 
 @app.post("/embedd_document/")
-async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", token: Optional[str] = None) -> JSONResponse:
+async def embedd_one_document(request: EmbeddDocumentRequest) -> JSONResponse:
     """Uploads one document to the backend and embeds it in the database.
 
     Args:
-        file (UploadFile): The file to upload. Should be a PDF file.
-        aa_or_openai (str, optional): The backend to use. Defaults to "openai".
-        token (str, optional): The API token. Defaults to None.
+        request (EmbeddDocumentRequest): The request parameters.
 
     Raises:
         ValueError: If the backend is not implemented yet.
@@ -198,13 +199,13 @@ async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", to
     # Create a temporary folder to save the files
     tmp_dir = create_tmp_folder()
 
-    tmp_file_path = os.path.join(tmp_dir, str(file.filename))
+    tmp_file_path = os.path.join(tmp_dir, str(request.file.filename))
 
     logger.info(tmp_file_path)
     print(tmp_file_path)
 
     with open(tmp_file_path, "wb") as f:
-        f.write(await file.read())
+        f.write(await request.file.read())
 
     embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=aa_or_openai, token=token)
     return JSONResponse(content={"message": "File received and saved.", "filenames": file.filename})
