@@ -5,6 +5,7 @@ from typing import List, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile
+from langchain.docstore.document import Document as LangchainDocument
 from loguru import logger
 from pydantic import BaseModel, Field, validator
 from starlette.responses import JSONResponse
@@ -49,7 +50,7 @@ class EmbeddTextFilesRequest(BaseModel):
     files: List[UploadFile] = Field(..., description="The list of text files to embed.")
     aa_or_openai: str = Field("openai", description="The LLM provider to use for embedding.")
     token: Optional[str] = Field(None, description="The API token for the LLM provider.")
-    separator: str = Field("###", description="The separator to use between embedded texts.")
+    seperator: str = Field("###", description="The seperator to use between embedded texts.")
 
 
 class SearchRequest(BaseModel):
@@ -68,7 +69,7 @@ class EmbeddTextRequest(BaseModel):
     file_name: str = Field(..., title="File Name", description="The name of the file to save the embedded text to.")
     aa_or_openai: str = Field("openai", title="LLM Provider", description="The LLM provider to use for embedding.")
     token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
-    separator: str = Field("###", title="Separator", description="The separator to use between embedded texts.")
+    seperator: str = Field("###", title="seperator", description="The seperator to use between embedded texts.")
 
 
 class ExplainRequest(BaseModel):
@@ -177,7 +178,7 @@ def create_tmp_folder() -> str:
     return tmp_dir
 
 
-@app.post("/upload_documents")
+@app.post("/embedd_documents")
 async def upload_documents(request: UploadDocumentsRequest) -> JSONResponse:
     """Uploads multiple documents to the backend.
 
@@ -263,7 +264,7 @@ async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
     if request.aa_or_openai is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
-    embedd_text_aleph_alpha(text=request.text, file_name=request.file_name, aleph_alpha_token=token, separator=request.separator)
+    embedd_text_aleph_alpha(text=request.text, file_name=request.file_name, aleph_alpha_token=token, seperator=request.seperator)
     return JSONResponse(content={"message": "Text received and saved.", "filenames": request.file_name})
 
 
@@ -305,12 +306,12 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> JSONResponse:
     if request.aa_or_openai is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
-    embedd_text_files_aleph_alpha(folder=tmp_dir, aleph_alpha_token=token, separator=request.separator)
+    embedd_text_files_aleph_alpha(folder=tmp_dir, aleph_alpha_token=token, seperator=request.seperator)
 
     return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
 
 
-@app.get("/search")
+@app.post("/search")
 def search(request: SearchRequest) -> JSONResponse:
     """Searches for a query in the vector database.
 
@@ -335,7 +336,7 @@ def search(request: SearchRequest) -> JSONResponse:
     return JSONResponse(content={"documents": DOCS})
 
 
-@app.get("/qa")
+@app.post("/qa")
 def question_answer(request: QARequest) -> JSONResponse:
     """Answer a question based on the documents in the database.
 
@@ -398,11 +399,14 @@ def explain_output(request: ExplainRequest) -> JSONResponse:
         raise ValueError("Please provide a token.")
 
 
-def search_database(request: SearchRequest) -> JSONResponse:
+def search_database(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> List[tuple[LangchainDocument, float]]:
     """Searches the database for a query.
 
     Args:
-        request (SearchRequest): The search request.
+        query (str): The search query.
+        aa_or_openai (str, optional): The LLM provider. Defaults to "openai".
+        token (str, optional): The API token. Defaults to None.
+        amount (int, optional): The amount of search results. Defaults to 3.
 
     Raises:
         ValueError: If the LLM provider is not implemented yet.
@@ -410,23 +414,22 @@ def search_database(request: SearchRequest) -> JSONResponse:
     Returns:
         List: A list of documents that match the query.
     """
-    if request.token:
+    if token:
 
-        token = get_token(request.token, request.aa_or_openai)
+        token = get_token(token, aa_or_openai)
 
-        if request.aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
+        if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
             # Embedd the documents with Aleph Alpha
-            documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=request.query, amount=request.amount)
-        elif request.aa_or_openai == "openai":
-            documents = search_documents_openai(open_ai_token=token, query=request.query, amount=request.amount)
+            documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query, amount=amount)
+        elif aa_or_openai == "openai":
+            documents = search_documents_openai(open_ai_token=token, query=query, amount=amount)
 
             # Embedd the documents with OpenAI#
         else:
             raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
         logger.info(f"Found {len(documents)} documents.")
-
-        return JSONResponse(content={"documents": documents})
+        return documents
 
     else:
         raise ValueError("Please provide a token.")

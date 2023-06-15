@@ -73,7 +73,9 @@ def test_send_completion_request():
 def test_embedd_text_aleph_alpha():
     """Test that embedd_text_aleph_alpha does not raise an error."""
     # assert that it does not raise an error
-    embedd_text_aleph_alpha("This is a test", "file", os.getenv("ALEPH_ALPHA_API_KEY"), " ")
+    token = os.getenv("ALEPH_ALPHA_API_KEY")
+    assert token is not None
+    embedd_text_aleph_alpha("This is a test", "file", token, " ")
 
 
 def test_search_documents_aleph_alpha_wrong_token():
@@ -111,7 +113,10 @@ def test_search_documents_aleph_alpha_empty():
 
 def test_embedd_text_files_aleph_alpha():
     """Tests that embedd_text_files_aleph_alpha does not raise an error."""
-    embedd_text_files_aleph_alpha(folder="tests/ressources", aleph_alpha_token=os.getenv("ALEPH_ALPHA_API_KEY"), separator=" ")
+    token = os.getenv("ALEPH_ALPHA_API_KEY")
+    assert token is not None
+
+    embedd_text_files_aleph_alpha(folder="tests/ressources", aleph_alpha_token=token, seperator=" ")
 
 
 def test_explain_completion():

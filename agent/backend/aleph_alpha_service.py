@@ -181,13 +181,13 @@ def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, s
     logger.info("SUCCESS: Database Persistent.")
 
 
-def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, separator: str) -> None:
+def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator: str) -> None:
     """Embeds text files in the Aleph Alpha database.
 
     Args:
         folder (str): The folder containing the text files to embed.
         aleph_alpha_token (str): The Aleph Alpha API token.
-        separator (str): The separator to use when splitting the text into chunks.
+        seperator (str): The seperator to use when splitting the text into chunks.
 
     Returns:
         None
@@ -204,7 +204,7 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, separator
         with open(os.path.join(folder, file)) as f:
             text = f.read()
 
-        text_list: List = text.split(separator)
+        text_list: List = text.split(seperator)
 
         # check if first and last element are empty
         if not text_list[0]:

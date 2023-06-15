@@ -38,12 +38,12 @@ async def test_upload_documents(provider):
         if provider == "openai":
             logger.warning("Using OpenAI API")
             response = await ac.post(
-                "/embedd_documents", params={"aa_or_openai": "openai", "token": os.getenv("OPENAI_API_KEY")}, files=[("files", file) for file in files]
+                "/embedd_documents", json={"aa_or_openai": "openai", "token": os.getenv("OPENAI_API_KEY")}, files=[("files", file) for file in files]
             )
         else:
             logger.warning("Using Aleph Alpha API")
             response = await ac.post(
-                "/embedd_documents", params={"aa_or_openai": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
+                "/embedd_documents", json={"aa_or_openai": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
             )
 
     assert response.status_code == 200
@@ -63,7 +63,9 @@ async def test_embedd_one_document():
     """Testing the upload of one document."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
         tmp_file = open("tests/ressources/1706.03762v5.pdf", "rb")
-        response = await ac.post("/embedd_document/", files=[("file", tmp_file)])
+        response = await ac.post(
+            "/embedd_document/", files=[("file", tmp_file)], json={"aa_or_openai": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY"), "file": tmp_file}
+        )
 
     assert response.status_code == 200
     assert response.json() == {
@@ -80,9 +82,9 @@ async def test_embedd_one_document():
 def test_search_route_invalid_provider():
     """Testing with wrong backend."""
     with pytest.raises(ValueError):
-        response = client.get(
+        response = client.post(
             "/search",
-            params={
+            json={
                 "query": "example query",
                 "aa_or_openai": "invalid_provider",
                 "token": "example_token",
@@ -95,18 +97,18 @@ def test_search_route_invalid_provider():
 
 def test_explain_output():
     """Test the function with valid arguments."""
-    response = client.post("/explain", params={"prompt": "What is the capital of France?", "output": "Paris", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
+    response = client.post("/explain", json={"prompt": "What is the capital of France?", "output": "Paris", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
     assert response.status_code == 200
 
 
 def test_wrong_input_explain_output():
     """Test the function with wrong arguments."""
     with pytest.raises(ValueError):
-        client.post("/explain", params={"prompt": "", "output": "", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
+        client.post("/explain", json={"prompt": "", "output": "", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
     with pytest.raises(ValueError):
-        client.post("/explain", params={"prompt": "", "output": "asdfasdf", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
+        client.post("/explain", json={"prompt": "", "output": "asdfasdf", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
     with pytest.raises(ValueError):
-        client.post("/explain", params={"prompt": "asdfasdf", "output": "", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
+        client.post("/explain", json={"prompt": "asdfasdf", "output": "", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
 
 
 def test_embedd_text():
@@ -115,7 +117,7 @@ def test_embedd_text():
     with open("tests/ressources/file1.txt") as f:
         text = f.read()
 
-    response = client.post("/embedd_text", params={"text": text, "aa_or_openai": "aa", "file_name": "file", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
+    response = client.post("/embedd_text", json={"text": text, "aa_or_openai": "aa", "file_name": "file", "token": os.getenv("ALEPH_ALPHA_API_KEY"), "seperator": "###"})
     assert response.status_code == 200
     logger.info(response.json())
     assert response.json() == {"message": "Text received and saved.", "filenames": "file"}
