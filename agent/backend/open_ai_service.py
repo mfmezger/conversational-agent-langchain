@@ -86,7 +86,12 @@ def create_summarization(open_ai_token: str, documents):
 
 if __name__ == "__main__":
 
-    embedd_documents_openai("data", os.getenv("OPENAI_API_KEY"))
+    token = os.getenv("OPENAI_API_KEY")
+
+    if not token:
+        raise ValueError("OPENAI_API_KEY is not set.")
+
+    embedd_documents_openai("data", token)
 
     DOCS = search_documents_openai(open_ai_token="", query="Was ist Vanille?", amount=3)
     print(DOCS)

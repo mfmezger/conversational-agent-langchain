@@ -3,10 +3,17 @@ import os
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
-from aleph_alpha_client import Client, CompletionRequest, ExplanationRequest, Prompt
+from aleph_alpha_client import (
+    Client,
+    CompletionRequest,
+    Document,
+    ExplanationRequest,
+    Prompt,
+    SummarizationRequest,
+)
 from dotenv import load_dotenv
 from jinja2 import Template
-from langchain.docstore.document import Document
+from langchain.docstore.document import Document as LangchainDocument
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
 from langchain.vectorstores import Chroma
@@ -40,9 +47,27 @@ def generate_prompt(prompt_name: str, text: str, query: str) -> str:
 
     # replace the value text with jinja
     # Render the template with your variable
-    prompt = prompt.render(text=text, query=query)
+    prompt_text = prompt.render(text=text, query=query)
 
-    return str(prompt)
+    return prompt_text
+
+
+def summarize_text(text: str, token: str) -> str:
+    """Summarizes the given text using the Luminous API.
+
+    Args:
+        text (str): The text to be summarized.
+        token (str): The token for the Luminous API.
+
+    Returns:
+        str: The summary of the text.
+    """
+    client = Client(token=token)
+    document = Document.from_text(text=text)
+    request = SummarizationRequest(document=Document.from_text(document))
+    response = client.summarize(request=request, model="luminous-extended")
+
+    return response.summary
 
 
 def send_completion_request(text: str, token: str) -> str:
@@ -76,7 +101,7 @@ def send_completion_request(text: str, token: str) -> str:
     if not response.completions[0].completion:
         raise ValueError("Completion is empty.")
 
-    return response.completions[0].completion
+    return str(response.completions[0].completion)
 
 
 @load_config(location="config/chroma_db.yml")
@@ -90,7 +115,7 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Chroma:
     Returns:
         Chroma: The Chroma DB connection.
     """
-    embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)
+    embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
     vector_db = Chroma(persist_directory=cfg.chroma.persist_directory_aa, embedding_function=embedding)
 
     logger.info("SUCCESS: Chroma DB initialized.")
@@ -140,6 +165,12 @@ def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, s
     # split the text at the seperator
     text_list: List = text.split(seperator)
 
+    # check if first and last element are empty
+    if not text_list[0]:
+        text_list.pop(0)
+    if not text_list[-1]:
+        text_list.pop(-1)
+
     metadata = file_name
     # add _ and an incrementing number to the metadata
     metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
@@ -175,6 +206,17 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, separator
 
         text_list: List = text.split(separator)
 
+        # check if first and last element are empty
+        if not text_list[0]:
+            text_list.pop(0)
+        if not text_list[-1]:
+            text_list.pop(-1)
+
+        # ensure that the text is not empty
+        if not text_list:
+            raise ValueError("Text is empty.")
+
+        logger.info(f"Loaded {text_list} documents.")
         # get the name of the file
         metadata = os.path.splitext(file)[0]
         # add _ and an incrementing number to the metadata
@@ -187,7 +229,7 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, separator
     logger.info("SUCCESS: Database Persistent.")
 
 
-def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int = 1) -> List[Tuple[Document, float]]:
+def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int = 1) -> List[Tuple[LangchainDocument, float]]:
     """Searches the Aleph Alpha service for similar documents.
 
     Args:
@@ -215,34 +257,8 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
         raise
 
 
-# def summarization(aleph_alpha_token: str, documents: List[Tuple[Document, float]]) -> List[str]:
-#     """Summarizes a list of documents and returns a list of summaries.
-
-#     Args:
-#         aleph_alpha_token (str): Aleph Alpha API Token.
-#         documents (List[Tuple[Document, float]]): A list of tuples containing the documents and their similarity scores.
-
-#     Returns
-#     -------
-#         List[str]: A list of summaries.
-
-#     """
-#     client = Client(token=aleph_alpha_token)
-
-#     # TODO: Implement
-#     # extract the text from the documents
-#     texts = [doc[0].page_content for doc in documents]
-
-#     # summarize the texts
-#     summaries = []
-#     for text in texts:
-#         pass
-
-#     return ["None"]
-
-
 def qa_aleph_alpha(
-    aleph_alpha_token: str, documents: List[Tuple[Document, float]], query: str, summarization: bool = False
+    aleph_alpha_token: str, documents: list[tuple[LangchainDocument, float]], query: str, summarization: bool = False
 ) -> Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]:
     """QA takes a list of documents and returns a list of answers.
 
@@ -265,8 +281,10 @@ def qa_aleph_alpha(
         texts = [doc[0].page_content for doc in documents]
         if summarization:
             # call summarization
-            # TODO: implement summarization
             text = ""
+            for t in texts:
+                text += summarize_text(t, aleph_alpha_token)
+
         else:
             # combine the texts to one text
             text = " ".join(texts)
@@ -274,8 +292,25 @@ def qa_aleph_alpha(
 
     # load the prompt
     prompt = generate_prompt("qa.j2", text=text, query=query)
-    # call the luminous api
-    answer = send_completion_request(prompt, aleph_alpha_token)
+
+    try:
+
+        # call the luminous api
+        answer = send_completion_request(prompt, aleph_alpha_token)
+
+    except ValueError as e:
+        # if the code is PROMPT_TOO_LONG, split it into chunks
+        if e.args[0] == "PROMPT_TOO_LONG":
+            logger.info("Prompt too long. Summarizing.")
+
+            # summarize the text
+            short_text = summarize_text(text, aleph_alpha_token)
+
+            # generate the prompt
+            prompt = generate_prompt("qa.j2", text=short_text, query=query)
+
+            # call the luminous api
+            answer = send_completion_request(prompt, aleph_alpha_token)
 
     # extract the answer
     return answer, prompt, meta_data
@@ -315,17 +350,23 @@ def explain_completion(prompt: str, output: str, token: str):
 
 
 if __name__ == "__main__":
-    # embedd_documents_aleph_alpha("data", str(os.getenv("ALEPH_ALPHA_API_KEY")))
+
+    token = os.getenv("ALEPH_ALPHA_API_KEY")
+
+    if not token:
+        raise ValueError("Token cannot be None or empty.")
+
+    # embedd_documents_aleph_alpha("data", token)
     # open the text file and read the text
     with open("data/brustkrebs_input.txt") as f:
         text = f.read()
 
-    # embedd_text_aleph_alpha(text, "file1", str(os.getenv("ALEPH_ALPHA_API_KEY")), "###")
-    embedd_text_files_aleph_alpha("data/", str(os.getenv("ALEPH_ALPHA_API_KEY")), "###")
-    DOCS = search_documents_aleph_alpha(aleph_alpha_token=str(os.getenv("ALEPH_ALPHA_API_KEY")), query="Was sind meine Vorteile?")
+    # embedd_text_aleph_alpha(text, "file1", token, "###")
+    embedd_text_files_aleph_alpha("data/", token, "###")
+    DOCS = search_documents_aleph_alpha(aleph_alpha_token=token, query="Was sind meine Vorteile?")
     logger.info(DOCS)
-    answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=str(os.getenv("ALEPH_ALPHA_API_KEY")), documents=DOCS, query="Muss ich mein Mietwagen volltanken?")
+    answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=token, documents=DOCS, query="Muss ich mein Mietwagen volltanken?")
     logger.info(f"Answer: {answer}")
-    explanations = explain_completion(prompt, answer, str(os.getenv("ALEPH_ALPHA_API_KEY")))
+    explanations = explain_completion(prompt, answer, token)
 
     print(explanations)

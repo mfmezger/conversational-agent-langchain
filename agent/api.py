@@ -1,7 +1,7 @@
 """FastAPI Backend for the Knowledge Agent."""
 import os
 import uuid
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
@@ -34,39 +34,42 @@ ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
 def get_token(token: Optional[str], aa_or_openai: str) -> str:
     """Get the token from the environment variables or the parameter.
 
-    :param token: token from rest service
-    :type token: str
-    :param aa_or_openai: LLM provider, defaults to "openai"
-    :type aa_or_openai: str
-    :return: Token for the LLM Provider of choice
-    :rtype: str
+    Args:
+        token (str, optional): Token from the REST service.
+        aa_or_openai (str): LLM provider. Defaults to "openai".
+
+    Returns:
+        str: Token for the LLM Provider of choice.
+
+    Raises:
+        ValueError: If no token is provided.
     """
     env_token = ALEPH_ALPHA_API_KEY if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"} else OPENAI_API_KEY
     if env_token is None and token is None:
         raise ValueError("No token provided.")
-    return token if env_token is None else env_token
+    return token or env_token
 
 
 @app.get("/")
 def read_root() -> str:
-    """Root Message.
+    """Returns the welcome message.
 
-    :return: Welcome Message
-    :rtype: string
+    Returns:
+        str: The welcome message.
     """
     return "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
-def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", token: Optional[str] = None):
-    """Call the right embedding function for the choosen backend.
+def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", token: Optional[str] = None) -> None:
+    """Call the right embedding function for the chosen backend.
 
-    :param folder_name: Name of the temporary folder
-    :type folder_name: str
-    :param aa_or_openai: LLM provider, defaults to "openai"
-    :type aa_or_openai: str, optional
-    :param toke: Token for the LLM Provider of choice, defaults to None
-    :type token: str, optional
-    :raises ValueError: Raise error if not a valid LLM Provider is set
+    Args:
+        folder_name (str): Name of the temporary folder.
+        aa_or_openai (str, optional): LLM provider. Defaults to "openai".
+        token (str, optional): Token for the LLM Provider of choice. Defaults to None.
+
+    Raises:
+        ValueError: If an invalid LLM Provider is set.
     """
     token = get_token(token, aa_or_openai)
     if token is None:
@@ -85,8 +88,8 @@ def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", tok
 def create_tmp_folder() -> str:
     """Creates a temporary folder for files to store.
 
-    :return: The directory name
-    :rtype: str
+    Returns:
+        str: The directory name.
     """
     # Create a temporary folder to save the files
     tmp_dir = f"tmp_{str(uuid.uuid4())}"
@@ -96,13 +99,14 @@ def create_tmp_folder() -> str:
 
 
 @app.post("/embedd_documents")
-async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None):
-    """Upload multiple documents to the backend.
+async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None) -> JSONResponse:
+    """Uploads multiple documents to the backend.
 
-    :param files: Uploaded files, defaults to File(...)
-    :type files: List[UploadFile], optional
-    :return: Return as JSON
-    :rtype: JSONResponse
+    Args:
+        files (List[UploadFile], optional): Uploaded files. Defaults to File(...).
+
+    Returns:
+        JSONResponse: The response as JSON.
     """
     tmp_dir = create_tmp_folder()
 
@@ -177,6 +181,9 @@ async def embedd_text(text: str, file_name: str, aa_or_openai: str = "openai", t
     if token is None:
         raise ValueError("Please provide a token for the LLM Provider of choice.")
 
+    if aa_or_openai == "openai":
+        raise ValueError("Not implemented yet.")
+
     if aa_or_openai is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
@@ -185,7 +192,7 @@ async def embedd_text(text: str, file_name: str, aa_or_openai: str = "openai", t
 
 
 @app.post("/embedd_text_file/")
-async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None, seperator: str = "###") -> JSONResponse:
+async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None, separator: str = "###") -> JSONResponse:
     """Embeds text files in the database.
 
     Args:
@@ -225,13 +232,13 @@ async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: s
     if aa_or_openai is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
-    embedd_text_files_aleph_alpha(folder=tmp_dir, aleph_alpha_token=token, seperator=seperator)
+    embedd_text_files_aleph_alpha(folder=tmp_dir, aleph_alpha_token=token, separator=separator)
 
     return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
 
 
 @app.get("/search")
-def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> None:
+def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> JSONResponse:
     """Searches for a query in the vector database.
 
     Args:
@@ -252,11 +259,13 @@ def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None
     if aa_or_openai is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
-    return search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+    DOCS = search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+
+    return JSONResponse(content={"documents": DOCS})
 
 
 @app.get("/qa")
-def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 1):
+def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 1) -> JSONResponse:
     """Answer a question based on the documents in the database.
 
     Args:
@@ -282,14 +291,14 @@ def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", t
         # call the qa function
         answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)
 
-        return answer, prompt, meta_data
+        return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
 
     else:
         raise ValueError("Please provide a token.")
 
 
 @app.post("/explain")
-def explain_output(prompt: str, output: str, token: Optional[str] = None) -> Dict[str, float]:
+def explain_output(prompt: str, output: str, token: Optional[str] = None) -> JSONResponse:
     """Explain the output of the question answering system.
 
     Args:
@@ -317,12 +326,13 @@ def explain_output(prompt: str, output: str, token: Optional[str] = None) -> Dic
 
     if token:
         token = get_token(token, aa_or_openai="aa")
-        return explain_completion(prompt=prompt, output=output, token=token)
+        explanations = explain_completion(prompt=prompt, output=output, token=token)
+        return JSONResponse(content={"explanations": explanations})
     else:
         raise ValueError("Please provide a token.")
 
 
-def search_database(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> List:
+def search_database(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> JSONResponse:
     """Searches the database for a query.
 
     Args:
@@ -353,7 +363,7 @@ def search_database(query: str, aa_or_openai: str = "openai", token: Optional[st
 
         logger.info(f"Found {len(documents)} documents.")
 
-        return documents
+        return JSONResponse(content={"documents": documents})
 
     else:
         raise ValueError("Please provide a token.")
