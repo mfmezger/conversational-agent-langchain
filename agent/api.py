@@ -399,6 +399,40 @@ def question_answer(request: QARequest) -> JSONResponse:
     return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
 
 
+@app.get("/explain-qa")
+def explain_question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 1) -> JSONResponse:
+    """Answer a question & explains it based on the documents in the database.
+
+    This uses the normal qa but combines it with the explain function.
+    Args:
+        query (str, optional): _description_. Defaults to None.
+        aa_or_openai (str, optional): _description_. Defaults to "openai".
+        token (str, optional): _description_. Defaults to None.
+        amount (int, optional): _description_. Defaults to 1.
+
+    Raises:
+        ValueError: Error if no query or token is provided.
+
+    Returns:
+        Tuple: Answer, Prompt and Meta Data
+    """
+    # if the query is not provided, raise an error
+    if query is None:
+        raise ValueError("Please provide a Question.")
+
+    if token:
+        token = get_token(token, aa_or_openai)
+        documents = search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+
+        # call the qa function
+        answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)
+
+        return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
+
+    else:
+        raise ValueError("Please provide a token.")
+
+
 @app.post("/explain")
 def explain_output(request: ExplainRequest) -> JSONResponse:
     """Explain the output of the question answering system.
