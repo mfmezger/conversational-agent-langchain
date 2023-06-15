@@ -307,8 +307,10 @@ def qa_aleph_alpha(
         texts = [doc[0].page_content for doc in documents]
         if summarization:
             # call summarization
-            # TODO: implement summarization
             text = ""
+            for t in texts:
+                text += summarize_text(t, aleph_alpha_token)
+
         else:
             # combine the texts to one text
             text = " ".join(texts)
