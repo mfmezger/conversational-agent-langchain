@@ -34,39 +34,42 @@ ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
 def get_token(token: Optional[str], aa_or_openai: str) -> str:
     """Get the token from the environment variables or the parameter.
 
-    :param token: token from rest service
-    :type token: str
-    :param aa_or_openai: LLM provider, defaults to "openai"
-    :type aa_or_openai: str
-    :return: Token for the LLM Provider of choice
-    :rtype: str
+    Args:
+        token (str, optional): Token from the REST service.
+        aa_or_openai (str): LLM provider. Defaults to "openai".
+
+    Returns:
+        str: Token for the LLM Provider of choice.
+
+    Raises:
+        ValueError: If no token is provided.
     """
     env_token = ALEPH_ALPHA_API_KEY if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"} else OPENAI_API_KEY
     if env_token is None and token is None:
         raise ValueError("No token provided.")
-    return token if env_token is None else env_token
+    return token or env_token
 
 
 @app.get("/")
 def read_root() -> str:
-    """Root Message.
+    """Returns the welcome message.
 
-    :return: Welcome Message
-    :rtype: string
+    Returns:
+        str: The welcome message.
     """
     return "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
 def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", token: Optional[str] = None) -> None:
-    """Call the right embedding function for the choosen backend.
+    """Call the right embedding function for the chosen backend.
 
-    :param folder_name: Name of the temporary folder
-    :type folder_name: str
-    :param aa_or_openai: LLM provider, defaults to "openai"
-    :type aa_or_openai: str, optional
-    :param toke: Token for the LLM Provider of choice, defaults to None
-    :type token: str, optional
-    :raises ValueError: Raise error if not a valid LLM Provider is set
+    Args:
+        folder_name (str): Name of the temporary folder.
+        aa_or_openai (str, optional): LLM provider. Defaults to "openai".
+        token (str, optional): Token for the LLM Provider of choice. Defaults to None.
+
+    Raises:
+        ValueError: If an invalid LLM Provider is set.
     """
     token = get_token(token, aa_or_openai)
     if token is None:
@@ -85,8 +88,8 @@ def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", tok
 def create_tmp_folder() -> str:
     """Creates a temporary folder for files to store.
 
-    :return: The directory name
-    :rtype: str
+    Returns:
+        str: The directory name.
     """
     # Create a temporary folder to save the files
     tmp_dir = f"tmp_{str(uuid.uuid4())}"
@@ -97,12 +100,13 @@ def create_tmp_folder() -> str:
 
 @app.post("/embedd_documents")
 async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None) -> JSONResponse:
-    """Upload multiple documents to the backend.
+    """Uploads multiple documents to the backend.
 
-    :param files: Uploaded files, defaults to File(...)
-    :type files: List[UploadFile], optional
-    :return: Return as JSON
-    :rtype: JSONResponse
+    Args:
+        files (List[UploadFile], optional): Uploaded files. Defaults to File(...).
+
+    Returns:
+        JSONResponse: The response as JSON.
     """
     tmp_dir = create_tmp_folder()
 

@@ -25,7 +25,7 @@ from agent.utils.configuration import load_config
 load_dotenv()
 
 
-def generate_prompt(prompt_name: str, text: str, query: str) -> Template:
+def generate_prompt(prompt_name: str, text: str, query: str) -> str:
     """Generates a prompt for the Luminous API using a Jinja template.
 
     Args:
@@ -47,9 +47,9 @@ def generate_prompt(prompt_name: str, text: str, query: str) -> Template:
 
     # replace the value text with jinja
     # Render the template with your variable
-    prompt = prompt.render(text=text, query=query)
+    prompt_text = prompt.render(text=text, query=query)
 
-    return str(prompt)
+    return prompt_text
 
 
 def summarize_text(text: str, token: str) -> str:
@@ -101,7 +101,7 @@ def send_completion_request(text: str, token: str) -> str:
     if not response.completions[0].completion:
         raise ValueError("Completion is empty.")
 
-    return response.completions[0].completion
+    return str(response.completions[0].completion)
 
 
 @load_config(location="config/chroma_db.yml")
@@ -115,7 +115,7 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Chroma:
     Returns:
         Chroma: The Chroma DB connection.
     """
-    embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)
+    embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
     vector_db = Chroma(persist_directory=cfg.chroma.persist_directory_aa, embedding_function=embedding)
 
     logger.info("SUCCESS: Chroma DB initialized.")
@@ -350,17 +350,23 @@ def explain_completion(prompt: str, output: str, token: str):
 
 
 if __name__ == "__main__":
-    # embedd_documents_aleph_alpha("data", str(os.getenv("ALEPH_ALPHA_API_KEY")))
+
+    token = os.getenv("ALEPH_ALPHA_API_KEY")
+
+    if not token:
+        raise ValueError("Token cannot be None or empty.")
+
+    # embedd_documents_aleph_alpha("data", token)
     # open the text file and read the text
     with open("data/brustkrebs_input.txt") as f:
         text = f.read()
 
-    # embedd_text_aleph_alpha(text, "file1", str(os.getenv("ALEPH_ALPHA_API_KEY")), "###")
-    embedd_text_files_aleph_alpha("data/", str(os.getenv("ALEPH_ALPHA_API_KEY")), "###")
-    DOCS = search_documents_aleph_alpha(aleph_alpha_token=str(os.getenv("ALEPH_ALPHA_API_KEY")), query="Was sind meine Vorteile?")
+    # embedd_text_aleph_alpha(text, "file1", token, "###")
+    embedd_text_files_aleph_alpha("data/", token, "###")
+    DOCS = search_documents_aleph_alpha(aleph_alpha_token=token, query="Was sind meine Vorteile?")
     logger.info(DOCS)
-    answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=str(os.getenv("ALEPH_ALPHA_API_KEY")), documents=DOCS, query="Muss ich mein Mietwagen volltanken?")
+    answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=token, documents=DOCS, query="Muss ich mein Mietwagen volltanken?")
     logger.info(f"Answer: {answer}")
-    explanations = explain_completion(prompt, answer, str(os.getenv("ALEPH_ALPHA_API_KEY")))
+    explanations = explain_completion(prompt, answer, token)
 
     print(explanations)
