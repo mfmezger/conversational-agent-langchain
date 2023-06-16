@@ -4,10 +4,10 @@ import uuid
 from typing import List, Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, File, UploadFile
 from langchain.docstore.document import Document as LangchainDocument
 from loguru import logger
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 from starlette.responses import JSONResponse
 
 from agent.backend.aleph_alpha_service import (
@@ -27,6 +27,7 @@ from agent.backend.open_ai_service import (
 app = FastAPI(debug=True)
 
 load_dotenv()
+
 
 # load the token from the environment variables
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
@@ -78,37 +79,6 @@ class ExplainRequest(BaseModel):
     prompt: str = Field(..., title="Prompt", description="The prompt used to generate the output.")
     output: str = Field(..., title="Output", description="The output to be explained.")
     token: Optional[str] = Field(None, title="API Token", description="The Aleph Alpha API token.")
-
-
-class EmbeddDocumentRequest(BaseModel):
-    """The request parameters for embedding a document."""
-
-    file: UploadFile = Field(..., title="File", description="The PDF file to embed.")
-    aa_or_openai: str = Field("openai", title="LLM Provider", description="The LLM provider to use for embedding.")
-    token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
-
-    @validator("file")
-    def validate_file(cls, v):
-        """Validate the file."""
-        if not v.content_type.startswith("application/pdf"):
-            raise ValueError("Only PDF files are allowed")
-        return v
-
-
-class UploadDocumentsRequest(BaseModel):
-    """The request parameters for uploading multiple documents."""
-
-    files: List[UploadFile] = Field(..., title="Files", description="The PDF files to upload.")
-    aa_or_openai: str = Field("openai", title="LLM Provider", description="The LLM provider to use for embedding.")
-    token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
-
-    @validator("files")
-    def validate_files(cls, v):
-        """Validate the files."""
-        for file in v:
-            if not file.content_type.startswith("application/pdf"):
-                raise ValueError("Only PDF files are allowed")
-        return v
 
 
 def get_token(token: Optional[str], aa_or_openai: str) -> str:
@@ -179,14 +149,11 @@ def create_tmp_folder() -> str:
 
 
 @app.post("/embedd_documents")
-async def upload_documents(request: UploadDocumentsRequest) -> JSONResponse:
+async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None) -> JSONResponse:
     """Uploads multiple documents to the backend.
 
     Args:
-        request (UploadDocumentsRequest): The request parameters.
-
-    Raises:
-        ValueError: If the backend is not implemented yet.
+        files (List[UploadFile], optional): Uploaded files. Defaults to File(...).
 
     Returns:
         JSONResponse: The response as JSON.
@@ -195,7 +162,7 @@ async def upload_documents(request: UploadDocumentsRequest) -> JSONResponse:
 
     file_names = []
 
-    for file in request.files:
+    for file in files:
         file_name = file.filename
         file_names.append(file_name)
 
@@ -209,16 +176,18 @@ async def upload_documents(request: UploadDocumentsRequest) -> JSONResponse:
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
 
-    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=request.aa_or_openai, token=request.token)
+    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=aa_or_openai, token=token)
     return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
 
 
 @app.post("/embedd_document/")
-async def embedd_one_document(request: EmbeddDocumentRequest) -> JSONResponse:
+async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", token: Optional[str] = None) -> JSONResponse:
     """Uploads one document to the backend and embeds it in the database.
 
     Args:
-        request (EmbeddDocumentRequest): The request parameters.
+        file (UploadFile): The file to upload. Should be a PDF file.
+        aa_or_openai (str, optional): The backend to use. Defaults to "openai".
+        token (str, optional): The API token. Defaults to None.
 
     Raises:
         ValueError: If the backend is not implemented yet.
@@ -229,16 +198,16 @@ async def embedd_one_document(request: EmbeddDocumentRequest) -> JSONResponse:
     # Create a temporary folder to save the files
     tmp_dir = create_tmp_folder()
 
-    tmp_file_path = os.path.join(tmp_dir, str(request.file.filename))
+    tmp_file_path = os.path.join(tmp_dir, str(file.filename))
 
     logger.info(tmp_file_path)
     print(tmp_file_path)
 
     with open(tmp_file_path, "wb") as f:
-        f.write(await request.file.read())
+        f.write(await file.read())
 
-    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=request.aa_or_openai, token=request.token)
-    return JSONResponse(content={"message": "File received and saved.", "filenames": request.file.filename})
+    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=aa_or_openai, token=token)
+    return JSONResponse(content={"message": "File received and saved.", "filenames": file.filename})
 
 
 @app.post("/embedd_text/")
