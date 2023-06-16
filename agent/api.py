@@ -5,7 +5,9 @@ from typing import List, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
+from langchain.docstore.document import Document as LangchainDocument
 from loguru import logger
+from pydantic import BaseModel, Field
 from starlette.responses import JSONResponse
 
 from agent.backend.aleph_alpha_service import (
@@ -26,9 +28,57 @@ app = FastAPI(debug=True)
 
 load_dotenv()
 
+
 # load the token from the environment variables
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
+
+
+class QARequest(BaseModel):
+    """Request for the QA endpoint."""
+
+    query: Optional[str] = Field(None, title="Query", description="The question to answer.")
+    aa_or_openai: str = Field("openai", title="LLM Provider", description="The LLM provider to use for answering the question. Can be 'openai' or 'aleph-alpha'.")
+    token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
+    amount: int = Field(1, title="Amount", description="The number of answers to return.")
+    history: int = Field(0, title="History", description="The number of previous questions to include in the context.")
+    history_list: List[str] = Field(None, title="History List", description="A list of previous questions to include in the context.")
+
+
+class EmbeddTextFilesRequest(BaseModel):
+    """The request for the Embedd Text Files endpoint."""
+
+    files: List[UploadFile] = Field(..., description="The list of text files to embed.")
+    aa_or_openai: str = Field("openai", description="The LLM provider to use for embedding.")
+    token: Optional[str] = Field(None, description="The API token for the LLM provider.")
+    seperator: str = Field("###", description="The seperator to use between embedded texts.")
+
+
+class SearchRequest(BaseModel):
+    """The request parameters for searching the database."""
+
+    query: str = Field(..., title="Query", description="The search query.")
+    aa_or_openai: str = Field("openai", title="LLM Provider", description="The LLM provider to use for searching.")
+    token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
+    amount: int = Field(3, title="Amount", description="The number of search results to return.")
+
+
+class EmbeddTextRequest(BaseModel):
+    """The request parameters for embedding text."""
+
+    text: str = Field(..., title="Text", description="The text to embed.")
+    file_name: str = Field(..., title="File Name", description="The name of the file to save the embedded text to.")
+    aa_or_openai: str = Field("openai", title="LLM Provider", description="The LLM provider to use for embedding.")
+    token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
+    seperator: str = Field("###", title="seperator", description="The seperator to use between embedded texts.")
+
+
+class ExplainRequest(BaseModel):
+    """The request parameters for explaining the output."""
+
+    prompt: str = Field(..., title="Prompt", description="The prompt used to generate the output.")
+    output: str = Field(..., title="Output", description="The output to be explained.")
+    token: Optional[str] = Field(None, title="API Token", description="The Aleph Alpha API token.")
 
 
 def get_token(token: Optional[str], aa_or_openai: str) -> str:
@@ -47,7 +97,7 @@ def get_token(token: Optional[str], aa_or_openai: str) -> str:
     env_token = ALEPH_ALPHA_API_KEY if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"} else OPENAI_API_KEY
     if env_token is None and token is None:
         raise ValueError("No token provided.")
-    return token or env_token
+    return token or env_token  # type: ignore
 
 
 @app.get("/")
@@ -161,15 +211,11 @@ async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", to
 
 
 @app.post("/embedd_text/")
-async def embedd_text(text: str, file_name: str, aa_or_openai: str = "openai", token: Optional[str] = None, seperator: str = "###") -> JSONResponse:
+async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
     """Embeds text in the database.
 
     Args:
-        text (str): The text to embed.
-        file_name (str): The name of the file to save the embedded text to.
-        aa_or_openai (str, optional): The LLM provider to use. Defaults to "openai".
-        token (str, optional): The API token. Defaults to None.
-        seperator (str, optional): The separator to use when splitting the text into chunks. Defaults to "###".
+        request (EmbeddTextRequest): The request parameters.
 
     Raises:
         ValueError: If no token is provided or if no LLM provider is specified.
@@ -177,29 +223,26 @@ async def embedd_text(text: str, file_name: str, aa_or_openai: str = "openai", t
     Returns:
         JSONResponse: A response indicating that the text was received and saved, along with the name of the file it was saved to.
     """
-    token = get_token(token, aa_or_openai)
+    token = get_token(request.token, request.aa_or_openai)
     if token is None:
         raise ValueError("Please provide a token for the LLM Provider of choice.")
 
-    if aa_or_openai == "openai":
+    if request.aa_or_openai == "openai":
         raise ValueError("Not implemented yet.")
 
-    if aa_or_openai is None:
+    if request.aa_or_openai is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
-    embedd_text_aleph_alpha(text=text, file_name=file_name, aleph_alpha_token=token, seperator=seperator)
-    return JSONResponse(content={"message": "Text received and saved.", "filenames": file_name})
+    embedd_text_aleph_alpha(text=request.text, file_name=request.file_name, aleph_alpha_token=token, seperator=request.seperator)
+    return JSONResponse(content={"message": "Text received and saved.", "filenames": request.file_name})
 
 
 @app.post("/embedd_text_file/")
-async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None, separator: str = "###") -> JSONResponse:
+async def embedd_text_files(request: EmbeddTextFilesRequest) -> JSONResponse:
     """Embeds text files in the database.
 
     Args:
-        files (List[UploadFile], optional): A list of files to embed. Defaults to File(...).
-        aa_or_openai (str, optional): The LLM provider to use. Defaults to "openai".
-        token (str, optional): The API token. Defaults to None.
-        seperator (str, optional): The separator to use when splitting the text into chunks. Defaults to "###".
+        request (EmbeddTextFilesRequest): The request parameters.
 
     Raises:
         ValueError: If a file does not have a valid name, if no temporary folder is provided, or if no token or LLM provider is specified.
@@ -211,7 +254,7 @@ async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: s
 
     file_names = []
 
-    for file in files:
+    for file in request.files:
         file_name = file.filename
         file_names.append(file_name)
 
@@ -225,26 +268,24 @@ async def embedd_text_files(files: List[UploadFile] = File(...), aa_or_openai: s
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
 
-    token = get_token(token, aa_or_openai)
+    token = get_token(request.token, request.aa_or_openai)
     if token is None:
         raise ValueError("Please provide a token for the LLM Provider of choice.")
 
-    if aa_or_openai is None:
+    if request.aa_or_openai is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
-    embedd_text_files_aleph_alpha(folder=tmp_dir, aleph_alpha_token=token, separator=separator)
+    embedd_text_files_aleph_alpha(folder=tmp_dir, aleph_alpha_token=token, seperator=request.seperator)
 
     return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
 
 
-@app.get("/search")
-def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> JSONResponse:
+@app.post("/search")
+def search(request: SearchRequest) -> JSONResponse:
     """Searches for a query in the vector database.
 
     Args:
-        query (str): The search query.
-        aa_or_openai (str, optional): The LLM provider. Defaults to "openai".
-        token (str, optional): Token for the LLM provider. Defaults to None.
+        request (SearchRequest): The search request.
 
     Raises:
         ValueError: If the LLM provider is not implemented yet.
@@ -252,27 +293,24 @@ def search(query: str, aa_or_openai: str = "openai", token: Optional[str] = None
     Returns:
         List[str]: A list of matching documents.
     """
-    token = get_token(token, aa_or_openai)
+    token = get_token(request.token, request.aa_or_openai)
     if token is None:
         raise ValueError("Please provide a token for the LLM Provider of choice.")
 
-    if aa_or_openai is None:
+    if request.aa_or_openai is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
-    DOCS = search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+    DOCS = search_database(query=request.query, aa_or_openai=request.aa_or_openai, token=token, amount=request.amount)
 
     return JSONResponse(content={"documents": DOCS})
 
 
-@app.get("/qa")
-def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 1) -> JSONResponse:
+@app.post("/qa")
+def question_answer(request: QARequest) -> JSONResponse:
     """Answer a question based on the documents in the database.
 
     Args:
-        query (str, optional): _description_. Defaults to None.
-        aa_or_openai (str, optional): _description_. Defaults to "openai".
-        token (str, optional): _description_. Defaults to None.
-        amount (int, optional): _description_. Defaults to 1.
+        request (QARequest): The request parameters.
 
     Raises:
         ValueError: Error if no query or token is provided.
@@ -281,15 +319,15 @@ def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", t
         Tuple: Answer, Prompt and Meta Data
     """
     # if the query is not provided, raise an error
-    if query is None:
+    if request.query is None:
         raise ValueError("Please provide a Question.")
 
+    token = get_token(request.token, request.aa_or_openai)
     if token:
-        token = get_token(token, aa_or_openai)
-        documents = search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+        documents = search_database(query=request.query, aa_or_openai=request.aa_or_openai, token=token, amount=request.amount)
 
         # call the qa function
-        answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)
+        answer, prompt, meta_data = qa_aleph_alpha(query=request.query, documents=documents, aleph_alpha_token=token)
 
         return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
 
@@ -298,13 +336,11 @@ def question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", t
 
 
 @app.post("/explain")
-def explain_output(prompt: str, output: str, token: Optional[str] = None) -> JSONResponse:
+def explain_output(request: ExplainRequest) -> JSONResponse:
     """Explain the output of the question answering system.
 
     Args:
-        prompt (str): The prompt used to generate the output.
-        output (str): The output to be explained.
-        token (str, optional): The Aleph Alpha API token. Defaults to None.
+        request (ExplainRequest): The explain request.
 
     Raises:
         ValueError: If no token is provided.
@@ -313,26 +349,26 @@ def explain_output(prompt: str, output: str, token: Optional[str] = None) -> JSO
         Dict[str, float]: A dictionary containing the prompt and the score of the output.
     """
     # explain the output
-    logger.error(f"Output {output}")
-    logger.error(f"Prompt {prompt}")
+    logger.error(f"Output {request.output}")
+    logger.error(f"Prompt {request.prompt}")
 
     # fail if prompt or output are not provided
-    if prompt is None or output is None:
+    if request.prompt is None or request.output is None:
         raise ValueError("Please provide a prompt and output.")
 
     # fail if prompt or output are empty
-    if prompt == "" or output == "":
+    if request.prompt == "" or request.output == "":
         raise ValueError("Please provide a prompt and output.")
 
-    if token:
-        token = get_token(token, aa_or_openai="aa")
-        explanations = explain_completion(prompt=prompt, output=output, token=token)
+    if request.token:
+        token = get_token(request.token, aa_or_openai="aa")
+        explanations = explain_completion(prompt=request.prompt, output=request.output, token=token)
         return JSONResponse(content={"explanations": explanations})
     else:
         raise ValueError("Please provide a token.")
 
 
-def search_database(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> JSONResponse:
+def search_database(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> List[tuple[LangchainDocument, float]]:
     """Searches the database for a query.
 
     Args:
@@ -362,8 +398,7 @@ def search_database(query: str, aa_or_openai: str = "openai", token: Optional[st
             raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
         logger.info(f"Found {len(documents)} documents.")
-
-        return JSONResponse(content={"documents": documents})
+        return documents
 
     else:
         raise ValueError("Please provide a token.")
