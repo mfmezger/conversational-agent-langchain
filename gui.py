@@ -17,6 +17,7 @@ PDF_FILE_TYPE = "pdf"
 META_DATA_HEIGHT = 500
 EXPLANATION_HEIGHT = 300
 
+
 logger.info("Starting Application.")
 
 # Set small icon in the tab bar
@@ -35,6 +36,7 @@ def upload_files(save_path_input: str) -> List[Tuple[str, bytes]]:
     """Upload PDF files and save them to the file system."""
     uploaded_files = st.file_uploader("Upload PDF Files", type=PDF_FILE_TYPE, accept_multiple_files=True)
     files = []
+
     for file in uploaded_files:
         with open(f"{save_path_input}{file.name}", "wb") as f:
             f.write(file.getbuffer())
@@ -51,15 +53,7 @@ def search_documents(token: str, query: str) -> Tuple[str, str, str, Any]:
     """Search the documents and return the answer, prompt, and metadata."""
     documents = search_documents_aleph_alpha(query=query, aleph_alpha_token=token)
     answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)
-    logger.info(f"Prompt: {prompt}")
     return answer, prompt, meta_data, documents
-
-
-def display_results(answer: str, documents: str, meta_data: str) -> None:
-    """Display the search results."""
-    st.text_area("QA", value=answer)
-    st.text_area("Document", value=documents, height=META_DATA_HEIGHT)
-    st.text_area("MetaData", value=meta_data)
 
 
 def explain(answer: str, prompt: str, token: str) -> str:
@@ -70,6 +64,9 @@ def explain(answer: str, prompt: str, token: str) -> str:
 
 def initialize() -> None:
     """Initialize the GUI."""
+    answer = ""
+    prompt = ""
+
     save_path_input = "data/"
     create_folder_structure(save_path_input)
 
@@ -81,26 +78,25 @@ def initialize() -> None:
     files = upload_files(save_path_input)
 
     # Start the embedding process
-    if st.button("Start Embedding"):
+    if st.button("Start Embedding", key="start_embedding"):
         logger.debug("Embedding was started")
         start_embedding(save_path_input, aleph_alpha_api_key)
 
     # Search the documents
     search_query = st.text_input("Search Query")
-    if st.button("Start Search"):
+    if st.button("Start Search", key="start_search"):
         logger.debug("Search was started")
         answer, prompt, meta_data, documents = search_documents(aleph_alpha_api_key, search_query)
-        display_results(answer, meta_data, documents)
+        display_results(answer=answer, meta_data=meta_data, documents=documents)
 
     # Explain the answer
-    if st.button("Explain!"):
-        # Define the answer and prompt variables
-        answer = st.text_input("Answer")
-        prompt = st.text_input("Prompt")
-        explanation = explain(answer, prompt, aleph_alpha_api_key)
-        st.text_area("Explanation", value=explanation, height=EXPLANATION_HEIGHT)
+    if st.button("Explain!", key="explain"):
+        # make sure that the answer and prompt are not empty
+        answer, prompt, meta_data, documents = search_documents(aleph_alpha_api_key, search_query)
 
-    # Search the documents
+        explanation = explain(answer, prompt, aleph_alpha_api_key)
+        logger.info(f"Explanation was created{explanation}")
+        st.text_area("Explanation", value=explanation, height=EXPLANATION_HEIGHT)
 
 
 def display_results(answer: str, meta_data: str, documents: str) -> None:
@@ -108,11 +104,6 @@ def display_results(answer: str, meta_data: str, documents: str) -> None:
     st.text_area("QA", value=answer)
     st.text_area("Document", value=documents, height=META_DATA_HEIGHT)
     st.text_area("MetaData", value=meta_data)
-
-    # Explain the answer
-    if st.button("Explain!"):
-        explanation = explain(answer, prompt, aleph_alpha_api_key)
-        st.text_area("Explanation", value=explanation, height=EXPLANATION_HEIGHT)
 
 
 # Start the GUI app
