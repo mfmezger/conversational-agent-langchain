@@ -1,15 +1,15 @@
 """The main gui."""
 from pathlib import Path
-from typing import List, Tuple, Any
+from typing import Any, List, Tuple
 
 import streamlit as st
 from loguru import logger
 
 from agent.backend.aleph_alpha_service import (
     embedd_documents_aleph_alpha,
+    explain_completion,
     qa_aleph_alpha,
     search_documents_aleph_alpha,
-    explain_completion
 )
 
 # Constants
@@ -101,6 +101,8 @@ def initialize() -> None:
         st.text_area("Explanation", value=explanation, height=EXPLANATION_HEIGHT)
 
     # Search the documents
+
+
 def display_results(answer: str, meta_data: str, documents: str) -> None:
     """Display the search results."""
     st.text_area("QA", value=answer)
