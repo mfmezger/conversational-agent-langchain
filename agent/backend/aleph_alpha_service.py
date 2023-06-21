@@ -91,7 +91,7 @@ def send_completion_request(text: str, token: str) -> str:
     client = Client(token=token)
 
     request = CompletionRequest(prompt=Prompt.from_text(text), maximum_tokens=256, stop_sequences=["###"])
-    response = client.complete(request, model="luminous-supreme-control")
+    response = client.complete(request, model="luminous-extended-control")
 
     # ensure that the response is not empty
     if not response.completions:
@@ -332,8 +332,7 @@ def explain_completion(prompt: str, output: str, token: str):
     """
     exp_req = ExplanationRequest(Prompt.from_text(prompt), output, control_factor=0.1, prompt_granularity="sentence")
     client = Client(token=token)
-    response_explain = client.explain(exp_req, model="luminous-supreme-control")
-
+    response_explain = client.explain(exp_req, model="luminous-extended-control")
     explanations = response_explain[1][0].items[0][0]
 
     # sort the explanations by score
