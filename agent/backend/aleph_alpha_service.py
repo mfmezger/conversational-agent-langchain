@@ -336,14 +336,19 @@ def explain_completion(prompt: str, output: str, token: str):
     explanations = response_explain[1][0].items[0][0]
 
     # sort the explanations by score
-    explanations = sorted(explanations, key=lambda x: x.score, reverse=True)
+    # explanations = sorted(explanations, key=lambda x: x.score, reverse=True)
+
+    # load the prompt
+    with open("prompts/qa.j2") as f:
+        template = str(Template(f.read()))
 
     result = {}
-    # extract the first 3 explanations
-    for item in explanations[:3]:
+    # remove the prompt from the explanations
+    for item in explanations:
         start = item.start
         end = item.start + item.length
-        result[prompt[start:end]] = np.round(item.score, decimals=3)
+        if not prompt[start:end] in template:
+            result[prompt[start:end]] = np.round(item.score, decimals=3)
 
     return result
 
