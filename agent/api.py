@@ -5,6 +5,7 @@ from typing import List, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
+from fastapi.openapi.utils import get_openapi
 from langchain.docstore.document import Document as LangchainDocument
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -23,8 +24,26 @@ from agent.backend.open_ai_service import (
     search_documents_openai,
 )
 
+
+def my_schema() -> dict:
+    """Used to generate the OpenAPI schema.
+
+    Returns:
+        _type_: _description_
+    """
+    openapi_schema = get_openapi(
+        title="Conversational AI API",
+        version="1.0",
+        description="Chat with your Documents using Conversational AI by Aleph Alpha and OpenAI.",
+        routes=app.routes,
+    )
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
 # initialize the Fast API Application.
 app = FastAPI(debug=True)
+app.openapi = my_schema
 
 load_dotenv()
 
