@@ -3,7 +3,7 @@ import os
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
-from aleph_alpha_client import (
+from aleph_alpha_client import (  # type: ignore
     Client,
     CompletionRequest,
     Document,
