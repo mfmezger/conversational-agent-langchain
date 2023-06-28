@@ -29,7 +29,7 @@ app = FastAPI(debug=True)
 load_dotenv()
 
 
-# load the token from the environment variables
+# load the token from the environment variables, is None if not set.
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
 
