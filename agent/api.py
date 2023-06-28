@@ -29,7 +29,7 @@ app = FastAPI(debug=True)
 load_dotenv()
 
 
-# load the token from the environment variables
+# load the token from the environment variables, is None if not set.
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
 
@@ -158,6 +158,9 @@ async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: st
     Returns:
         JSONResponse: The response as JSON.
     """
+    token = get_token(token, aa_or_openai)
+    if not token:
+        raise ValueError("Please provide a token for the LLM Provider of choice.")
     tmp_dir = create_tmp_folder()
 
     file_names = []
@@ -195,6 +198,9 @@ async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", to
     Returns:
         JSONResponse: A response indicating which files were received and saved.
     """
+    token = get_token(token, aa_or_openai)
+    if not token:
+        raise ValueError("Please provide a token for the LLM Provider of choice.")
     # Create a temporary folder to save the files
     tmp_dir = create_tmp_folder()
 
@@ -323,16 +329,15 @@ def question_answer(request: QARequest) -> JSONResponse:
         raise ValueError("Please provide a Question.")
 
     token = get_token(request.token, request.aa_or_openai)
-    if token:
-        documents = search_database(query=request.query, aa_or_openai=request.aa_or_openai, token=token, amount=request.amount)
-
-        # call the qa function
-        answer, prompt, meta_data = qa_aleph_alpha(query=request.query, documents=documents, aleph_alpha_token=token)
-
-        return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
-
-    else:
+    if not token:
         raise ValueError("Please provide a token.")
+
+    documents = search_database(query=request.query, aa_or_openai=request.aa_or_openai, token=token, amount=request.amount)
+
+    # call the qa function
+    answer, prompt, meta_data = qa_aleph_alpha(query=request.query, documents=documents, aleph_alpha_token=token)
+
+    return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
 
 
 @app.post("/explain")
@@ -360,8 +365,8 @@ def explain_output(request: ExplainRequest) -> JSONResponse:
     if request.prompt == "" or request.output == "":
         raise ValueError("Please provide a prompt and output.")
 
-    if request.token:
-        token = get_token(request.token, aa_or_openai="aa")
+    token = get_token(request.token, aa_or_openai="aa")
+    if token:
         explanations = explain_completion(prompt=request.prompt, output=request.output, token=token)
         return JSONResponse(content={"explanations": explanations})
     else:
@@ -383,22 +388,18 @@ def search_database(query: str, aa_or_openai: str = "openai", token: Optional[st
     Returns:
         List: A list of documents that match the query.
     """
-    if token:
-
-        token = get_token(token, aa_or_openai)
-
-        if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
-            # Embedd the documents with Aleph Alpha
-            documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query, amount=amount)
-        elif aa_or_openai == "openai":
-            documents = search_documents_openai(open_ai_token=token, query=query, amount=amount)
-
-            # Embedd the documents with OpenAI#
-        else:
-            raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
-
-        logger.info(f"Found {len(documents)} documents.")
-        return documents
-
-    else:
+    token = get_token(token, aa_or_openai)
+    if not token:
         raise ValueError("Please provide a token.")
+    if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
+        # Embedd the documents with Aleph Alpha
+        documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query, amount=amount)
+    elif aa_or_openai == "openai":
+        documents = search_documents_openai(open_ai_token=token, query=query, amount=amount)
+
+        # Embedd the documents with OpenAI#
+    else:
+        raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
+
+    logger.info(f"Found {len(documents)} documents.")
+    return documents
