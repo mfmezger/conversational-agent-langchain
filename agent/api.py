@@ -18,11 +18,13 @@ from agent.backend.aleph_alpha_service import (
     explain_completion,
     qa_aleph_alpha,
     search_documents_aleph_alpha,
+    summarize_text_aleph_alpha,
 )
 from agent.backend.open_ai_service import (
     embedd_documents_openai,
     search_documents_openai,
 )
+from agent.utils.utility import combine_text_from_list
 
 
 def my_schema() -> dict:
@@ -350,6 +352,19 @@ def question_answer(request: QARequest) -> JSONResponse:
     token = get_token(request.token, request.aa_or_openai)
     if not token:
         raise ValueError("Please provide a token.")
+
+    # if the history flag is activated and the history is not provided, raise an error
+    if request.history and request.history is None:
+        raise ValueError("Please provide a HistoryList.")
+
+    # summarize the history
+    if request.history:
+        # combine the texts
+        text = combine_text_from_list(request.history_list)
+        # summarize the text
+        summary = summarize_text_aleph_alpha(text=text, token=token)
+        # combine the history and the query
+        request.query = f"{summary}\n{request.query}"
 
     documents = search_database(query=request.query, aa_or_openai=request.aa_or_openai, token=token, amount=request.amount)
 

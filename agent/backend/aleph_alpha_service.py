@@ -52,7 +52,7 @@ def generate_prompt(prompt_name: str, text: str, query: str) -> str:
     return prompt_text
 
 
-def summarize_text(text: str, token: str) -> str:
+def summarize_text_aleph_alpha(text: str, token: str) -> str:
     """Summarizes the given text using the Luminous API.
 
     Args:
@@ -64,8 +64,8 @@ def summarize_text(text: str, token: str) -> str:
     """
     client = Client(token=token)
     document = Document.from_text(text=text)
-    request = SummarizationRequest(document=Document.from_text(document))
-    response = client.summarize(request=request, model="luminous-extended")
+    request = SummarizationRequest(document=document)
+    response = client.summarize(request=request)
 
     return response.summary
 
@@ -283,7 +283,7 @@ def qa_aleph_alpha(
             # call summarization
             text = ""
             for t in texts:
-                text += summarize_text(t, aleph_alpha_token)
+                text += summarize_text_aleph_alpha(t, aleph_alpha_token)
 
         else:
             # combine the texts to one text
@@ -304,7 +304,7 @@ def qa_aleph_alpha(
             logger.info("Prompt too long. Summarizing.")
 
             # summarize the text
-            short_text = summarize_text(text, aleph_alpha_token)
+            short_text = summarize_text_aleph_alpha(text, aleph_alpha_token)
 
             # generate the prompt
             prompt = generate_prompt("qa.j2", text=short_text, query=query)
