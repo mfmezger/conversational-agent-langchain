@@ -412,6 +412,43 @@ def explain_output(request: ExplainRequest) -> JSONResponse:
         raise ValueError("Please provide a token.")
 
 
+@app.post("/process_document")
+async def process_document(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None, type: str = "invoice") -> JSONResponse:
+    """Process a document.
+
+    Args:
+        file (UploadFile): _description_
+        aa_or_openai (str, optional): _description_. Defaults to "openai".
+        token (Optional[str], optional): _description_. Defaults to None.
+        type (str, optional): _description_. Defaults to "invoice".
+
+    Returns:
+        JSONResponse: _description_
+    """
+    token = get_token(token, aa_or_openai)
+    if not token:
+        raise ValueError("Please provide a token.")
+
+    # Create a temporary folder to save the files
+    tmp_dir = create_tmp_folder()
+
+    file_names = []
+
+    for file in files:
+        file_name = file.filename
+        file_names.append(file_name)
+
+        # Save the file to the temporary folder
+        if tmp_dir is None or not os.path.exists(tmp_dir):
+            raise ValueError("Please provide a temporary folder to save the files.")
+
+        if file_name is None:
+            raise ValueError("Please provide a file to save.")
+
+        with open(os.path.join(tmp_dir, file_name), "wb") as f:
+            f.write(await file.read())
+
+
 def search_database(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> List[tuple[LangchainDocument, float]]:
     """Searches the database for a query.
 

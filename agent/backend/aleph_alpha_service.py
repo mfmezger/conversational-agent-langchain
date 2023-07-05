@@ -353,6 +353,48 @@ def explain_completion(prompt: str, output: str, token: str):
     return result
 
 
+def process_documents(folder: str, token: str, type: str):
+    """Process the documents in the given folder.
+
+    Args:
+        folder (str): Folder where the documents are located.
+        token (str): The Aleph Alpha API Token.
+        type (str): The type of the documents.
+
+    Raises:
+        ValueError: If the type is not one of 'qa', 'summarization', or 'invoice'.
+    """
+    # load the documents
+    loader = DirectoryLoader(folder, glob="*.pdf", loader_cls=PyPDFLoader)
+
+    # load the documents
+    docs = loader.load()
+
+    # load the correct prompt
+    match type:
+        case "qa":
+            raise NotImplementedError
+        case "summarization":
+            raise NotImplementedError
+        case "invoice":
+            # load the prompt
+            prompt_name = "invoice.j2"
+        case _:
+            raise ValueError("Type must be one of 'qa', 'summarization', or 'invoice'.")
+
+    # load the prompt
+    with open(os.path.join("prompts", str(prompt_name))) as f:
+        template = str(Template(f.read()))
+
+    # iterate over the documents
+    for doc in docs:
+        # combine the prompt and the text
+        prompt = template + doc.page_content
+
+        # call the luminous api
+        answer = send_completion_request(prompt, token)
+
+
 if __name__ == "__main__":
 
     token = os.getenv("ALEPH_ALPHA_API_KEY")
