@@ -16,6 +16,7 @@ from agent.backend.aleph_alpha_service import (
     embedd_text_aleph_alpha,
     embedd_text_files_aleph_alpha,
     explain_completion,
+    process_documents_aleph_alpha,
     qa_aleph_alpha,
     search_documents_aleph_alpha,
     summarize_text_aleph_alpha,
@@ -417,7 +418,7 @@ async def process_document(files: List[UploadFile] = File(...), aa_or_openai: st
     """Process a document.
 
     Args:
-        file (UploadFile): _description_
+        files (UploadFile): _description_
         aa_or_openai (str, optional): _description_. Defaults to "openai".
         token (Optional[str], optional): _description_. Defaults to None.
         type (str, optional): _description_. Defaults to "invoice".
@@ -447,6 +448,8 @@ async def process_document(files: List[UploadFile] = File(...), aa_or_openai: st
 
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
+
+    process_documents_aleph_alpha(folder=tmp_dir, token=token, type=type)
 
 
 def search_database(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> List[tuple[LangchainDocument, float]]:
