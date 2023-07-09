@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from langchain.docstore.document import Document
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
+from langchain.vectorstores import Weaviate
 from loguru import logger
 from omegaconf import DictConfig
 
@@ -16,7 +16,7 @@ load_dotenv()
 
 
 @load_config(location="config/chroma_db.yml")
-def get_db_connection(cfg: DictConfig, open_ai_token: str) -> Chroma:
+def get_db_connection(cfg: DictConfig, open_ai_token: str) -> Weaviate:
     """get_db_connection initializes the connection to the chroma db.
 
     :param cfg: OmegaConf configuration
@@ -27,7 +27,8 @@ def get_db_connection(cfg: DictConfig, open_ai_token: str) -> Chroma:
     :rtype: Chroma
     """
     embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)
-    vector_db = Chroma(persist_directory=cfg.chroma.persist_directory, embedding_function=embedding)
+    WEAVIATE_URL
+    vector_db = Weaviate(persist_directory=cfg.chroma.persist_directory, embedding_function=embedding)
     logger.info("SUCCESS: Chroma DB initialized.")
     return vector_db
 

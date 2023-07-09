@@ -5,5 +5,6 @@ service:
   host: 0.0.0.0
   http_port: 6333
   grpc_port: 6334
+  api_key: "test"
 
 telemetry_disabled: true

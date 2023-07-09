@@ -16,7 +16,7 @@ from jinja2 import Template
 from langchain.docstore.document import Document as LangchainDocument
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
-from langchain.vectorstores import Chroma
+from langchain.vectorstores import Weaviate
 from loguru import logger
 from omegaconf import DictConfig
 
@@ -105,7 +105,7 @@ def send_completion_request(text: str, token: str) -> str:
 
 
 @load_config(location="config/chroma_db.yml")
-def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Chroma:
+def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Weaviate:
     """Initializes a connection to the Chroma DB.
 
     Args:
@@ -116,7 +116,7 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Chroma:
         Chroma: The Chroma DB connection.
     """
     embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
-    vector_db = Chroma(persist_directory=cfg.chroma.persist_directory_aa, embedding_function=embedding)
+    vector_db = Weaviate(persist_directory=cfg.chroma.persist_directory_aa, embedding_function=embedding)
 
     logger.info("SUCCESS: Chroma DB initialized.")
 

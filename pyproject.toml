@@ -6,14 +6,13 @@ authors = ["Marc Mezger <marc.mezger@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11,<3.12"
 langchain = "^0.0.228"
 streamlit = "^1.24.1"
 loguru = "^0.7.0"
 omegaconf = "^2.3.0"
 aleph-alpha-client = "^3.1.4"
 pypdf = "^3.12.0"
-chromadb = "^0.3.26"
 tiktoken = "^0.4.0"
 python-dotenv = "^1.0.0"
 httpx = "^0.24.1"
@@ -21,6 +20,7 @@ python-multipart = "^0.0.6"
 fastapi = "^0.100.0"
 openai = "^0.27.8"
 jinja2 = "^3.1.2"
+weaviate-client = "^3.22.0"
 
 
 [tool.poetry.group.dev.dependencies]
