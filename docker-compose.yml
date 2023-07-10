@@ -3,16 +3,13 @@
 services:
   agent:
     build: .
-
     volumes:
       - ./data:/data
       - ./logs:/logs
-
     ports:
       - "8001:8001"
 
   weaviate:
-
     command:
     - --host
     - 0.0.0.0

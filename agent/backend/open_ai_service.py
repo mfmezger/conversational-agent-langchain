@@ -27,7 +27,6 @@ def get_db_connection(cfg: DictConfig, open_ai_token: str) -> Weaviate:
     :rtype: Chroma
     """
     embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)
-    WEAVIATE_URL
     vector_db = Weaviate(persist_directory=cfg.chroma.persist_directory, embedding_function=embedding)
     logger.info("SUCCESS: Chroma DB initialized.")
     return vector_db
