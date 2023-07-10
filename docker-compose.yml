@@ -23,10 +23,10 @@ services:
     image: semitechnologies/weaviate:1.20.0
     ports:
     - 8080:8080
-    # restart: on-failure:0
+    restart: on-failure:0
     environment:
       QUERY_DEFAULTS_LIMIT: 25
-      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'false'
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
       DEFAULT_VECTORIZER_MODULE: 'none'
       ENABLE_MODULES: ''
@@ -34,8 +34,10 @@ services:
       # Enables API key authentication.
       AUTHENTICATION_APIKEY_ENABLED: 'true'
       # List one or more keys, separated by commas. Each key corresponds to a specific user identity below.
-      AUTHENTICATION_APIKEY_ALLOWED_KEYS: 'devy, prody'
+      AUTHENTICATION_APIKEY_ALLOWED_KEYS: 'devy,prody,root'
       # List one or more user identities, separated by commas. Each identity corresponds to a specific key above.
-      AUTHENTICATION_APIKEY_USERS: 'dev,prod'
+      AUTHENTICATION_APIKEY_USERS: 'dev,prod,root'
+      AUTHORIZATION_ADMINLIST_ENABLED: 'true'
+      AUTHORIZATION_ADMINLIST_USERS: 'root'
     volumes:
       - ./vector_db:/var/lib/weaviate

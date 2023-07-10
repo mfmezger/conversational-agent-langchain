@@ -105,7 +105,7 @@ def send_completion_request(text: str, token: str) -> str:
     return str(response.completions[0].completion)
 
 
-@load_config(location="config/chroma_db.yml")
+@load_config(location="config/weaviate.yml")
 def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Weaviate:
     """Initializes a connection to the Chroma DB.
 
@@ -116,7 +116,7 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Weaviate:
     Returns:
         Chroma: The Chroma DB connection.
     """
-    client = weaviate.Client("http://localhost:8080")
+    client = weaviate.Client()
     embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
 
     vector_db = Weaviate(client=client, index_name="aleph-alpha-db", text_key="", embedding=embedding)

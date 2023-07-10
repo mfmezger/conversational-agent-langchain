@@ -1,2 +1,3 @@
-WEAVIATE_URL="localhost:8080"
-WEAVIATE_API_KEY="asdf"
+weaviate:
+  weaviate_url:"localhost:8080"
+  weaviate_api_key:"devy"
