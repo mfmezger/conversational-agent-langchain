@@ -26,6 +26,8 @@ from agent.backend.open_ai_service import (
 )
 from agent.utils.utility import combine_text_from_list
 
+os.environ["LANGCHAIN_WANDB_TRACING"] = "true"
+
 
 def my_schema() -> dict:
     """Used to generate the OpenAPI schema.
