@@ -26,6 +26,10 @@ from agent.backend.open_ai_service import (
 )
 from agent.utils.utility import combine_text_from_list
 
+# add file logger for loguru
+logger.add("logs/file_{time}.log", backtrace=True, diagnose=True)
+logger.info("Startup.")
+
 
 def my_schema() -> dict:
     """Used to generate the OpenAPI schema.
@@ -53,6 +57,7 @@ load_dotenv()
 # load the token from the environment variables, is None if not set.
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
+logger.info("Loading REST API Finished.")
 
 
 class QARequest(BaseModel):
