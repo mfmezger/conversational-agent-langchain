@@ -3,6 +3,7 @@ import os
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
+import weaviate
 from aleph_alpha_client import (  # type: ignore
     Client,
     CompletionRequest,
@@ -115,8 +116,10 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Weaviate:
     Returns:
         Chroma: The Chroma DB connection.
     """
+    client = weaviate.Client("http://localhost:8080")
     embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
-    vector_db = Weaviate(persist_directory=cfg.chroma.persist_directory_aa, embedding_function=embedding)
+
+    vector_db = Weaviate(client=client, index_name="aleph-alpha-db", text_key="", embedding=embedding)
 
     logger.info("SUCCESS: Chroma DB initialized.")
 

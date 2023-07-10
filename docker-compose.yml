@@ -12,6 +12,7 @@ services:
       - "8001:8001"
 
   weaviate:
+
     command:
     - --host
     - 0.0.0.0
@@ -30,5 +31,11 @@ services:
       DEFAULT_VECTORIZER_MODULE: 'none'
       ENABLE_MODULES: ''
       CLUSTER_HOSTNAME: 'node1'
+      # Enables API key authentication.
+      AUTHENTICATION_APIKEY_ENABLED: 'true'
+      # List one or more keys, separated by commas. Each key corresponds to a specific user identity below.
+      AUTHENTICATION_APIKEY_ALLOWED_KEYS: 'devy, prody'
+      # List one or more user identities, separated by commas. Each identity corresponds to a specific key above.
+      AUTHENTICATION_APIKEY_USERS: 'dev,prod'
     volumes:
       - ./vector_db:/var/lib/weaviate
