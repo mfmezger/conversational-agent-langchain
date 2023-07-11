@@ -1,6 +1,18 @@
 # Conversational Agent
 This is a Backend to chat with your Data with Semantic Search.
 
+
+- [Conversational Agent](#conversational-agent)
+  - [Project Description](#project-description)
+  - [Architecture Semantic Search](#architecture-semantic-search)
+  - [Components](#components)
+  - [Deployment](#deployment)
+  - [Secret Management](#secret-management)
+  - [Installation \& Development Backend](#installation--development-backend)
+  - [Development Frontend](#development-frontend)
+  - [Star History](#star-history)
+
+
 ## Project Description
 This project is a conversational agent that uses Aleph Alpha and OpenAI Large Language Models to generate responses to user queries. The agent also includes a vector database and a REST API built with FastAPI.
 
@@ -8,6 +20,7 @@ Features
 - Uses Aleph Alpha and OpenAI Large Language Models to generate responses to user queries.
 - Includes a vector database to store and retrieve information.
 - Provides a REST API built with FastAPI for easy integration with other applications.
+- Has a basic gui.
 
 ## Architecture Semantic Search
 ![Semantic Search Architecture](resources/Architecture.png)
@@ -43,9 +56,14 @@ Another possiblity is to create a .env file and add the api token there.
 If you use OpenAI from Azure or OpenAI directly you need to set the correct parameters in the .env file.
 
 
+## Installation & Development Backend
 
+First install Python Dependencies:
 
-## Development Backend
+```bash
+pip install poetry
+poetry install
+```
 
 To run the Backend use this command in the root directory:
 
@@ -66,3 +84,14 @@ To run the Frontend use this command in the root directory:
 ```bash
 poetry run streamlit run gui.py
 ```
+
+
+## Star History
+
+<a href="https://star-history.com/#mfmezger/conversational-agent-langchain&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=mfmezger/conversational-agent-langchain&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=mfmezger/conversational-agent-langchain&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=mfmezger/conversational-agent-langchain&type=Date" />
+  </picture>
+</a>

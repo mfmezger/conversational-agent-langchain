@@ -60,14 +60,14 @@ repos:
         - --add-ignore=D105
         # - --ignore=D401, D213, D211, D203, D404
 
--   repo: https://github.com/btford/write-good
-    rev: v1.0.8
-    hooks:
-    -   id: write-good
-        files: "\\.(rst|md|markdown|mdown|mkdn)$"
-        args:
-        - --no-passive
-        # exclude: docs/infra/gerrit.rst|docs/best-practices.rst
+# -   repo: https://github.com/btford/write-good
+#     rev: v1.0.8
+#     hooks:
+#     -   id: write-good
+#         files: "\\.(rst|md|markdown|mdown|mkdn)$"
+#         args:
+#         - --no-passive
+#         # exclude: docs/infra/gerrit.rst|docs/best-practices.rst
 
 -   repo: https://github.com/adamchainz/blacken-docs
     rev: 1.13.0  # replace with latest tag on GitHub
