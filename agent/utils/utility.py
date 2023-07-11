@@ -22,7 +22,8 @@ def combine_text_from_list(input_list: list) -> str:
     for text in input_list:
         # verify that text is a string
         if isinstance(text, str):
-            combined_text += text
+            # combine the text in a new line
+            combined_text += "\n".join(text)
 
         else:
             raise TypeError("Input list must contain only strings")
