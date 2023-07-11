@@ -2,6 +2,7 @@
 import os
 from typing import List, Tuple
 
+import openai
 from dotenv import load_dotenv
 from langchain.docstore.document import Document
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
@@ -84,6 +85,25 @@ def create_summarization(open_ai_token: str, documents):
     pass
 
 
+def summarize_text_openai(text: str, token: str) -> str:
+    """Summarizes the given text using the Luminous API.
+
+    Args:
+        text (str): The text to be summarized.
+        token (str): The token for the Luminous API.
+
+    Returns:
+        str: The summary of the text.
+    """
+    prompt = f"Summarize the following text:\n\n{text}\n\nSummary:"
+
+    response = openai.Completion.create(
+        engine="text-davinci-003", prompt=prompt, temperature=0.3, max_tokens=350, top_p=1, frequency_penalty=0, presence_penalty=0, best_of=1, stop=None
+    )
+
+    return response.choices[0].text
+
+
 if __name__ == "__main__":
 
     token = os.getenv("OPENAI_API_KEY")
@@ -95,3 +115,10 @@ if __name__ == "__main__":
 
     DOCS = search_documents_openai(open_ai_token="", query="Was ist Vanille?", amount=3)
     print(DOCS)
+
+    summary = summarize_text_openai(
+        """Below is an extract from the annual financial report of a company. """,
+        token,
+    )
+
+    print(summary)

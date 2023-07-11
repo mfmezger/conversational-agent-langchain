@@ -10,7 +10,6 @@ This is a Backend to chat with your Data with Semantic Search.
   - [Secret Management](#secret-management)
   - [Installation \& Development Backend](#installation--development-backend)
   - [Development Frontend](#development-frontend)
-  - [Star History](#star-history)
 
 
 ## Project Description
@@ -86,7 +85,7 @@ poetry run streamlit run gui.py
 ```
 
 
-## Star History
+<!-- ## Star History
 
 <a href="https://star-history.com/#mfmezger/conversational-agent-langchain&Date">
   <picture>
@@ -94,4 +93,4 @@ poetry run streamlit run gui.py
     <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=mfmezger/conversational-agent-langchain&type=Date" />
     <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=mfmezger/conversational-agent-langchain&type=Date" />
   </picture>
-</a>
+</a> -->

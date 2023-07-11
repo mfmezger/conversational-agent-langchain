@@ -366,10 +366,19 @@ def question_answer(request: QARequest) -> JSONResponse:
     if request.history:
         # combine the texts
         text = combine_text_from_list(request.history_list)
-        # summarize the text
-        summary = summarize_text_aleph_alpha(text=text, token=token)
-        # combine the history and the query
-        request.query = f"{summary}\n{request.query}"
+
+        if request.aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
+
+            # summarize the text
+            summary = summarize_text_aleph_alpha(text=text, token=token)
+            # combine the history and the query
+            request.query = f"{summary}\n{request.query}"
+
+        elif request.aa_or_openai == "openai":
+            pass
+
+        else:
+            raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
     documents = search_database(query=request.query, aa_or_openai=request.aa_or_openai, token=token, amount=request.amount)
 
