@@ -85,7 +85,8 @@ def create_summarization(open_ai_token: str, documents):
     pass
 
 
-def summarize_text_openai(text: str, token: str) -> str:
+@load_config(location="config/ai/openai.yml")
+def summarize_text_openai(text: str, token: str, cfg: DictConfig) -> str:
     """Summarizes the given text using the Luminous API.
 
     Args:
@@ -98,7 +99,15 @@ def summarize_text_openai(text: str, token: str) -> str:
     prompt = f"Summarize the following text:\n\n{text}\n\nSummary:"
 
     response = openai.Completion.create(
-        engine="text-davinci-003", prompt=prompt, temperature=0.3, max_tokens=350, top_p=1, frequency_penalty=0, presence_penalty=0, best_of=1, stop=None
+        engine=cfg.openai.model,
+        prompt=prompt,
+        temperature=cfg.openai.temperature,
+        max_tokens=cfg.openai.token,
+        top_p=cfg.openai.top_p,
+        frequency_penalty=cfg.openai.frequency_penalty,
+        presence_penalty=cfg.openai.presence_penalty,
+        best_of=cfg.openai.best_of,
+        stop=cfg.openai.stop,
     )
 
     return response.choices[0].text
@@ -107,6 +116,7 @@ def summarize_text_openai(text: str, token: str) -> str:
 if __name__ == "__main__":
 
     token = os.getenv("OPENAI_API_KEY")
+    print(token)
 
     if not token:
         raise ValueError("OPENAI_API_KEY is not set.")
@@ -116,9 +126,6 @@ if __name__ == "__main__":
     DOCS = search_documents_openai(open_ai_token="", query="Was ist Vanille?", amount=3)
     print(DOCS)
 
-    summary = summarize_text_openai(
-        """Below is an extract from the annual financial report of a company. """,
-        token,
-    )
+    summary = summarize_text_openai("Below is an extract from the annual financial report of a company. ", token)
 
     print(summary)
