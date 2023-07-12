@@ -75,14 +75,16 @@ def search_documents_openai(open_ai_token: str, query: str, amount: int) -> List
 
 
 def create_summarization(open_ai_token: str, documents):
-    """Generate a summary of the given documents.
+    """Generates a summary of the given documents.
 
-    :param open_ai_token: _description_
-    :type open_ai_token: str
-    :param documents: _description_
-    :type documents: _type_
+    Args:
+        open_ai_token (str): The OpenAI API token.
+        documents (List[str]): A list of documents to summarize.
+
+    Returns:
+        str: The generated summary.
     """
-    pass
+    # Implementation goes here
 
 
 @load_config(location="config/ai/openai.yml")
