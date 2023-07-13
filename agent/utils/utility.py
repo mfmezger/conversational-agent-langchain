@@ -1,4 +1,7 @@
 """This is the utility module."""
+import os
+
+from jinja2 import Template
 from loguru import logger
 
 
@@ -29,3 +32,39 @@ def combine_text_from_list(input_list: list) -> str:
             raise TypeError("Input list must contain only strings")
 
     return combined_text
+
+
+def generate_prompt(prompt_name: str, text: str, query: str, language: str = "de") -> str:
+    """Generates a prompt for the Luminous API using a Jinja template.
+
+    Args:
+        prompt_name (str): The name of the file containing the Jinja template.
+        text (str): The text to be inserted into the template.
+        query (str): The query to be inserted into the template.
+        language (str): The language the query should output.
+
+    Returns:
+        str: The generated prompt.
+
+    Raises:
+        FileNotFoundError: If the specified prompt file cannot be found.
+    """
+    try:
+        # TODO add language selection.
+        match language:
+            case "english", "en":
+                lang = "en"
+            case "german", "deutsch", "de":
+                lang = "de"
+            case _:
+                raise ValueError("Language not supported.")
+        with open(os.path.join("prompts", lang, prompt_name)) as f:
+            prompt = Template(f.read())
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Prompt file '{prompt_name}' not found.")
+
+    # replace the value text with jinja
+    # Render the template with your variable
+    prompt_text = prompt.render(text=text, query=query)
+
+    return prompt_text

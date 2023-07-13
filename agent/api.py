@@ -67,6 +67,7 @@ class QARequest(BaseModel):
     aa_or_openai: str = Field("openai", title="LLM Provider", description="The LLM provider to use for answering the question. Can be 'openai' or 'aleph-alpha'.")
     token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
     amount: int = Field(1, title="Amount", description="The number of answers to return.")
+    language: str = Field("de", title="Language", description="The language to use for the answer.")
     history: int = Field(0, title="History", description="The number of previous questions to include in the context.")
     history_list: List[str] = Field(None, title="History List", description="A list of previous questions to include in the context.")
 

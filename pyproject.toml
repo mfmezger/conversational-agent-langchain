@@ -13,14 +13,16 @@ loguru = "^0.7.0"
 omegaconf = "^2.3.0"
 aleph-alpha-client = "^3.1.4"
 pypdf = "^3.12.0"
-chromadb = "^0.3.26"
 tiktoken = "^0.4.0"
 python-dotenv = "^1.0.0"
 httpx = "^0.24.1"
 python-multipart = "^0.0.6"
-fastapi = "^0.100.0"
+fastapi = "0.85.1"
 openai = "^0.27.8"
 jinja2 = "^3.1.2"
+setuptools = "^68.0.0"
+chromadb = "^0.3.29"
+uvicorn = "^0.22.0"
 
 
 [tool.poetry.group.dev.dependencies]
