@@ -2,6 +2,7 @@
 import os
 from typing import List, Tuple
 
+import weaviate
 from dotenv import load_dotenv
 from langchain.docstore.document import Document
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
@@ -15,7 +16,7 @@ from agent.utils.configuration import load_config
 load_dotenv()
 
 
-@load_config(location="config/chroma_db.yml")
+@load_config(location="config/db/weaviate.yaml")
 def get_db_connection(cfg: DictConfig, open_ai_token: str) -> Weaviate:
     """get_db_connection initializes the connection to the chroma db.
 
@@ -26,14 +27,21 @@ def get_db_connection(cfg: DictConfig, open_ai_token: str) -> Weaviate:
     :return: Chroma DB connection
     :rtype: Chroma
     """
+    resource_owner_config = weaviate.AuthApiKey(api_key=cfg.weav.api_key)
+
+    # Initiate the client with the auth config
+    client = weaviate.Client(
+        url="http://localhost:8080",
+        auth_client_secret=resource_owner_config,
+        additional_headers={"user": "dev"},
+    )
     embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)
-    vector_db = Weaviate(persist_directory=cfg.chroma.persist_directory, embedding_function=embedding)
-    logger.info("SUCCESS: Chroma DB initialized.")
-    return vector_db
+    return Weaviate(client=client, index_name=cfg.weav.index_name_openai, embedding=embedding, text_key="text")  # TODO: WTF is text kry?
 
 
-def embedd_documents_openai(dir: str, open_ai_token: str) -> None:
-    """embedd_documents embedds the documents in the given directory.
+@load_config(location="config/db/weaviate.yaml")
+def embedd_documents_openai(dir: str, open_ai_token: str, cfg: DictConfig) -> None:
+    """Embedd_documents embedds the documents in the given directory.
 
     :param cfg: Configuration from the file
     :type cfg: DictConfig
@@ -42,18 +50,17 @@ def embedd_documents_openai(dir: str, open_ai_token: str) -> None:
     :param open_ai_token: OpenAI API Token
     :type open_ai_token: str
     """
-    vector_db: Chroma = get_db_connection(open_ai_token=open_ai_token)
-
+    weav_connection = get_db_connection(open_ai_token=open_ai_token)
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
     docs = loader.load()
 
     logger.info(f"Loaded {len(docs)} documents.")
     texts = [doc.page_content for doc in docs]
     metadatas = [doc.metadata for doc in docs]
-    vector_db.add_texts(texts=texts, metadatas=metadatas)
+    # vector_db.add_texts(texts=texts, metadatas=metadatas)
+    embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)
+    weav_connection.from_texts(texts=texts, weaviate_url=cfg.weav.url, by_text=False, embedding=embedding, metadatas=metadatas)
     logger.info("SUCCESS: Texts embedded.")
-    vector_db.persist()
-    logger.info("SUCCESS: Database Persistent.")
 
 
 def search_documents_openai(open_ai_token: str, query: str, amount: int) -> List[Tuple[Document, float]]:
@@ -91,7 +98,7 @@ if __name__ == "__main__":
     if not token:
         raise ValueError("OPENAI_API_KEY is not set.")
 
-    embedd_documents_openai("data", token)
+    embedd_documents_openai(dir="data", open_ai_token=token)
 
-    DOCS = search_documents_openai(open_ai_token="", query="Was ist Vanille?", amount=3)
-    print(DOCS)
+    # DOCS = search_documents_openai(open_ai_token="", query="Was ist Vanille?", amount=3)
+    # print(DOCS)
