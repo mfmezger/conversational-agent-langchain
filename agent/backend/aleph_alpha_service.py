@@ -16,14 +16,22 @@ from jinja2 import Template
 from langchain.docstore.document import Document as LangchainDocument
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
-from langchain.vectorstores import Chroma
+from langchain.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
+from qdrant_client import QdrantClient
+from qdrant_client.http import models
 
 from agent.utils.configuration import load_config
 from agent.utils.utility import generate_prompt
 
 load_dotenv()
+# qdrant_client = QdrantClient("http://localhost", port=6333, api_key="test", prefer_grpc=False)
+
+# qdrant_client.recreate_collection(
+#     collection_name="Aleph_Alpha",
+#     vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
+# )
 
 
 def summarize_text_aleph_alpha(text: str, token: str) -> str:
@@ -79,7 +87,7 @@ def send_completion_request(text: str, token: str, model: str = "luminous-extend
 
 
 @load_config(location="config/chroma_db.yml")
-def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Chroma:
+def get_db_connection(cfg: DictConfig, aleph_alpha_token: str):
     """Initializes a connection to the Chroma DB.
 
     Args:
@@ -90,11 +98,19 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Chroma:
         Chroma: The Chroma DB connection.
     """
     embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
-    vector_db = Chroma(persist_directory=cfg.chroma.persist_directory_aa, embedding_function=embedding)
+    # vector_db = Chroma(persist_directory=cfg.chroma.persist_directory_aa, embedding_function=embedding)
+    qdrant_client = QdrantClient("http://localhost", port=6333, api_key="test", prefer_grpc=False)
 
+    # qdrant_client.recreate_collection(
+    #     collection_name="Aleph_Alpha",
+    #     vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
+    # )
+
+    # vector_db = Qdrant(client=qdrant_client, collection_name="Aleph_Alpha", embeddings=embedding)
     logger.info("SUCCESS: Chroma DB initialized.")
 
-    return vector_db
+    # return vector_db
+    return qdrant_client
 
 
 def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
@@ -111,6 +127,7 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
         None
     """
     vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
+    embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
 
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
     docs = loader.load()
@@ -118,10 +135,8 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
     logger.info(f"Loaded {len(docs)} documents.")
     texts = [doc.page_content for doc in docs]
     metadatas = [doc.metadata for doc in docs]
-    vector_db.add_texts(texts=texts, metadatas=metadatas)
+    Qdrant.from_texts(cls=vector_db, texts=texts, metadatas=metadatas, embedding=embedding, force_recreate=False)
     logger.info("SUCCESS: Texts embedded.")
-    vector_db.persist()
-    logger.info("SUCCESS: Database Persistent.")
 
 
 def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, seperator: str) -> None:
@@ -148,11 +163,12 @@ def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, s
     metadata = file_name
     # add _ and an incrementing number to the metadata
     metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
+    embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
 
-    vector_db.add_texts(texts=text_list, metadata=metadata_list)
+    Qdrant.from_texts(cls=vector_db, texts=text_list, metadatas=metadata_list, embedding=embedding, force_recreate=False)
+
+    # vector_db.add_texts(texts=text_list, metadata=metadata_list)
     logger.info("SUCCESS: Text embedded.")
-    vector_db.persist()
-    logger.info("SUCCESS: Database Persistent.")
 
 
 def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator: str) -> None:
@@ -190,17 +206,26 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator
         if not text_list:
             raise ValueError("Text is empty.")
 
-        logger.info(f"Loaded {text_list} documents.")
+        logger.info(f"Loaded {len(text_list)} documents.")
         # get the name of the file
         metadata = os.path.splitext(file)[0]
         # add _ and an incrementing number to the metadata
         metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
+        embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
 
-        vector_db.add_texts(texts=text_list, metadata=metadata_list)
+        Qdrant.from_texts(
+            texts=text_list,
+            metadatas=metadata_list,
+            embedding=embedding,
+            collection_name="Aleph_Alpha",
+            url="http://localhost",
+            port=6333,
+            api_key="test",
+            prefer_grpc=False,
+        )
+        # vector_db.add_texts(texts=text_list, metadata=metadata_list)
 
     logger.info("SUCCESS: Text embedded.")
-    vector_db.persist()
-    logger.info("SUCCESS: Database Persistent.")
 
 
 def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int = 1) -> List[Tuple[LangchainDocument, float]]:
@@ -223,7 +248,8 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
 
     try:
         vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
-        docs = vector_db.similarity_search_with_score(query, k=amount)
+        embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
+        docs = Qdrant(client=vector_db, collection_name="Aleph_Alpha", embeddings=embedding).similarity_search_with_score(query, k=amount)
         logger.info("SUCCESS: Documents found.")
         return docs
     except Exception as e:
@@ -389,7 +415,7 @@ if __name__ == "__main__":
     embedd_text_files_aleph_alpha("data/", token, "###")
     DOCS = search_documents_aleph_alpha(aleph_alpha_token=token, query="Was sind meine Vorteile?")
     logger.info(DOCS)
-    answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=token, documents=DOCS, query="Muss ich mein Mietwagen volltanken?")
+    answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=token, documents=DOCS, query="What are Attentions?")
     logger.info(f"Answer: {answer}")
     explanations = explain_completion(prompt, answer, token)
 
