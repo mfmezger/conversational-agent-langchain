@@ -136,3 +136,4 @@ chroma_db/
 chroma_db_aa/
 tmp*/
 htmlcov/
+vector_db/
