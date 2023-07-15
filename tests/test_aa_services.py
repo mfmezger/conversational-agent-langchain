@@ -93,6 +93,7 @@ def test_search_documents_aleph_alpha_wrong_token():
         search_documents_aleph_alpha(aleph_alpha_token, query)
 
 
+@pytest.mark.intgration
 def test_db_connection():
     """Test that get_db_connection returns a non-empty connection."""
     assert get_db_connection(aleph_alpha_token="") is not None
@@ -111,6 +112,7 @@ def test_search_documents_aleph_alpha_empty():
         search_documents_aleph_alpha(aleph_alpha_token, query)
 
 
+@pytest.mark.integration
 def test_embedd_text_files_aleph_alpha():
     """Tests that embedd_text_files_aleph_alpha does not raise an error."""
     token = os.getenv("ALEPH_ALPHA_API_KEY")
@@ -119,7 +121,7 @@ def test_embedd_text_files_aleph_alpha():
     embedd_text_files_aleph_alpha(folder="tests/ressources", aleph_alpha_token=token, seperator=" ")
 
 
-def test_explain_completion():
+def test_explain_completion():  # todo: rework
     """Test that explain_completion does not raise an error."""
     explain_completion("This is a test", " ", str(os.getenv("ALEPH_ALPHA_API_KEY")))
 
