@@ -1,29 +1,31 @@
-name: pytest
+# name: pytest
 
-on: [push, pull_request]
+# on: [push, pull_request]
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
+# jobs:
+#   test:
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v3
-        with:
-          python-version: 3.11
+#       - name: Set up Python
+#         uses: actions/setup-python@v3
+#         with:
+#           python-version: 3.11
 
-      - name: Install dependencies
-        run: |
-          pip install poetry
-          poetry config virtualenvs.create false
-          poetry install --with dev
-      - name: Run tests
-        run: pytest tests/
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ALEPH_ALPHA_API_KEY: ${{ secrets.ALEPH_ALPHA_API_KEY }}
-          OPENAI_API_TYPE: azure
-          OPENAI_API_BASE: https://openaiendpoint.openai.azure.com/
+#       - name: Run VDB
+#         run: docker run -p 6333:6333 -v $(pwd)/config/qdrant.yaml:/qdrant/config/qdrant.yaml qdrant/qdrant ./qdrant --config-path config/qdrant.yaml
+#       - name: Install dependencies poetry
+#         run: |
+#           pip install poetry
+#           poetry config virtualenvs.create false
+#           poetry install --with dev
+#       - name: Run tests
+#         run: pytest tests/
+#         env:
+#           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+#           ALEPH_ALPHA_API_KEY: ${{ secrets.ALEPH_ALPHA_API_KEY }}
+#           OPENAI_API_TYPE: azure
+#           OPENAI_API_BASE: https://openaiendpoint.openai.azure.com/

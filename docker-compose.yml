@@ -10,3 +10,23 @@ services:
 
     ports:
       - "8001:8001"
+
+  qdrant:
+    image: qdrant/qdrant
+    container_name: qdrant
+    command: ["./qdrant", "--config-path", "config/qdrant.yaml"]
+    volumes:
+      - ./vector_db:/qdrant/storage
+      - ./config/qdrant.yaml:/qdrant/config/qdrant.yaml
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    logging:
+      driver: "json-file"
+      options:
+        max-file: 1
+        max-size: 10m
+    deploy:
+      resources:
+        limits:
+          memory: 10Gb

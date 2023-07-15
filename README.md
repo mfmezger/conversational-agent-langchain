@@ -10,6 +10,7 @@ This is a Backend to chat with your Data with Semantic Search.
   - [Secret Management](#secret-management)
   - [Installation \& Development Backend](#installation--development-backend)
   - [Development Frontend](#development-frontend)
+  - [Qdrant API Key](#qdrant-api-key)
 
 
 ## Project Description
@@ -83,6 +84,12 @@ To run the Frontend use this command in the root directory:
 ```bash
 poetry run streamlit run gui.py
 ```
+
+## Qdrant API Key
+To use the Qdrant API you need to set the correct parameters in the .env file.
+QDRANT_API_KEY is the API key for the Qdrant API.
+And you need to change it in the qdrant.yaml file in the config folder.
+
 
 
 <!-- ## Star History

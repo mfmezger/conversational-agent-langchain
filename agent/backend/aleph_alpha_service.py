@@ -16,14 +16,49 @@ from jinja2 import Template
 from langchain.docstore.document import Document as LangchainDocument
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
-from langchain.vectorstores import Chroma
+from langchain.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
+from qdrant_client import QdrantClient
+from qdrant_client.http import models
 
 from agent.utils.configuration import load_config
 from agent.utils.utility import generate_prompt
 
 load_dotenv()
+
+
+qdrant_client = QdrantClient("http://localhost", port=6333, api_key="test", prefer_grpc=False)
+collection_name = "Aleph_Alpha"
+try:
+    qdrant_client.get_collection(collection_name=collection_name)
+    logger.info("SUCCESS: Collection already exists.")
+except Exception:
+    qdrant_client.recreate_collection(
+        collection_name=collection_name,
+        vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
+    )
+    logger.info("SUCCESS: Collection created.")
+
+
+@load_config(location="config/db.yml")
+def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
+    """Initializes a connection to the Chroma DB.
+
+    Args:
+        cfg (DictConfig): The configuration file loaded via OmegaConf.
+        aleph_alpha_token (str): The Aleph Alpha API token.
+
+    Returns:
+        Chroma: The Chroma DB connection.
+    """
+    embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
+    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
+
+    vector_db = Qdrant(client=qdrant_client, collection_name="Aleph_Alpha", embeddings=embedding)
+    logger.info("SUCCESS: Chroma DB initialized.")
+
+    return vector_db
 
 
 def summarize_text_aleph_alpha(text: str, token: str) -> str:
@@ -78,25 +113,6 @@ def send_completion_request(text: str, token: str, model: str = "luminous-extend
     return str(response.completions[0].completion)
 
 
-@load_config(location="config/chroma_db.yml")
-def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Chroma:
-    """Initializes a connection to the Chroma DB.
-
-    Args:
-        cfg (DictConfig): The configuration file loaded via OmegaConf.
-        aleph_alpha_token (str): The Aleph Alpha API token.
-
-    Returns:
-        Chroma: The Chroma DB connection.
-    """
-    embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
-    vector_db = Chroma(persist_directory=cfg.chroma.persist_directory_aa, embedding_function=embedding)
-
-    logger.info("SUCCESS: Chroma DB initialized.")
-
-    return vector_db
-
-
 def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
     """Embeds the documents in the given directory in the Aleph Alpha database.
 
@@ -116,12 +132,11 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
     docs = loader.load()
 
     logger.info(f"Loaded {len(docs)} documents.")
-    texts = [doc.page_content for doc in docs]
-    metadatas = [doc.metadata for doc in docs]
-    vector_db.add_texts(texts=texts, metadatas=metadatas)
+    text_list = [doc.page_content for doc in docs]
+    metadata_list = [doc.metadata for doc in docs]
+    vector_db.add_texts(texts=text_list, metadata=metadata_list)
+
     logger.info("SUCCESS: Texts embedded.")
-    vector_db.persist()
-    logger.info("SUCCESS: Database Persistent.")
 
 
 def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, seperator: str) -> None:
@@ -151,8 +166,6 @@ def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, s
 
     vector_db.add_texts(texts=text_list, metadata=metadata_list)
     logger.info("SUCCESS: Text embedded.")
-    vector_db.persist()
-    logger.info("SUCCESS: Database Persistent.")
 
 
 def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator: str) -> None:
@@ -190,17 +203,14 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator
         if not text_list:
             raise ValueError("Text is empty.")
 
-        logger.info(f"Loaded {text_list} documents.")
+        logger.info(f"Loaded {len(text_list)} documents.")
         # get the name of the file
         metadata = os.path.splitext(file)[0]
         # add _ and an incrementing number to the metadata
         metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
-
         vector_db.add_texts(texts=text_list, metadata=metadata_list)
 
     logger.info("SUCCESS: Text embedded.")
-    vector_db.persist()
-    logger.info("SUCCESS: Database Persistent.")
 
 
 def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int = 1) -> List[Tuple[LangchainDocument, float]]:
@@ -389,7 +399,7 @@ if __name__ == "__main__":
     embedd_text_files_aleph_alpha("data/", token, "###")
     DOCS = search_documents_aleph_alpha(aleph_alpha_token=token, query="Was sind meine Vorteile?")
     logger.info(DOCS)
-    answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=token, documents=DOCS, query="Muss ich mein Mietwagen volltanken?")
+    answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=token, documents=DOCS, query="What are Attentions?")
     logger.info(f"Answer: {answer}")
     explanations = explain_completion(prompt, answer, token)
 
