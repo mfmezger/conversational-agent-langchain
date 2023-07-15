@@ -68,6 +68,7 @@ class QARequest(BaseModel):
     aa_or_openai: str = Field("openai", title="LLM Provider", description="The LLM provider to use for answering the question. Can be 'openai' or 'aleph-alpha'.")
     token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
     amount: int = Field(1, title="Amount", description="The number of answers to return.")
+    language: str = Field("de", title="Language", description="The language to use for the answer.")
     history: int = Field(0, title="History", description="The number of previous questions to include in the context.")
     history_list: List[str] = Field(None, title="History List", description="A list of previous questions to include in the context.")
 
@@ -367,10 +368,19 @@ def question_answer(request: QARequest) -> JSONResponse:
     if request.history:
         # combine the texts
         text = combine_text_from_list(request.history_list)
-        # summarize the text
-        summary = summarize_text_aleph_alpha(text=text, token=token)
-        # combine the history and the query
-        request.query = f"{summary}\n{request.query}"
+
+        if request.aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
+
+            # summarize the text
+            summary = summarize_text_aleph_alpha(text=text, token=token)
+            # combine the history and the query
+            request.query = f"{summary}\n{request.query}"
+
+        elif request.aa_or_openai == "openai":
+            pass
+
+        else:
+            raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
     documents = search_database(query=request.query, aa_or_openai=request.aa_or_openai, token=token, amount=request.amount)
 

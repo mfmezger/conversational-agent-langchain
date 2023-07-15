@@ -21,35 +21,9 @@ from loguru import logger
 from omegaconf import DictConfig
 
 from agent.utils.configuration import load_config
+from agent.utils.utility import generate_prompt
 
 load_dotenv()
-
-
-def generate_prompt(prompt_name: str, text: str, query: str) -> str:
-    """Generates a prompt for the Luminous API using a Jinja template.
-
-    Args:
-        prompt_name (str): The name of the file containing the Jinja template.
-        text (str): The text to be inserted into the template.
-        query (str): The query to be inserted into the template.
-
-    Returns:
-        str: The generated prompt.
-
-    Raises:
-        FileNotFoundError: If the specified prompt file cannot be found.
-    """
-    try:
-        with open(os.path.join("prompts", prompt_name)) as f:
-            prompt = Template(f.read())
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Prompt file '{prompt_name}' not found.")
-
-    # replace the value text with jinja
-    # Render the template with your variable
-    prompt_text = prompt.render(text=text, query=query)
-
-    return prompt_text
 
 
 def summarize_text_aleph_alpha(text: str, token: str) -> str:
@@ -338,8 +312,8 @@ def explain_completion(prompt: str, output: str, token: str):
     # sort the explanations by score
     # explanations = sorted(explanations, key=lambda x: x.score, reverse=True)
 
-    # load the prompt
-    with open("prompts/qa.j2") as f:
+    # load the prompt # TODO: remove hardcoded and get over generate prompt method.
+    with open("prompts/de/qa.j2") as f:
         template = str(Template(f.read()))
 
     result = {}

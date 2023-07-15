@@ -110,6 +110,7 @@ ENV/
 env.bak/
 venv.bak/
 
+.DS_Store
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -135,3 +136,4 @@ chroma_db/
 chroma_db_aa/
 tmp*/
 htmlcov/
+vector_db/
