@@ -16,7 +16,7 @@ jobs:
           python-version: 3.11
 
       - name: Install dependencies
-        run: |
+        run: docker run -p 6333:6333 -v $(pwd)/config/qdrant.yaml:/qdrant/config/qdrant.yaml qdrant/qdrant ./qdrant --config-path config/qdrant.yaml
           pip install poetry
           poetry config virtualenvs.create false
           poetry install --with dev
