@@ -40,7 +40,7 @@ except Exception:  # todo find the correct exception
     logger.info("SUCCESS: Collection created.")
 
 
-@load_config(location="config/chroma_db.yml")
+@load_config(location="config/db.yml")
 def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
     """Initializes a connection to the Chroma DB.
 
@@ -53,7 +53,7 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
     """
     embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
     # TODO: read keys from config.
-    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=cfg.qdrant.api_key, prefer_grpc=cfg.qdrant.prefer_grpc)
+    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
     vector_db = Qdrant(client=qdrant_client, collection_name="Aleph_Alpha", embeddings=embedding)
     logger.info("SUCCESS: Chroma DB initialized.")

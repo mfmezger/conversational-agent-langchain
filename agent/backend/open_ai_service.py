@@ -29,12 +29,12 @@ try:
 except Exception:  # todo find the correct exception
     qdrant_client.recreate_collection(
         collection_name="OpenAI",
-        vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
+        vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
     )
     logger.info("SUCCESS: Collection created.")
 
 
-@load_config(location="config/chroma_db.yml")
+@load_config(location="config/db.yml")
 def get_db_connection(open_ai_token: str, cfg: DictConfig) -> Qdrant:
     """get_db_connection initializes the connection to the chroma db.
 
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     if not token:
         raise ValueError("OPENAI_API_KEY is not set.")
 
-    embedd_documents_openai("data", token)
+    embedd_documents_openai(dir="data", open_ai_token=token)
 
     DOCS = search_documents_openai(open_ai_token="", query="Was ist Vanille?", amount=3)
     print(f"DOCUMENTS: {DOCS}")

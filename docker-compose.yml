@@ -16,7 +16,7 @@ services:
     container_name: qdrant
     command: ["./qdrant", "--config-path", "config/qdrant.yaml"]
     volumes:
-      - ./data:/qdrant/storage
+      - ./vector_db:/qdrant/storage
       - ./config/qdrant.yaml:/qdrant/config/qdrant.yaml
     ports:
       - "6333:6333"
