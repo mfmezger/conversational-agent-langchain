@@ -26,12 +26,18 @@ from agent.utils.configuration import load_config
 from agent.utils.utility import generate_prompt
 
 load_dotenv()
-# qdrant_client = QdrantClient("http://localhost", port=6333, api_key="test", prefer_grpc=False)
 
-# qdrant_client.recreate_collection(
-#     collection_name="Aleph_Alpha",
-#     vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
-# )
+
+qdrant_client = QdrantClient("http://localhost", port=6333, api_key="test", prefer_grpc=False)
+try:
+    qdrant_client.get_collection(collection_name="Aleph_Alpha")
+    logger.info("SUCCESS: Collection already exists.")
+except Exception:
+    qdrant_client.recreate_collection(
+        collection_name="Aleph_Alpha",
+        vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
+    )
+    logger.info("SUCCESS: Collection created.")
 
 
 def summarize_text_aleph_alpha(text: str, token: str) -> str:
@@ -87,7 +93,7 @@ def send_completion_request(text: str, token: str, model: str = "luminous-extend
 
 
 @load_config(location="config/chroma_db.yml")
-def get_db_connection(cfg: DictConfig, aleph_alpha_token: str):
+def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
     """Initializes a connection to the Chroma DB.
 
     Args:
@@ -101,16 +107,10 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str):
     # vector_db = Chroma(persist_directory=cfg.chroma.persist_directory_aa, embedding_function=embedding)
     qdrant_client = QdrantClient("http://localhost", port=6333, api_key="test", prefer_grpc=False)
 
-    # qdrant_client.recreate_collection(
-    #     collection_name="Aleph_Alpha",
-    #     vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
-    # )
-
-    # vector_db = Qdrant(client=qdrant_client, collection_name="Aleph_Alpha", embeddings=embedding)
+    vector_db = Qdrant(client=qdrant_client, collection_name="Aleph_Alpha", embeddings=embedding)
     logger.info("SUCCESS: Chroma DB initialized.")
 
-    # return vector_db
-    return qdrant_client
+    return vector_db
 
 
 def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
@@ -133,9 +133,10 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
     docs = loader.load()
 
     logger.info(f"Loaded {len(docs)} documents.")
-    texts = [doc.page_content for doc in docs]
-    metadatas = [doc.metadata for doc in docs]
-    Qdrant.from_texts(cls=vector_db, texts=texts, metadatas=metadatas, embedding=embedding, force_recreate=False)
+    text_list = [doc.page_content for doc in docs]
+    metadata_list = [doc.metadata for doc in docs]
+    vector_db.add_texts(texts=text_list, metadata=metadata_list)
+
     logger.info("SUCCESS: Texts embedded.")
 
 
@@ -163,11 +164,8 @@ def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, s
     metadata = file_name
     # add _ and an incrementing number to the metadata
     metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
-    embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
 
-    Qdrant.from_texts(cls=vector_db, texts=text_list, metadatas=metadata_list, embedding=embedding, force_recreate=False)
-
-    # vector_db.add_texts(texts=text_list, metadata=metadata_list)
+    vector_db.add_texts(texts=text_list, metadata=metadata_list)
     logger.info("SUCCESS: Text embedded.")
 
 
@@ -211,19 +209,7 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator
         metadata = os.path.splitext(file)[0]
         # add _ and an incrementing number to the metadata
         metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
-        embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
-
-        Qdrant.from_texts(
-            texts=text_list,
-            metadatas=metadata_list,
-            embedding=embedding,
-            collection_name="Aleph_Alpha",
-            url="http://localhost",
-            port=6333,
-            api_key="test",
-            prefer_grpc=False,
-        )
-        # vector_db.add_texts(texts=text_list, metadata=metadata_list)
+        vector_db.add_texts(texts=text_list, metadata=metadata_list)
 
     logger.info("SUCCESS: Text embedded.")
 
@@ -248,8 +234,7 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
 
     try:
         vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
-        embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
-        docs = Qdrant(client=vector_db, collection_name="Aleph_Alpha", embeddings=embedding).similarity_search_with_score(query, k=amount)
+        docs = vector_db.similarity_search_with_score(query, k=amount)
         logger.info("SUCCESS: Documents found.")
         return docs
     except Exception as e:
