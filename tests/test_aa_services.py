@@ -27,7 +27,7 @@ def test_generate_prompt():
     """Test that generate_prompt returns a non-empty string with the expected text and query."""
     text = "ASDF"
     query = "FDSA"
-    prompt = generate_prompt("qa.j2", text=text, query=query, language="de")
+    prompt = generate_prompt(prompt_name="qa.j2", text=text, query=query)
     assert isinstance(prompt, str)
     assert len(prompt) > 0
     assert text in prompt

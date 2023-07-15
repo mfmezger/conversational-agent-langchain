@@ -50,11 +50,11 @@ def generate_prompt(prompt_name: str, text: str, query: str, language: str = "de
         FileNotFoundError: If the specified prompt file cannot be found.
     """
     try:
-        # TODO add language selection.
+        logger.info(f"ÖLASKJDÖLASKJD {language}")
         match language:
-            case "english", "en":
+            case "en":
                 lang = "en"
-            case "german", "deutsch", "de":
+            case "de":
                 lang = "de"
             case _:
                 raise ValueError("Language not supported.")
@@ -68,3 +68,8 @@ def generate_prompt(prompt_name: str, text: str, query: str, language: str = "de
     prompt_text = prompt.render(text=text, query=query)
 
     return prompt_text
+
+
+if __name__ == "__main__":
+    # test the function
+    generate_prompt("qa.j2", "This is a test text.", "What is the meaning of life?")
