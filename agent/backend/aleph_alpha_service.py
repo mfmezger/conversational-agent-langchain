@@ -29,12 +29,13 @@ load_dotenv()
 
 
 qdrant_client = QdrantClient("http://localhost", port=6333, api_key="test", prefer_grpc=False)
+collection_name = "Aleph_Alpha"
 try:
-    qdrant_client.get_collection(collection_name="Aleph_Alpha")
+    qdrant_client.get_collection(collection_name=collection_name)
     logger.info("SUCCESS: Collection already exists.")
-except Exception:  # todo find the correct exception
+except Exception:
     qdrant_client.recreate_collection(
-        collection_name="Aleph_Alpha",
+        collection_name=collection_name,
         vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
     )
     logger.info("SUCCESS: Collection created.")
@@ -58,33 +59,6 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
     logger.info("SUCCESS: Chroma DB initialized.")
 
     return vector_db
-
-
-def generate_prompt(prompt_name: str, text: str, query: str) -> str:
-    """Generates a prompt for the Luminous API using a Jinja template.
-
-    Args:
-        prompt_name (str): The name of the file containing the Jinja template.
-        text (str): The text to be inserted into the template.
-        query (str): The query to be inserted into the template.
-
-    Returns:
-        str: The generated prompt.
-
-    Raises:
-        FileNotFoundError: If the specified prompt file cannot be found.
-    """
-    try:
-        with open(os.path.join("prompts", prompt_name)) as f:
-            prompt = Template(f.read())
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Prompt file '{prompt_name}' not found.")
-
-    # replace the value text with jinja
-    # Render the template with your variable
-    prompt_text = prompt.render(text=text, query=query)
-
-    return prompt_text
 
 
 def summarize_text_aleph_alpha(text: str, token: str) -> str:
@@ -153,7 +127,6 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
         None
     """
     vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
-    embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
 
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
     docs = loader.load()

@@ -19,16 +19,15 @@ from agent.utils.utility import generate_prompt
 
 load_dotenv()
 
-# TODO: fix token handling
-
 
 qdrant_client = QdrantClient("http://localhost", port=6333, api_key="test", prefer_grpc=False)
+collection_name = "OpenAI"
 try:
-    qdrant_client.get_collection(collection_name="OpenAI")
+    qdrant_client.get_collection(collection_name=collection_name)
     logger.info("SUCCESS: Collection already exists.")
 except Exception:
     qdrant_client.recreate_collection(
-        collection_name="OpenAI",
+        collection_name=collection_name,
         vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
     )
     logger.info("SUCCESS: Collection created.")

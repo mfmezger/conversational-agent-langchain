@@ -3,10 +3,13 @@ from omegaconf import OmegaConf
 
 
 def load_config(location):
-    """Method to load the configuration file.
+    """Loads the configuration file.
 
-    :param location: _description_
-    :type location: _type_
+    Args:
+        location (str): The location of the configuration file.
+
+    Returns:
+        dict: A dictionary containing the configuration settings.
     """
 
     def decorator(func):
