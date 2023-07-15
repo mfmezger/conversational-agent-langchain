@@ -1,5 +1,4 @@
 qdrant:
   url: http://localhost
   port: 6333
-  api_key: "test"
   prefer_grpc: false
