@@ -312,8 +312,8 @@ def explain_completion(prompt: str, output: str, token: str):
     # sort the explanations by score
     # explanations = sorted(explanations, key=lambda x: x.score, reverse=True)
 
-    # load the prompt
-    with open("prompts/qa.j2") as f:
+    # load the prompt # TODO: remove hardcoded and get over generate prompt method.
+    with open("prompts/de/qa.j2") as f:
         template = str(Template(f.read()))
 
     result = {}
