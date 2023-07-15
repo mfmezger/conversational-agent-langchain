@@ -109,15 +109,14 @@ def test_wrong_input_explain_output():
         client.post("/explain", json={"prompt": "asdfasdf", "output": "", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
 
 
-# def test_embedd_text():
-#     """Test the embedd_text function."""
-#     # load text
-#     with open("tests/ressources/file1.txt") as f:
-#         text = f.read()
+def test_embedd_text():
+    """Test the embedd_text function."""
+    # load text
+    with open("tests/ressources/file1.txt") as f:
+        text = f.read()
 
-#     response = client.post("/embedd_text",
-# json={"text": text, "aa_or_openai": "aa", "file_name": "file", "token": os.getenv("ALEPH_ALPHA_API_KEY"), "seperator": "###"})
-#     logger.info(response)
-#     assert response.status_code == 200
-#     logger.info(response.json())
-#     assert response.json() == {"message": "Text received and saved.", "filenames": "file"}
+    response = client.post("/embedd_text", json={"text": text, "aa_or_openai": "aa", "file_name": "file", "token": os.getenv("ALEPH_ALPHA_API_KEY"), "seperator": "###"})
+    logger.info(response)
+    assert response.status_code == 200
+    logger.info(response.json())
+    assert response.json() == {"message": "Text received and saved.", "filenames": "file"}
