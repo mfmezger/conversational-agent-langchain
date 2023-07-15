@@ -52,7 +52,6 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
         Chroma: The Chroma DB connection.
     """
     embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
-    # TODO: read keys from config.
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
     vector_db = Qdrant(client=qdrant_client, collection_name="Aleph_Alpha", embeddings=embedding)

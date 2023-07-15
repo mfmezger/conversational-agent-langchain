@@ -26,7 +26,7 @@ qdrant_client = QdrantClient("http://localhost", port=6333, api_key="test", pref
 try:
     qdrant_client.get_collection(collection_name="OpenAI")
     logger.info("SUCCESS: Collection already exists.")
-except Exception:  # todo find the correct exception
+except Exception:
     qdrant_client.recreate_collection(
         collection_name="OpenAI",
         vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
