@@ -8,9 +8,11 @@ from langchain.docstore.document import Document
 from langchain.docstore.document import Document as LangchainDocument
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
+from langchain.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
+from qdrant_client import QdrantClient
+from qdrant_client.http import models
 
 from agent.utils.configuration import load_config
 from agent.utils.utility import generate_prompt
@@ -20,8 +22,20 @@ load_dotenv()
 # TODO: fix token handling
 
 
+qdrant_client = QdrantClient("http://localhost", port=6333, api_key="test", prefer_grpc=False)
+try:
+    qdrant_client.get_collection(collection_name="OpenAI")
+    logger.info("SUCCESS: Collection already exists.")
+except Exception:  # todo find the correct exception
+    qdrant_client.recreate_collection(
+        collection_name="OpenAI",
+        vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
+    )
+    logger.info("SUCCESS: Collection created.")
+
+
 @load_config(location="config/chroma_db.yml")
-def get_db_connection(cfg: DictConfig, open_ai_token: str) -> Chroma:
+def get_db_connection(open_ai_token: str, cfg: DictConfig) -> Qdrant:
     """get_db_connection initializes the connection to the chroma db.
 
     :param cfg: OmegaConf configuration
@@ -32,8 +46,10 @@ def get_db_connection(cfg: DictConfig, open_ai_token: str) -> Chroma:
     :rtype: Chroma
     """
     embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)
-    vector_db = Chroma(persist_directory=cfg.chroma.persist_directory, embedding_function=embedding)
-    logger.info("SUCCESS: Chroma DB initialized.")
+    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=cfg.qdrant.api_key, prefer_grpc=cfg.qdrant.prefer_grpc)
+
+    vector_db = Qdrant(client=qdrant_client, collection_name="OpenAI", embeddings=embedding)
+    logger.info("SUCCESS: Qdrant DB Connection.")
     return vector_db
 
 
@@ -47,7 +63,7 @@ def embedd_documents_openai(dir: str, open_ai_token: str) -> None:
     :param open_ai_token: OpenAI API Token
     :type open_ai_token: str
     """
-    vector_db: Chroma = get_db_connection(open_ai_token=open_ai_token)
+    vector_db: Qdrant = get_db_connection(open_ai_token=open_ai_token)
 
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
     docs = loader.load()
@@ -57,21 +73,20 @@ def embedd_documents_openai(dir: str, open_ai_token: str) -> None:
     metadatas = [doc.metadata for doc in docs]
     vector_db.add_texts(texts=texts, metadatas=metadatas)
     logger.info("SUCCESS: Texts embedded.")
-    vector_db.persist()
-    logger.info("SUCCESS: Database Persistent.")
 
 
 def search_documents_openai(open_ai_token: str, query: str, amount: int) -> List[Tuple[Document, float]]:
-    """search_documents searches the documents in the Chroma DB with a specific query.
+    """Searches the documents in the Chroma DB with a specific query.
 
-    :param open_ai_token: OpenAI Token
-    :type open_ai_token: str
-    :param query: The Question for which documents should be searched.
-    :type query: str
-    :return: List of Results.
-    :rtype: List[Tuple[Document, float]]
+    Args:
+        open_ai_token (str): The OpenAI API token.
+        query (str): The question for which documents should be searched.
+
+    Returns:
+        List[Tuple[Document, float]]: A list of search results, where each result is a tuple
+        containing a Document object and a float score.
     """
-    vector_db: Chroma = get_db_connection(open_ai_token=open_ai_token)
+    vector_db = get_db_connection(open_ai_token=open_ai_token)
 
     docs = vector_db.similarity_search_with_score(query, k=amount)
     logger.info("SUCCESS: Documents found.")

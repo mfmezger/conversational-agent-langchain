@@ -32,12 +32,60 @@ qdrant_client = QdrantClient("http://localhost", port=6333, api_key="test", pref
 try:
     qdrant_client.get_collection(collection_name="Aleph_Alpha")
     logger.info("SUCCESS: Collection already exists.")
-except Exception:
+except Exception:  # todo find the correct exception
     qdrant_client.recreate_collection(
         collection_name="Aleph_Alpha",
         vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
     )
     logger.info("SUCCESS: Collection created.")
+
+
+@load_config(location="config/chroma_db.yml")
+def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
+    """Initializes a connection to the Chroma DB.
+
+    Args:
+        cfg (DictConfig): The configuration file loaded via OmegaConf.
+        aleph_alpha_token (str): The Aleph Alpha API token.
+
+    Returns:
+        Chroma: The Chroma DB connection.
+    """
+    embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
+    # TODO: read keys from config.
+    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=cfg.qdrant.api_key, prefer_grpc=cfg.qdrant.prefer_grpc)
+
+    vector_db = Qdrant(client=qdrant_client, collection_name="Aleph_Alpha", embeddings=embedding)
+    logger.info("SUCCESS: Chroma DB initialized.")
+
+    return vector_db
+
+
+def generate_prompt(prompt_name: str, text: str, query: str) -> str:
+    """Generates a prompt for the Luminous API using a Jinja template.
+
+    Args:
+        prompt_name (str): The name of the file containing the Jinja template.
+        text (str): The text to be inserted into the template.
+        query (str): The query to be inserted into the template.
+
+    Returns:
+        str: The generated prompt.
+
+    Raises:
+        FileNotFoundError: If the specified prompt file cannot be found.
+    """
+    try:
+        with open(os.path.join("prompts", prompt_name)) as f:
+            prompt = Template(f.read())
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Prompt file '{prompt_name}' not found.")
+
+    # replace the value text with jinja
+    # Render the template with your variable
+    prompt_text = prompt.render(text=text, query=query)
+
+    return prompt_text
 
 
 def summarize_text_aleph_alpha(text: str, token: str) -> str:
@@ -90,27 +138,6 @@ def send_completion_request(text: str, token: str, model: str = "luminous-extend
         raise ValueError("Completion is empty.")
 
     return str(response.completions[0].completion)
-
-
-@load_config(location="config/chroma_db.yml")
-def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
-    """Initializes a connection to the Chroma DB.
-
-    Args:
-        cfg (DictConfig): The configuration file loaded via OmegaConf.
-        aleph_alpha_token (str): The Aleph Alpha API token.
-
-    Returns:
-        Chroma: The Chroma DB connection.
-    """
-    embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
-    # vector_db = Chroma(persist_directory=cfg.chroma.persist_directory_aa, embedding_function=embedding)
-    qdrant_client = QdrantClient("http://localhost", port=6333, api_key="test", prefer_grpc=False)
-
-    vector_db = Qdrant(client=qdrant_client, collection_name="Aleph_Alpha", embeddings=embedding)
-    logger.info("SUCCESS: Chroma DB initialized.")
-
-    return vector_db
 
 
 def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
