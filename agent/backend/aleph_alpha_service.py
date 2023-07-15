@@ -70,7 +70,7 @@ def summarize_text_aleph_alpha(text: str, token: str) -> str:
     return response.summary
 
 
-def send_completion_request(text: str, token: str) -> str:
+def send_completion_request(text: str, token: str, model: str = "luminous-extended-control") -> str:
     """Sends a completion request to the Luminous API.
 
     Args:
@@ -91,7 +91,7 @@ def send_completion_request(text: str, token: str) -> str:
     client = Client(token=token)
 
     request = CompletionRequest(prompt=Prompt.from_text(text), maximum_tokens=256, stop_sequences=["###"])
-    response = client.complete(request, model="luminous-extended-control")
+    response = client.complete(request, model=model)
 
     # ensure that the response is not empty
     if not response.completions:
@@ -351,6 +351,52 @@ def explain_completion(prompt: str, output: str, token: str):
             result[prompt[start:end]] = np.round(item.score, decimals=3)
 
     return result
+
+
+def process_documents_aleph_alpha(folder: str, token: str, type: str):
+    """Process the documents in the given folder.
+
+    Args:
+        folder (str): Folder where the documents are located.
+        token (str): The Aleph Alpha API Token.
+        type (str): The type of the documents.
+
+    Raises:
+        ValueError: If the type is not one of 'qa', 'summarization', or 'invoice'.
+    """
+    # load the documents
+    loader = DirectoryLoader(folder, glob="*.pdf", loader_cls=PyPDFLoader)
+
+    # load the documents
+    docs = loader.load()
+
+    # load the correct prompt
+    match type:
+        case "qa":
+            raise NotImplementedError
+        case "summarization":
+            raise NotImplementedError
+        case "invoice":
+            # load the prompt
+            prompt_name = "invoice.j2"
+        case _:
+            raise ValueError("Type must be one of 'qa', 'summarization', or 'invoice'.")
+
+    # load the prompt
+    with open(os.path.join("prompts", str(prompt_name))) as f:
+        template = Template(f.read())
+
+    answers = []
+    # iterate over the documents
+    for doc in docs:
+        # combine the prompt and the text
+        prompt_text = template.render(text=doc.page_content)
+        # call the luminous api
+        answer = send_completion_request(prompt_text, token, model="luminous-base-control")
+
+        answers.append(answer)
+
+    return answers
 
 
 if __name__ == "__main__":
