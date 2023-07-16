@@ -5,7 +5,6 @@ from typing import List, Tuple
 import openai
 from dotenv import load_dotenv
 from langchain.docstore.document import Document
-from langchain.docstore.document import Document as LangchainDocument
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
@@ -20,7 +19,7 @@ from agent.utils.utility import generate_prompt
 load_dotenv()
 
 
-qdrant_client = QdrantClient("http://localhost", port=6333, api_key="test", prefer_grpc=False)
+qdrant_client = QdrantClient("http://localhost", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
 collection_name = "OpenAI"
 try:
     qdrant_client.get_collection(collection_name=collection_name)
@@ -130,12 +129,12 @@ def send_completion(prompt, token):
     pass
 
 
-def qa_openai(token: str, documents: list[tuple[LangchainDocument, float]], query: str, summarization: bool = False) -> str:
+def qa_openai(token: str, documents: list[tuple[Document, float]], query: str, summarization: bool = False) -> str:
     """QA Function for OpenAI LLMs.
 
     Args:
         token (str): _description_
-        documents (list[tuple[LangchainDocument, float]]): _description_
+        documents (list[tuple[Document, float]]): _description_
         query (str): _description_
         summarization (bool, optional): _description_. Defaults to False.
 

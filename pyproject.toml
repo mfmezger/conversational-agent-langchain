@@ -7,17 +7,17 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
-langchain = "^0.0.228"
+langchain = "^0.0.234"
 streamlit = "^1.24.1"
 loguru = "^0.7.0"
 omegaconf = "^2.3.0"
-aleph-alpha-client = "^3.1.4"
+aleph-alpha-client = "^3.1.5"
 pypdf = "^3.12.0"
 tiktoken = "^0.4.0"
 python-dotenv = "^1.0.0"
 httpx = "^0.24.1"
 python-multipart = "^0.0.6"
-fastapi = "0.85.1"
+fastapi = "^0.100.0"
 openai = "^0.27.8"
 jinja2 = "^3.1.2"
 grpcio = "^1.56.0"
@@ -41,7 +41,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [settings]
-known_third_party = ["aleph_alpha_client", "dotenv", "fastapi", "gpt4all", "httpx", "jinja2", "langchain", "loguru", "numpy", "omegaconf", "pydantic", "pytest", "starlette", "streamlit"]
+known_third_party = ["aleph_alpha_client", "dotenv", "fastapi", "jinja2", "langchain", "loguru", "numpy", "omegaconf", "openai", "pydantic", "pytest", "qdrant_client", "starlette", "streamlit"]
 
 [mypy]
 # Disallow dynamic typing
