@@ -1,5 +1,5 @@
 # Conversational Agent
-This is a Backend to chat with your Data with Semantic Search.
+This is a Rest-Backend for a Conversational Agent, that allows to embedd Documentes, search for them using Semantic Search, to QA based on Documents and do document processing with Large Language Models.
 
 
 - [Conversational Agent](#conversational-agent)
