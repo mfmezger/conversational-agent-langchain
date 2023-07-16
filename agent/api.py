@@ -65,7 +65,7 @@ class QARequest(BaseModel):
     """Request for the QA endpoint."""
 
     query: Optional[str] = Field(None, title="Query", description="The question to answer.")
-    aa_or_openai: str = Field("openai", title="LLM Provider", description="The LLM provider to use for answering the question. Can be 'openai' or 'aleph-alpha'.")
+    llm_backend: str = Field("openai", title="LLM Provider", description="The LLM provider to use for answering the question. Can be 'openai' or 'aleph-alpha'.")
     token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
     amount: int = Field(1, title="Amount", description="The number of answers to return.")
     language: str = Field("de", title="Language", description="The language to use for the answer.")
@@ -77,7 +77,7 @@ class EmbeddTextFilesRequest(BaseModel):
     """The request for the Embedd Text Files endpoint."""
 
     files: List[UploadFile] = Field(..., description="The list of text files to embed.")
-    aa_or_openai: str = Field("openai", description="The LLM provider to use for embedding.")
+    llm_backend: str = Field("openai", description="The LLM provider to use for embedding.")
     token: Optional[str] = Field(None, description="The API token for the LLM provider.")
     seperator: str = Field("###", description="The seperator to use between embedded texts.")
 
@@ -86,7 +86,7 @@ class SearchRequest(BaseModel):
     """The request parameters for searching the database."""
 
     query: str = Field(..., title="Query", description="The search query.")
-    aa_or_openai: str = Field("openai", title="LLM Provider", description="The LLM provider to use for searching.")
+    llm_backend: str = Field("openai", title="LLM Provider", description="The LLM provider to use for searching.")
     token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
     amount: int = Field(3, title="Amount", description="The number of search results to return.")
 
@@ -96,7 +96,7 @@ class EmbeddTextRequest(BaseModel):
 
     text: str = Field(..., title="Text", description="The text to embed.")
     file_name: str = Field(..., title="File Name", description="The name of the file to save the embedded text to.")
-    aa_or_openai: str = Field("openai", title="LLM Provider", description="The LLM provider to use for embedding.")
+    llm_backend: str = Field("openai", title="LLM Provider", description="The LLM provider to use for embedding.")
     token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
     seperator: str = Field("###", title="seperator", description="The seperator to use between embedded texts.")
 
@@ -109,12 +109,12 @@ class ExplainRequest(BaseModel):
     token: Optional[str] = Field(None, title="API Token", description="The Aleph Alpha API token.")
 
 
-def get_token(token: Optional[str], aa_or_openai: str) -> str:
+def get_token(token: Optional[str], llm_backend: str) -> str:
     """Get the token from the environment variables or the parameter.
 
     Args:
         token (str, optional): Token from the REST service.
-        aa_or_openai (str): LLM provider. Defaults to "openai".
+        llm_backend (str): LLM provider. Defaults to "openai".
 
     Returns:
         str: Token for the LLM Provider of choice.
@@ -122,7 +122,7 @@ def get_token(token: Optional[str], aa_or_openai: str) -> str:
     Raises:
         ValueError: If no token is provided.
     """
-    env_token = ALEPH_ALPHA_API_KEY if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"} else OPENAI_API_KEY
+    env_token = ALEPH_ALPHA_API_KEY if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"} else OPENAI_API_KEY
     if env_token is None and token is None:
         raise ValueError("No token provided.")
     return token or env_token  # type: ignore
@@ -138,25 +138,25 @@ def read_root() -> str:
     return "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
-def embedd_documents_wrapper(folder_name: str, aa_or_openai: str = "openai", token: Optional[str] = None) -> None:
+def embedd_documents_wrapper(folder_name: str, llm_backend: str = "openai", token: Optional[str] = None) -> None:
     """Call the right embedding function for the chosen backend.
 
     Args:
         folder_name (str): Name of the temporary folder.
-        aa_or_openai (str, optional): LLM provider. Defaults to "openai".
+        llm_backend (str, optional): LLM provider. Defaults to "openai".
         token (str, optional): Token for the LLM Provider of choice. Defaults to None.
 
     Raises:
         ValueError: If an invalid LLM Provider is set.
     """
-    token = get_token(token, aa_or_openai)
+    token = get_token(token, llm_backend)
     if token is None:
         raise ValueError("Please provide a token for the LLM Provider of choice.")
 
-    if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
+    if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
         embedd_documents_aleph_alpha(dir=folder_name, aleph_alpha_token=token)
-    elif aa_or_openai == "openai":
+    elif llm_backend == "openai":
         # Embedd the documents with OpenAI
         embedd_documents_openai(dir=folder_name, open_ai_token=token)
     else:
@@ -177,7 +177,7 @@ def create_tmp_folder() -> str:
 
 
 @app.post("/embedd_documents")
-async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None) -> JSONResponse:
+async def upload_documents(files: List[UploadFile] = File(...), llm_backend: str = "openai", token: Optional[str] = None) -> JSONResponse:
     """Uploads multiple documents to the backend.
 
     Args:
@@ -186,7 +186,7 @@ async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: st
     Returns:
         JSONResponse: The response as JSON.
     """
-    token = get_token(token, aa_or_openai)
+    token = get_token(token, llm_backend)
     if not token:
         raise ValueError("Please provide a token for the LLM Provider of choice.")
     tmp_dir = create_tmp_folder()
@@ -207,17 +207,17 @@ async def upload_documents(files: List[UploadFile] = File(...), aa_or_openai: st
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
 
-    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=aa_or_openai, token=token)
+    embedd_documents_wrapper(folder_name=tmp_dir, llm_backend=llm_backend, token=token)
     return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
 
 
 @app.post("/embedd_document/")
-async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", token: Optional[str] = None) -> JSONResponse:
+async def embedd_one_document(file: UploadFile, llm_backend: str = "openai", token: Optional[str] = None) -> JSONResponse:
     """Uploads one document to the backend and embeds it in the database.
 
     Args:
         file (UploadFile): The file to upload. Should be a PDF file.
-        aa_or_openai (str, optional): The backend to use. Defaults to "openai".
+        llm_backend (str, optional): The backend to use. Defaults to "openai".
         token (str, optional): The API token. Defaults to None.
 
     Raises:
@@ -226,7 +226,7 @@ async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", to
     Returns:
         JSONResponse: A response indicating which files were received and saved.
     """
-    token = get_token(token, aa_or_openai)
+    token = get_token(token, llm_backend)
     if not token:
         raise ValueError("Please provide a token for the LLM Provider of choice.")
     # Create a temporary folder to save the files
@@ -240,7 +240,7 @@ async def embedd_one_document(file: UploadFile, aa_or_openai: str = "openai", to
     with open(tmp_file_path, "wb") as f:
         f.write(await file.read())
 
-    embedd_documents_wrapper(folder_name=tmp_dir, aa_or_openai=aa_or_openai, token=token)
+    embedd_documents_wrapper(folder_name=tmp_dir, llm_backend=llm_backend, token=token)
     return JSONResponse(content={"message": "File received and saved.", "filenames": file.filename})
 
 
@@ -257,14 +257,14 @@ async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
     Returns:
         JSONResponse: A response indicating that the text was received and saved, along with the name of the file it was saved to.
     """
-    token = get_token(request.token, request.aa_or_openai)
+    token = get_token(request.token, request.llm_backend)
     if token is None:
         raise ValueError("Please provide a token for the LLM Provider of choice.")
 
-    if request.aa_or_openai == "openai":
+    if request.llm_backend == "openai":
         raise ValueError("Not implemented yet.")
 
-    if request.aa_or_openai is None:
+    if request.llm_backend is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
     embedd_text_aleph_alpha(text=request.text, file_name=request.file_name, aleph_alpha_token=token, seperator=request.seperator)
@@ -302,11 +302,11 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> JSONResponse:
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
 
-    token = get_token(request.token, request.aa_or_openai)
+    token = get_token(request.token, request.llm_backend)
     if token is None:
         raise ValueError("Please provide a token for the LLM Provider of choice.")
 
-    if request.aa_or_openai is None:
+    if request.llm_backend is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
     embedd_text_files_aleph_alpha(folder=tmp_dir, aleph_alpha_token=token, seperator=request.seperator)
@@ -327,14 +327,14 @@ def search(request: SearchRequest) -> JSONResponse:
     Returns:
         List[str]: A list of matching documents.
     """
-    token = get_token(request.token, request.aa_or_openai)
+    token = get_token(request.token, request.llm_backend)
     if token is None:
         raise ValueError("Please provide a token for the LLM Provider of choice.")
 
-    if request.aa_or_openai is None:
+    if request.llm_backend is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
-    DOCS = search_database(query=request.query, aa_or_openai=request.aa_or_openai, token=token, amount=request.amount)
+    DOCS = search_database(query=request.query, llm_backend=request.llm_backend, token=token, amount=request.amount)
 
     return JSONResponse(content={"documents": DOCS})
 
@@ -356,7 +356,7 @@ def question_answer(request: QARequest) -> JSONResponse:
     if request.query is None:
         raise ValueError("Please provide a Question.")
 
-    token = get_token(request.token, request.aa_or_openai)
+    token = get_token(request.token, request.llm_backend)
     if not token:
         raise ValueError("Please provide a token.")
 
@@ -369,20 +369,20 @@ def question_answer(request: QARequest) -> JSONResponse:
         # combine the texts
         text = combine_text_from_list(request.history_list)
 
-        if request.aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
+        if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
 
             # summarize the text
             summary = summarize_text_aleph_alpha(text=text, token=token)
             # combine the history and the query
             request.query = f"{summary}\n{request.query}"
 
-        elif request.aa_or_openai == "openai":
+        elif request.llm_backend == "openai":
             pass
 
         else:
             raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
-    documents = search_database(query=request.query, aa_or_openai=request.aa_or_openai, token=token, amount=request.amount)
+    documents = search_database(query=request.query, llm_backend=request.llm_backend, token=token, amount=request.amount)
 
     # call the qa function
     answer, prompt, meta_data = qa_aleph_alpha(query=request.query, documents=documents, aleph_alpha_token=token)
@@ -415,7 +415,7 @@ def explain_output(request: ExplainRequest) -> JSONResponse:
     if request.prompt == "" or request.output == "":
         raise ValueError("Please provide a prompt and output.")
 
-    token = get_token(request.token, aa_or_openai="aa")
+    token = get_token(request.token, llm_backend="aa")
     if token:
         explanations = explain_completion(prompt=request.prompt, output=request.output, token=token)
         return JSONResponse(content={"explanations": explanations})
@@ -424,19 +424,19 @@ def explain_output(request: ExplainRequest) -> JSONResponse:
 
 
 @app.post("/process_document")
-async def process_document(files: List[UploadFile] = File(...), aa_or_openai: str = "openai", token: Optional[str] = None, type: str = "invoice") -> JSONResponse:
+async def process_document(files: List[UploadFile] = File(...), llm_backend: str = "openai", token: Optional[str] = None, type: str = "invoice") -> JSONResponse:
     """Process a document.
 
     Args:
         files (UploadFile): _description_
-        aa_or_openai (str, optional): _description_. Defaults to "openai".
+        llm_backend (str, optional): _description_. Defaults to "openai".
         token (Optional[str], optional): _description_. Defaults to None.
         type (str, optional): _description_. Defaults to "invoice".
 
     Returns:
         JSONResponse: _description_
     """
-    token = get_token(token, aa_or_openai)
+    token = get_token(token, llm_backend)
     if not token:
         raise ValueError("Please provide a token.")
 
@@ -462,12 +462,12 @@ async def process_document(files: List[UploadFile] = File(...), aa_or_openai: st
     process_documents_aleph_alpha(folder=tmp_dir, token=token, type=type)
 
 
-def search_database(query: str, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 3) -> List[tuple[LangchainDocument, float]]:
+def search_database(query: str, llm_backend: str = "openai", token: Optional[str] = None, amount: int = 3) -> List[tuple[LangchainDocument, float]]:
     """Searches the database for a query.
 
     Args:
         query (str): The search query.
-        aa_or_openai (str, optional): The LLM provider. Defaults to "openai".
+        llm_backend (str, optional): The LLM provider. Defaults to "openai".
         token (str, optional): The API token. Defaults to None.
         amount (int, optional): The amount of search results. Defaults to 3.
 
@@ -477,13 +477,13 @@ def search_database(query: str, aa_or_openai: str = "openai", token: Optional[st
     Returns:
         List: A list of documents that match the query.
     """
-    token = get_token(token, aa_or_openai)
+    token = get_token(token, llm_backend)
     if not token:
         raise ValueError("Please provide a token.")
-    if aa_or_openai in {"aleph-alpha", "aleph_alpha", "aa"}:
+    if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
         documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query, amount=amount)
-    elif aa_or_openai == "openai":
+    elif llm_backend == "openai":
         documents = search_documents_openai(open_ai_token=token, query=query, amount=amount)
 
         # Embedd the documents with OpenAI#
