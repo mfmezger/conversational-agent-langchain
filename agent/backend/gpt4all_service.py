@@ -29,7 +29,7 @@ try:
 except Exception:
     qdrant_client.recreate_collection(
         collection_name=collection_name,
-        vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
+        vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
     )
     logger.info("SUCCESS: Collection created.")
 
@@ -75,7 +75,14 @@ def embedd_documents_gpt4all(dir: str) -> None:
 
 
 def summarize_text_gpt4all(text: str) -> str:
-    """Summarize text with GPT4ALL."""
+    """Summarize text with GPT4ALL.
+
+    Args:
+        text (str): The text to be summarized.
+
+    Returns:
+        str: The summarized text.
+    """
     prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, language="de")
 
     model = GPT4All("orca-mini-3b.ggmlv3.q4_0.bin")
@@ -85,8 +92,16 @@ def summarize_text_gpt4all(text: str) -> str:
     return output
 
 
-def complete_text_gpt4all(text: str, query: str) -> str:
-    """Complete text with GPT4ALL."""
+def completion_text_gpt4all(text: str, query: str) -> str:
+    """Complete text with GPT4ALL.
+
+    Args:
+        text (str): The text as basic input.
+        query (str): The query to be inserted into the template.
+
+    Returns:
+        str: The completed text.
+    """
     prompt = generate_prompt(prompt_name="gpt4all-completion.j2", text=text, query=query, language="de")
 
     model = GPT4All("orca-mini-3b.ggmlv3.q4_0.bin")
@@ -96,7 +111,7 @@ def complete_text_gpt4all(text: str, query: str) -> str:
     return output
 
 
-def search_documents_openai(query: str, amount: int) -> List[Tuple[Document, float]]:
+def search_documents_gpt4all(query: str, amount: int) -> List[Tuple[Document, float]]:
     """Searches the documents in the Chroma DB with a specific query.
 
     Args:
@@ -114,6 +129,9 @@ def search_documents_openai(query: str, amount: int) -> List[Tuple[Document, flo
     return docs
 
 
-def completion_gpt4all():
-    """Complete text with GPT4ALL."""
-    pass
+if __name__ == "__main__":
+    embedd_documents_gpt4all(dir="data")
+
+    print(f'Summary: {summarize_text_gpt4all(text="Das ist ein Test.")}')
+
+    print(f'Completion: {completion_text_gpt4all(text="Das ist ein Test.", query="Was ist das?")}')

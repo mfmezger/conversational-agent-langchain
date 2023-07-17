@@ -21,6 +21,10 @@ from agent.backend.aleph_alpha_service import (
     search_documents_aleph_alpha,
     summarize_text_aleph_alpha,
 )
+from agent.backend.gpt4all_service import (
+    embedd_documents_gpt4all,
+    search_documents_gpt4all,
+)
 from agent.backend.open_ai_service import (
     embedd_documents_openai,
     search_documents_openai,
@@ -159,6 +163,8 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "openai", toke
     elif llm_backend == "openai":
         # Embedd the documents with OpenAI
         embedd_documents_openai(dir=folder_name, open_ai_token=token)
+    elif llm_backend == "gpt4all":
+        embedd_documents_gpt4all(dir=folder_name)
     else:
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
@@ -261,14 +267,17 @@ async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
     if token is None:
         raise ValueError("Please provide a token for the LLM Provider of choice.")
 
-    if request.llm_backend == "openai":
+    if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
+        # Embedd the documents with Aleph Alpha
+        embedd_text_aleph_alpha(text=request.text, file_name=request.file_name, aleph_alpha_token=token, seperator=request.seperator)
+    elif request.llm_backend == "openai":
+        # Embedd the documents with OpenAI
         raise ValueError("Not implemented yet.")
-
-    if request.llm_backend is None:
-        raise ValueError("Please provide a LLM Provider of choice.")
-
-    embedd_text_aleph_alpha(text=request.text, file_name=request.file_name, aleph_alpha_token=token, seperator=request.seperator)
-    return JSONResponse(content={"message": "Text received and saved.", "filenames": request.file_name})
+    elif request.llm_backend == "gpt4all":
+        # embedd_documents_gpt4all(dir=)
+        raise ValueError("Not implemented yet.")
+    else:
+        raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
 
 @app.post("/embedd_text_file/")
@@ -485,6 +494,8 @@ def search_database(query: str, llm_backend: str = "openai", token: Optional[str
         documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query, amount=amount)
     elif llm_backend == "openai":
         documents = search_documents_openai(open_ai_token=token, query=query, amount=amount)
+    elif llm_backend == "gpt4all":
+        documents = search_documents_gpt4all(query=query, amount=amount)
 
         # Embedd the documents with OpenAI#
     else:

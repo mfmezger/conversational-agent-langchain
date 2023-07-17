@@ -84,6 +84,13 @@ pip install poetry
 poetry install
 ```
 
+To run the Qdrant Database local just run:
+
+```bash
+docker compose up qdrant
+```
+
+
 To run the Backend use this command in the root directory:
 
 ```bash
