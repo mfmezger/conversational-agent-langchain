@@ -3,6 +3,7 @@ import os
 from typing import List, Tuple
 
 from dotenv import load_dotenv
+from gpt4all import GPT4All
 from langchain.docstore.document import Document
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings import GPT4AllEmbeddings
@@ -13,8 +14,12 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models
 
 from agent.utils.configuration import load_config
+from agent.utils.utility import generate_prompt
 
 load_dotenv()
+
+# TODO: do you need to preload the model?
+
 
 qdrant_client = QdrantClient("http://localhost", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
 collection_name = "GPT4ALL"
@@ -69,12 +74,29 @@ def embedd_documents_gpt4all(dir: str) -> None:
     logger.info("SUCCESS: Texts embedded.")
 
 
-def summarize_text_gpt4all():
+def summarize_text_gpt4all(text: str) -> str:
     """Summarize text with GPT4ALL."""
-    pass
+    prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, language="de")
+
+    model = GPT4All("orca-mini-3b.ggmlv3.q4_0.bin")
+
+    output = model.generate(prompt, max_tokens=300)
+
+    return output
 
 
-def search_documents_openai(open_ai_token: str, query: str, amount: int) -> List[Tuple[Document, float]]:
+def complete_text_gpt4all(text: str, query: str) -> str:
+    """Complete text with GPT4ALL."""
+    prompt = generate_prompt(prompt_name="gpt4all-completion.j2", text=text, query=query, language="de")
+
+    model = GPT4All("orca-mini-3b.ggmlv3.q4_0.bin")
+
+    output = model.generate(prompt, max_tokens=300)
+
+    return output
+
+
+def search_documents_openai(query: str, amount: int) -> List[Tuple[Document, float]]:
     """Searches the documents in the Chroma DB with a specific query.
 
     Args:

@@ -34,7 +34,7 @@ def combine_text_from_list(input_list: list) -> str:
     return combined_text
 
 
-def generate_prompt(prompt_name: str, text: str, query: str, language: str = "de") -> str:
+def generate_prompt(prompt_name: str, text: str, query: str = "", language: str = "de") -> str:
     """Generates a prompt for the Luminous API using a Jinja template.
 
     Args:
@@ -50,7 +50,6 @@ def generate_prompt(prompt_name: str, text: str, query: str, language: str = "de
         FileNotFoundError: If the specified prompt file cannot be found.
     """
     try:
-        logger.info(f"ÖLASKJDÖLASKJD {language}")
         match language:
             case "en":
                 lang = "en"
@@ -65,7 +64,10 @@ def generate_prompt(prompt_name: str, text: str, query: str, language: str = "de
 
     # replace the value text with jinja
     # Render the template with your variable
-    prompt_text = prompt.render(text=text, query=query)
+    if query:
+        prompt_text = prompt.render(text=text, query=query)
+    else:
+        prompt_text = prompt.render(text=text)
 
     return prompt_text
 
