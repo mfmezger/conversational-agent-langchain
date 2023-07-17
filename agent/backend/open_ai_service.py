@@ -5,7 +5,6 @@ from typing import List, Tuple
 import openai
 from dotenv import load_dotenv
 from langchain.docstore.document import Document
-from langchain.docstore.document import Document as LangchainDocument
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
@@ -20,7 +19,7 @@ from agent.utils.utility import generate_prompt
 load_dotenv()
 
 
-qdrant_client = QdrantClient("http://localhost", port=6333, api_key="test", prefer_grpc=False)
+qdrant_client = QdrantClient("http://localhost", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
 collection_name = "OpenAI"
 try:
     qdrant_client.get_collection(collection_name=collection_name)
@@ -103,7 +102,8 @@ def summarize_text_openai(text: str, token: str, cfg: DictConfig) -> str:
     Returns:
         str: The summary of the text.
     """
-    prompt = f"Summarize the following text:\n\n{text}\n\nSummary:"
+    prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, language="de")
+
     openai.api_key = token
     response = openai.Completion.create(
         engine=cfg.openai.model,
@@ -120,22 +120,43 @@ def summarize_text_openai(text: str, token: str, cfg: DictConfig) -> str:
     return response.choices[0].text
 
 
-def send_completion(prompt, token):
-    """Send a completion.
+@load_config(location="config/ai/openai.yml")
+def send_completion(text: str, query: str, token: str, cfg: DictConfig) -> str:
+    """Sent completion request to OpenAI API.
 
     Args:
-        prompt (_type_): _description_
-        token (_type_): _description_
+        text (str): The text on which the completion should be based.
+        query (str): The query for the completion.
+        token (str): The token for the OpenAI API.
+        cfg (DictConfig):
+
+    Returns:
+        str: Response from the OpenAI API.
     """
-    pass
+    prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, query=query, language="de")
+
+    openai.api_key = token
+    response = openai.Completion.create(
+        engine=cfg.openai.model,
+        prompt=prompt,
+        temperature=cfg.openai.temperature,
+        max_tokens=cfg.openai.max_tokens,
+        top_p=cfg.openai.top_p,
+        frequency_penalty=cfg.openai.frequency_penalty,
+        presence_penalty=cfg.openai.presence_penalty,
+        best_of=cfg.openai.best_of,
+        stop=cfg.openai.stop,
+    )
+
+    return response.choices[0].text
 
 
-def qa_openai(token: str, documents: list[tuple[LangchainDocument, float]], query: str, summarization: bool = False) -> str:
+def qa_openai(token: str, documents: list[tuple[Document, float]], query: str, summarization: bool = False) -> str:
     """QA Function for OpenAI LLMs.
 
     Args:
         token (str): _description_
-        documents (list[tuple[LangchainDocument, float]]): _description_
+        documents (list[tuple[Document, float]]): _description_
         query (str): _description_
         summarization (bool, optional): _description_. Defaults to False.
 
