@@ -8,7 +8,6 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.openapi.utils import get_openapi
 from langchain.docstore.document import Document as LangchainDocument
 from loguru import logger
-from pydantic import BaseModel, Field
 from starlette.responses import JSONResponse
 
 from agent.backend.aleph_alpha_service import (
@@ -28,6 +27,13 @@ from agent.backend.gpt4all_service import (
 from agent.backend.open_ai_service import (
     embedd_documents_openai,
     search_documents_openai,
+)
+from agent.data_model.rest_data_model import (
+    EmbeddTextFilesRequest,
+    EmbeddTextRequest,
+    ExplainRequest,
+    QARequest,
+    SearchRequest,
 )
 from agent.utils.utility import combine_text_from_list
 
@@ -63,54 +69,6 @@ load_dotenv()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
 logger.info("Loading REST API Finished.")
-
-
-class QARequest(BaseModel):
-    """Request for the QA endpoint."""
-
-    query: Optional[str] = Field(None, title="Query", description="The question to answer.")
-    llm_backend: str = Field("openai", title="LLM Provider", description="The LLM provider to use for answering the question. Can be 'openai' or 'aleph-alpha'.")
-    token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
-    amount: int = Field(1, title="Amount", description="The number of answers to return.")
-    language: str = Field("de", title="Language", description="The language to use for the answer.")
-    history: int = Field(0, title="History", description="The number of previous questions to include in the context.")
-    history_list: List[str] = Field(None, title="History List", description="A list of previous questions to include in the context.")
-
-
-class EmbeddTextFilesRequest(BaseModel):
-    """The request for the Embedd Text Files endpoint."""
-
-    files: List[UploadFile] = Field(..., description="The list of text files to embed.")
-    llm_backend: str = Field("openai", description="The LLM provider to use for embedding.")
-    token: Optional[str] = Field(None, description="The API token for the LLM provider.")
-    seperator: str = Field("###", description="The seperator to use between embedded texts.")
-
-
-class SearchRequest(BaseModel):
-    """The request parameters for searching the database."""
-
-    query: str = Field(..., title="Query", description="The search query.")
-    llm_backend: str = Field("openai", title="LLM Provider", description="The LLM provider to use for searching.")
-    token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
-    amount: int = Field(3, title="Amount", description="The number of search results to return.")
-
-
-class EmbeddTextRequest(BaseModel):
-    """The request parameters for embedding text."""
-
-    text: str = Field(..., title="Text", description="The text to embed.")
-    file_name: str = Field(..., title="File Name", description="The name of the file to save the embedded text to.")
-    llm_backend: str = Field("openai", title="LLM Provider", description="The LLM provider to use for embedding.")
-    token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
-    seperator: str = Field("###", title="seperator", description="The seperator to use between embedded texts.")
-
-
-class ExplainRequest(BaseModel):
-    """The request parameters for explaining the output."""
-
-    prompt: str = Field(..., title="Prompt", description="The prompt used to generate the output.")
-    output: str = Field(..., title="Output", description="The output to be explained.")
-    token: Optional[str] = Field(None, title="API Token", description="The Aleph Alpha API token.")
 
 
 def get_token(token: Optional[str], llm_backend: str) -> str:
@@ -218,7 +176,7 @@ async def upload_documents(files: List[UploadFile] = File(...), llm_backend: str
 
 
 @app.post("/embedd_document/")
-async def embedd_one_document(file: UploadFile, llm_backend: str = "openai", token: Optional[str] = None) -> JSONResponse:
+async def embedd_document(file: UploadFile, llm_backend: str = "openai", token: Optional[str] = None) -> JSONResponse:
     """Uploads one document to the backend and embeds it in the database.
 
     Args:
@@ -467,7 +425,7 @@ def explain_output(request: ExplainRequest) -> JSONResponse:
 
 
 @app.post("/process_document")
-async def process_document(files: List[UploadFile] = File(...), llm_backend: str = "openai", token: Optional[str] = None, type: str = "invoice") -> JSONResponse:
+async def process_document(files: List[UploadFile] = File(...), llm_backend: str = "openai", token: Optional[str] = None, type: str = "invoice") -> None:
     """Process a document.
 
     Args:
