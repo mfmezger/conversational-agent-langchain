@@ -1,6 +1,5 @@
 """FastAPI Backend for the Knowledge Agent."""
 import os
-import uuid
 from typing import List, Optional
 
 from dotenv import load_dotenv
@@ -23,6 +22,7 @@ from agent.backend.aleph_alpha_service import (
 from agent.backend.gpt4all_service import (
     embedd_documents_gpt4all,
     search_documents_gpt4all,
+    summarize_text_gpt4all,
 )
 from agent.backend.open_ai_service import (
     embedd_documents_openai,
@@ -35,11 +35,13 @@ from agent.data_model.rest_data_model import (
     QARequest,
     SearchRequest,
 )
-from agent.utils.utility import combine_text_from_list
+from agent.utils.utility import combine_text_from_list, create_tmp_folder
 
 # add file logger for loguru
-logger.add("logs/file_{time}.log", backtrace=True, diagnose=True)
+logger.add("logs/file_{time}.log", backtrace=False, diagnose=False)
 logger.info("Startup.")
+
+# TODO: Refactor
 
 
 def my_schema() -> dict:
@@ -86,7 +88,9 @@ def get_token(token: Optional[str], llm_backend: str) -> str:
     """
     env_token = ALEPH_ALPHA_API_KEY if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"} else OPENAI_API_KEY
     if env_token is None and token is None:
-        raise ValueError("No token provided.")
+        raise ValueError("No token provided.")  #
+
+    # TODO: think about raising exception right there.
     return token or env_token  # type: ignore
 
 
@@ -127,21 +131,8 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "openai", toke
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
 
-def create_tmp_folder() -> str:
-    """Creates a temporary folder for files to store.
-
-    Returns:
-        str: The directory name.
-    """
-    # Create a temporary folder to save the files
-    tmp_dir = f"tmp_{str(uuid.uuid4())}"
-    os.makedirs(tmp_dir)
-    logger.info(f"Created new folder {tmp_dir}.")
-    return tmp_dir
-
-
 @app.post("/embedd_documents")
-async def upload_documents(files: List[UploadFile] = File(...), llm_backend: str = "openai", token: Optional[str] = None) -> JSONResponse:
+async def post_upload_documents(files: List[UploadFile] = File(...), llm_backend: str = "openai", token: Optional[str] = None) -> JSONResponse:
     """Uploads multiple documents to the backend.
 
     Args:
@@ -176,7 +167,7 @@ async def upload_documents(files: List[UploadFile] = File(...), llm_backend: str
 
 
 @app.post("/embedd_document/")
-async def embedd_document(file: UploadFile, llm_backend: str = "openai", token: Optional[str] = None) -> JSONResponse:
+async def post_embedd_document(file: UploadFile, llm_backend: str = "openai", token: Optional[str] = None) -> JSONResponse:
     """Uploads one document to the backend and embeds it in the database.
 
     Args:
@@ -228,6 +219,8 @@ async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
     if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
         embedd_text_aleph_alpha(text=request.text, file_name=request.file_name, aleph_alpha_token=token, seperator=request.seperator)
+        # return a success notificaton
+        return JSONResponse("Embedding Sucessful.")
     elif request.llm_backend == "openai":
         # Embedd the documents with OpenAI
         raise ValueError("Not implemented yet.")
@@ -306,6 +299,7 @@ def search(request: SearchRequest) -> JSONResponse:
     return JSONResponse(content={"documents": DOCS})
 
 
+# TODO: REFACTOR
 @app.post("/qa")
 def question_answer(request: QARequest) -> JSONResponse:
     """Answer a question based on the documents in the database.
@@ -335,7 +329,7 @@ def question_answer(request: QARequest) -> JSONResponse:
     if request.history:
         # combine the texts
         text = combine_text_from_list(request.history_list)
-
+        # TODO: refactor for match.
         if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
 
             # summarize the text
@@ -346,13 +340,27 @@ def question_answer(request: QARequest) -> JSONResponse:
         elif request.llm_backend == "openai":
             pass
 
+        elif request.llm_backend == "gpt4all":
+            # summarize the text
+            summary = summarize_text_gpt4all(text=text)
+            # combine the history and the query
+            request.query = f"{summary}\n{request.query}"
         else:
-            raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
+            raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
     documents = search_database(query=request.query, llm_backend=request.llm_backend, token=token, amount=request.amount)
 
     # call the qa function
-    answer, prompt, meta_data = qa_aleph_alpha(query=request.query, documents=documents, aleph_alpha_token=token)
+    if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
+        answer, prompt, meta_data = qa_aleph_alpha(query=request.query, documents=documents, aleph_alpha_token=token)
+    elif request.llm_backend == "openai":
+        # todo:
+        raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
+    elif request.llm_backend == "gpt4all":
+        # todo:
+        raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
+    else:
+        raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
     return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
 
@@ -380,7 +388,7 @@ def explain_question_answer(query: Optional[str] = None, aa_or_openai: str = "op
 
     if token:
         token = get_token(token, aa_or_openai)
-        documents = search_database(query=query, aa_or_openai=aa_or_openai, token=token, amount=amount)
+        documents = search_database(query=query, llm_backend=aa_or_openai, token=token, amount=amount)
 
         # call the qa function
         answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)

@@ -1,5 +1,6 @@
 """This is the utility module."""
 import os
+import uuid
 
 from jinja2 import Template
 from loguru import logger
@@ -75,3 +76,16 @@ def generate_prompt(prompt_name: str, text: str, query: str = "", language: str 
 if __name__ == "__main__":
     # test the function
     generate_prompt("qa.j2", "This is a test text.", "What is the meaning of life?")
+
+
+def create_tmp_folder() -> str:
+    """Creates a temporary folder for files to store.
+
+    Returns:
+        str: The directory name.
+    """
+    # Create a temporary folder to save the files
+    tmp_dir = f"tmp_{str(uuid.uuid4())}"
+    os.makedirs(tmp_dir)
+    logger.info(f"Created new folder {tmp_dir}.")
+    return tmp_dir
