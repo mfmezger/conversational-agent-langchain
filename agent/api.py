@@ -48,7 +48,7 @@ def my_schema() -> dict:
     """Used to generate the OpenAPI schema.
 
     Returns:
-        _type_: _description_
+        FastAPI: FastAPI App
     """
     openapi_schema = get_openapi(
         title="Conversational AI API",
@@ -86,11 +86,11 @@ def get_token(token: Optional[str], llm_backend: str) -> str:
     Raises:
         ValueError: If no token is provided.
     """
+    # TODO: this does not work now if the gpt4all backend is selected because ist does not use a api key
     env_token = ALEPH_ALPHA_API_KEY if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"} else OPENAI_API_KEY
     if env_token is None and token is None:
         raise ValueError("No token provided.")  #
 
-    # TODO: think about raising exception right there.
     return token or env_token  # type: ignore
 
 
@@ -115,9 +115,11 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "openai", toke
     Raises:
         ValueError: If an invalid LLM Provider is set.
     """
-    token = get_token(token, llm_backend)
-    if token is None:
-        raise ValueError("Please provide a token for the LLM Provider of choice.")
+    token = ""
+    if llm_backend != "gpt4all":
+        token = get_token(token, llm_backend)
+        if token is None:
+            raise ValueError("Please provide a token for the LLM Provider of choice.")
 
     if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
@@ -141,9 +143,10 @@ async def post_upload_documents(files: List[UploadFile] = File(...), llm_backend
     Returns:
         JSONResponse: The response as JSON.
     """
-    token = get_token(token, llm_backend)
-    if not token:
-        raise ValueError("Please provide a token for the LLM Provider of choice.")
+    if llm_backend != "gpt4all":
+        token = get_token(token, llm_backend)
+        if token is None:
+            raise ValueError("Please provide a token for the LLM Provider of choice.")
     tmp_dir = create_tmp_folder()
 
     file_names = []
@@ -181,9 +184,10 @@ async def post_embedd_document(file: UploadFile, llm_backend: str = "openai", to
     Returns:
         JSONResponse: A response indicating which files were received and saved.
     """
-    token = get_token(token, llm_backend)
-    if not token:
-        raise ValueError("Please provide a token for the LLM Provider of choice.")
+    if llm_backend != "gpt4all":
+        token = get_token(token, llm_backend)
+        if token is None:
+            raise ValueError("Please provide a token for the LLM Provider of choice.")
     # Create a temporary folder to save the files
     tmp_dir = create_tmp_folder()
 
@@ -212,9 +216,11 @@ async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
     Returns:
         JSONResponse: A response indicating that the text was received and saved, along with the name of the file it was saved to.
     """
-    token = get_token(request.token, request.llm_backend)
-    if token is None:
-        raise ValueError("Please provide a token for the LLM Provider of choice.")
+    token = ""
+    if request.llm_backend != "gpt4all":
+        token = get_token(request.token, request.llm_backend)
+        if token is None:
+            raise ValueError("Please provide a token for the LLM Provider of choice.")
 
     if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
@@ -287,9 +293,11 @@ def search(request: SearchRequest) -> JSONResponse:
     Returns:
         List[str]: A list of matching documents.
     """
-    token = get_token(request.token, request.llm_backend)
-    if token is None:
-        raise ValueError("Please provide a token for the LLM Provider of choice.")
+    token = ""
+    if request.llm_backend != "gpt4all":
+        token = get_token(request.token, request.llm_backend)
+        if token is None:
+            raise ValueError("Please provide a token for the LLM Provider of choice.")
 
     if request.llm_backend is None:
         raise ValueError("Please provide a LLM Provider of choice.")
@@ -317,9 +325,11 @@ def question_answer(request: QARequest) -> JSONResponse:
     if request.query is None:
         raise ValueError("Please provide a Question.")
 
-    token = get_token(request.token, request.llm_backend)
-    if not token:
-        raise ValueError("Please provide a token.")
+    token = ""
+    if request.llm_backend != "gpt4all":
+        token = get_token(request.token, request.llm_backend)
+        if token is None:
+            raise ValueError("Please provide a token for the LLM Provider of choice.")
 
     # if the history flag is activated and the history is not provided, raise an error
     if request.history and request.history is None:
@@ -412,10 +422,6 @@ def explain_output(request: ExplainRequest) -> JSONResponse:
     Returns:
         Dict[str, float]: A dictionary containing the prompt and the score of the output.
     """
-    # explain the output
-    logger.error(f"Output {request.output}")
-    logger.error(f"Prompt {request.prompt}")
-
     # fail if prompt or output are not provided
     if request.prompt is None or request.output is None:
         raise ValueError("Please provide a prompt and output.")
