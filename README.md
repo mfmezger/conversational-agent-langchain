@@ -6,7 +6,8 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
   - [Recent Updates](#recent-updates)
   - [Redoc API Documentation](#redoc-api-documentation)
   - [Project Description](#project-description)
-  - [Architecture Semantic Search](#architecture-semantic-search)
+  - [Semantic Search](#semantic-search)
+  - [Architecture](#architecture)
   - [Components](#components)
   - [Available LLM Backends](#available-llm-backends)
   - [Deployment](#deployment)
@@ -35,10 +36,13 @@ Features
 - Provides a REST API built with FastAPI for easy integration with other applications.
 - Has a basic gui.
 
-## Architecture Semantic Search
-![Semantic Search Architecture](resources/Architecture.png)
+## Semantic Search
+![Semantic Search Architecture](resources/search_flow.png)
 
 Semantic search is an advanced search technique that aims to understand the meaning and context of a user's query, rather than matching keywords. It involves natural language processing (NLP) and machine learning algorithms to analyze and interpret user intent, synonyms, relationships between words, and the structure of content. By considering these factors, semantic search improves the accuracy and relevance of search results, providing a more intuitive and personalized user experience.
+
+## Architecture
+![Semantic Search Architecture](resources/architecture.png)
 
 ## Components
 

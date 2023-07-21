@@ -551,12 +551,12 @@ jinja2==3.1.2 ; python_version >= "3.11" and python_version < "3.12" \
 jsonschema==4.17.3 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:0f864437ab8b6076ba6707453ef8f98a6a0d512a80e93f8abdb676f737ecb60d \
     --hash=sha256:a870ad254da1a8ca84b6a2905cac29d265f805acc57af304784962a2aa6508f6
-langchain==0.0.234 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:a287f0b944fb1b48cc107cedb8c1ad052e0559327c7658ae20e6ce2e8e851122 \
-    --hash=sha256:fdb5ba8176497e5bdd7cbb7594125b1149d306f8c9ed31750160271fece356ee
-langsmith==0.0.5 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:c9ce19cf7a45d4b9ef74b3133ace4d0583bc992383296d03c05065e8f871e01f \
-    --hash=sha256:ffad2fc638cfee8c9d27c9eae2fa3c3f9ec423bf443b1dc44cc8184fa34cd6b2
+langchain==0.0.238 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:17ba2cd5386c0bbc2c7725b5f78fa85a3e040318f09fd64c57a20554461f33c7 \
+    --hash=sha256:25ff3bb2c3f166ffec4dd82d746561b85d535da5e8d47dab4e360fe6ceb298ee
+langsmith==0.0.12 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:5abf30ac4ebb6b68955bea617669585e80a6fe9def90664503d5fbd6d095e91e \
+    --hash=sha256:d7a4360d1984b57689c6470ffcef79dcb217dd7129bdfd3bcfcb22dc058787f6
 loguru==0.7.0 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:1612053ced6ae84d7959dd7d5e431a0532642237ec21f7fd83ac73fe539e03e1 \
     --hash=sha256:b93aa30099fa6860d4727f1b81f8718e965bb96253fa190fab2077aaad6d15d3
