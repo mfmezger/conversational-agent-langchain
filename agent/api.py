@@ -98,7 +98,7 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "openai", toke
     Raises:
         ValueError: If an invalid LLM Provider is set.
     """
-    token = validate_token
+    token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
@@ -122,7 +122,7 @@ async def post_upload_documents(files: List[UploadFile] = File(...), llm_backend
     Returns:
         JSONResponse: The response as JSON.
     """
-    token = validate_token()
+    token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
     tmp_dir = create_tmp_folder()
 
     file_names = []
@@ -160,7 +160,7 @@ async def post_embedd_document(file: UploadFile, llm_backend: str = "openai", to
     Returns:
         JSONResponse: A response indicating which files were received and saved.
     """
-    token = validate_token()
+    token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
     # Create a temporary folder to save the files
     tmp_dir = create_tmp_folder()
 
@@ -335,7 +335,7 @@ def question_answer(request: QARequest) -> JSONResponse:
 
 
 @app.get("/explain-qa")
-def explain_question_answer(query: Optional[str] = None, aa_or_openai: str = "openai", token: Optional[str] = None, amount: int = 1) -> JSONResponse:
+def explain_question_answer(query: Optional[str] = None, llm_backend: str = "openai", token: Optional[str] = None, amount: int = 1) -> JSONResponse:
     """Answer a question & explains it based on the documents in the database.
 
     This uses the normal qa but combines it with the explain function.
@@ -355,17 +355,14 @@ def explain_question_answer(query: Optional[str] = None, aa_or_openai: str = "op
     if query is None:
         raise ValueError("Please provide a Question.")
 
-    if token:
-        token = get_token(token, aa_or_openai)
-        documents = search_database(query=query, llm_backend=aa_or_openai, token=token, amount=amount)
+    token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
-        # call the qa function
-        answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)
+    documents = search_database(query=query, llm_backend=llm_backend, token=token, amount=amount)
 
-        return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
+    # call the qa function
+    answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)
 
-    else:
-        raise ValueError("Please provide a token.")
+    return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
 
 
 @app.post("/explain")
@@ -389,12 +386,9 @@ def explain_output(request: ExplainRequest) -> JSONResponse:
     if request.prompt == "" or request.output == "":
         raise ValueError("Please provide a prompt and output.")
 
-    token = get_token(request.token, llm_backend="aa")
-    if token:
-        explanations = explain_completion(prompt=request.prompt, output=request.output, token=token)
-        return JSONResponse(content={"explanations": explanations})
-    else:
-        raise ValueError("Please provide a token.")
+    token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    explanations = explain_completion(prompt=request.prompt, output=request.output, token=token)
+    return JSONResponse(content={"explanations": explanations})
 
 
 @app.post("/process_document")

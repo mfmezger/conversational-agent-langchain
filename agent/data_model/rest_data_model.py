@@ -51,3 +51,4 @@ class ExplainRequest(BaseModel):
     prompt: str = Field(..., title="Prompt", description="The prompt used to generate the output.")
     output: str = Field(..., title="Output", description="The output to be explained.")
     token: Optional[str] = Field(None, title="API Token", description="The Aleph Alpha API token.")
+    llm_backend: str = Field("openai", title="LLM Provider", description="The LLM provider to use for embedding.")

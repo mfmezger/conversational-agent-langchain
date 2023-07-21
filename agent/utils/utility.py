@@ -1,7 +1,6 @@
 """This is the utility module."""
 import os
 import uuid
-from typing import Optional
 
 from jinja2 import Template
 from loguru import logger
@@ -92,7 +91,7 @@ def create_tmp_folder() -> str:
     return tmp_dir
 
 
-def get_token(token: Optional[str], llm_backend: str, aleph_alpha_key: str, openai_key: str) -> str:
+def get_token(token: str | None, llm_backend: str | None, aleph_alpha_key: str | None, openai_key: str | None) -> str:
     """Get the token from the environment variables or the parameter.
 
     Args:
@@ -112,7 +111,7 @@ def get_token(token: Optional[str], llm_backend: str, aleph_alpha_key: str, open
     return token or env_token  # type: ignore
 
 
-def validate_token(token: str, llm_backend: str, aleph_alpha_key: str, openai_key: str) -> str:
+def validate_token(token: str | None, llm_backend: str, aleph_alpha_key: str | None, openai_key: str | None) -> str:
     """Test if a token is available, and raise an error if it is missing when needed.
 
     Args:
@@ -127,7 +126,6 @@ def validate_token(token: str, llm_backend: str, aleph_alpha_key: str, openai_ke
     Returns:
         str: Token
     """
-    token = ""
     if llm_backend != "gpt4all":
         token = get_token(token, llm_backend, aleph_alpha_key, openai_key)
         if token is None:
