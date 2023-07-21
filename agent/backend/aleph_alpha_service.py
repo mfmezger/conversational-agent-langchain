@@ -56,7 +56,7 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
     vector_db = Qdrant(client=qdrant_client, collection_name="Aleph_Alpha", embeddings=embedding)
-    logger.info("SUCCESS: Chroma DB initialized.")
+    logger.info("SUCCESS: Qdrant DB initialized.")
 
     return vector_db
 
@@ -134,7 +134,7 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
     logger.info(f"Loaded {len(docs)} documents.")
     text_list = [doc.page_content for doc in docs]
     metadata_list = [doc.metadata for doc in docs]
-    vector_db.add_texts(texts=text_list, metadata=metadata_list)
+    vector_db.add_texts(texts=text_list, metadatas=metadata_list)
 
     logger.info("SUCCESS: Texts embedded.")
 
@@ -164,7 +164,7 @@ def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, s
     # add _ and an incrementing number to the metadata
     metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
 
-    vector_db.add_texts(texts=text_list, metadata=metadata_list)
+    vector_db.add_texts(texts=text_list, metadatas=metadata_list)
     logger.info("SUCCESS: Text embedded.")
 
 
@@ -208,7 +208,7 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator
         metadata = os.path.splitext(file)[0]
         # add _ and an incrementing number to the metadata
         metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
-        vector_db.add_texts(texts=text_list, metadata=metadata_list)
+        vector_db.add_texts(texts=text_list, metadatas=metadata_list)
 
     logger.info("SUCCESS: Text embedded.")
 

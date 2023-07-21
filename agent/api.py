@@ -102,10 +102,13 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "openai", toke
 
     if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
+        logger.debug("Embedding Documents with Aleph Alpha.")
         embedd_documents_aleph_alpha(dir=folder_name, aleph_alpha_token=token)
     elif llm_backend == "openai":
         # Embedd the documents with OpenAI
+        logger.debug("Embedding Documents with OpenAI.")
         embedd_documents_openai(dir=folder_name, open_ai_token=token)
+
     elif llm_backend == "gpt4all":
         embedd_documents_gpt4all(dir=folder_name)
     else:
@@ -113,7 +116,7 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "openai", toke
 
 
 @app.post("/embedd_documents")
-async def post_upload_documents(files: List[UploadFile] = File(...), llm_backend: str = "openai", token: Optional[str] = None) -> JSONResponse:
+async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend: str = "openai", token: Optional[str] = None) -> JSONResponse:
     """Uploads multiple documents to the backend.
 
     Args:
@@ -142,6 +145,7 @@ async def post_upload_documents(files: List[UploadFile] = File(...), llm_backend
             f.write(await file.read())
 
     embedd_documents_wrapper(folder_name=tmp_dir, llm_backend=llm_backend, token=token)
+
     return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
 
 
@@ -195,7 +199,7 @@ async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
         # Embedd the documents with Aleph Alpha
         embedd_text_aleph_alpha(text=request.text, file_name=request.file_name, aleph_alpha_token=token, seperator=request.seperator)
         # return a success notificaton
-        return JSONResponse("Embedding Sucessful.")
+        return JSONResponse(content={"message": "Text received and saved.", "filenames": request.file_name})
     elif request.llm_backend == "openai":
         # Embedd the documents with OpenAI
         raise ValueError("Not implemented yet.")

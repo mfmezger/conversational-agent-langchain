@@ -38,12 +38,12 @@ async def test_upload_documents(provider):
         if provider == "openai":
             logger.warning("Using OpenAI API")
             response = await ac.post(
-                "/embedd_documents", params={"aa_or_openai": "openai", "token": os.getenv("OPENAI_API_KEY")}, files=[("files", file) for file in files]
+                "/embedd_documents", params={"llm_backend": "openai", "token": os.getenv("OPENAI_API_KEY")}, files=[("files", file) for file in files]
             )
         else:
             logger.warning("Using Aleph Alpha API")
             response = await ac.post(
-                "/embedd_documents", params={"aa_or_openai": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
+                "/embedd_documents", params={"llm_backend": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
             )
 
     assert response.status_code == 200
@@ -84,7 +84,7 @@ def test_search_route_invalid_provider():
             "/search",
             json={
                 "query": "example query",
-                "aa_or_openai": "invalid_provider",
+                "llm_backend": "invalid_provider",
                 "token": "example_token",
                 "amount": 3,
             },
@@ -115,7 +115,7 @@ def test_embedd_text():
     with open("tests/ressources/file1.txt") as f:
         text = f.read()
 
-    response = client.post("/embedd_text", json={"text": text, "aa_or_openai": "aa", "file_name": "file", "token": os.getenv("ALEPH_ALPHA_API_KEY"), "seperator": "###"})
+    response = client.post("/embedd_text", json={"text": text, "llm_backend": "aa", "file_name": "file", "token": os.getenv("ALEPH_ALPHA_API_KEY"), "seperator": "###"})
     logger.info(response)
     assert response.status_code == 200
     logger.info(response.json())

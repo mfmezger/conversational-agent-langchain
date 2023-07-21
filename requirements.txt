@@ -551,9 +551,9 @@ jinja2==3.1.2 ; python_version >= "3.11" and python_version < "3.12" \
 jsonschema==4.17.3 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:0f864437ab8b6076ba6707453ef8f98a6a0d512a80e93f8abdb676f737ecb60d \
     --hash=sha256:a870ad254da1a8ca84b6a2905cac29d265f805acc57af304784962a2aa6508f6
-langchain==0.0.238 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:17ba2cd5386c0bbc2c7725b5f78fa85a3e040318f09fd64c57a20554461f33c7 \
-    --hash=sha256:25ff3bb2c3f166ffec4dd82d746561b85d535da5e8d47dab4e360fe6ceb298ee
+langchain==0.0.239 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:a739ae141808e3d0abafe12c3daa4402c81bab8de033da48966702de6f647d96 \
+    --hash=sha256:e353e3290d4e6550788e6cd23828a4872e749008cb1a7564ab81ffc861315fd6
 langsmith==0.0.12 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:5abf30ac4ebb6b68955bea617669585e80a6fe9def90664503d5fbd6d095e91e \
     --hash=sha256:d7a4360d1984b57689c6470ffcef79dcb217dd7129bdfd3bcfcb22dc058787f6
@@ -1268,9 +1268,9 @@ sqlalchemy==2.0.14 ; python_version >= "3.11" and python_version < "3.12" \
 starlette==0.27.0 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:6a6b0d042acb8d469a01eba54e9cda6cbd24ac602c4cd016723117d6a7e73b75 \
     --hash=sha256:918416370e846586541235ccd38a474c08b80443ed31c578a418e2209b3eef91
-streamlit==1.24.1 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:569211b426ca078c0c2959a6c9a1413c2e81eca23e769fbf12308ba5bffd1f49 \
-    --hash=sha256:fd5f0b64798e9706364408fb589b77595314a6315d13b2d750b963c7ae97f362
+streamlit==1.25.0 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:3c561dca1b5430e73b7f2d66bff1d26103936bb4223912ab563ffee881fccc30 \
+    --hash=sha256:8a7c93bee8703869045804afe22e9373c4e974fdb2a3e9abe3b027df3de03119
 tenacity==8.2.2 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:2f277afb21b851637e8f52e6a613ff08734c347dc19ade928e519d7d2d8569b0 \
     --hash=sha256:43af037822bd0029025877f3b2d97cc4d7bb0c2991000a3d59d71517c5c969e0

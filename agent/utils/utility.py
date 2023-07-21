@@ -73,11 +73,6 @@ def generate_prompt(prompt_name: str, text: str, query: str = "", language: str 
     return prompt_text
 
 
-if __name__ == "__main__":
-    # test the function
-    generate_prompt("qa.j2", "This is a test text.", "What is the meaning of life?")
-
-
 def create_tmp_folder() -> str:
     """Creates a temporary folder for files to store.
 
@@ -105,7 +100,7 @@ def get_token(token: str | None, llm_backend: str | None, aleph_alpha_key: str |
         ValueError: If no token is provided.
     """
     env_token = aleph_alpha_key if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"} else openai_key
-    if env_token is None and token is None:
+    if not env_token and not token:
         raise ValueError("No token provided.")  #
 
     return token or env_token  # type: ignore
@@ -128,8 +123,11 @@ def validate_token(token: str | None, llm_backend: str, aleph_alpha_key: str | N
     """
     if llm_backend != "gpt4all":
         token = get_token(token, llm_backend, aleph_alpha_key, openai_key)
-        if token is None:
-            raise ValueError("Please provide a token for the LLM Provider of choice.")
     else:
         token = "gpt4all"
     return token
+
+
+if __name__ == "__main__":
+    # test the function
+    generate_prompt("qa.j2", "This is a test text.", "What is the meaning of life?")
