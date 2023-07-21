@@ -35,7 +35,11 @@ from agent.data_model.rest_data_model import (
     QARequest,
     SearchRequest,
 )
-from agent.utils.utility import combine_text_from_list, create_tmp_folder
+from agent.utils.utility import (
+    combine_text_from_list,
+    create_tmp_folder,
+    validate_token,
+)
 
 # add file logger for loguru
 logger.add("logs/file_{time}.log", backtrace=False, diagnose=False)
@@ -73,27 +77,6 @@ ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
 logger.info("Loading REST API Finished.")
 
 
-def get_token(token: Optional[str], llm_backend: str) -> str:
-    """Get the token from the environment variables or the parameter.
-
-    Args:
-        token (str, optional): Token from the REST service.
-        llm_backend (str): LLM provider. Defaults to "openai".
-
-    Returns:
-        str: Token for the LLM Provider of choice.
-
-    Raises:
-        ValueError: If no token is provided.
-    """
-    # TODO: this does not work now if the gpt4all backend is selected because ist does not use a api key
-    env_token = ALEPH_ALPHA_API_KEY if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"} else OPENAI_API_KEY
-    if env_token is None and token is None:
-        raise ValueError("No token provided.")  #
-
-    return token or env_token  # type: ignore
-
-
 @app.get("/")
 def read_root() -> str:
     """Returns the welcome message.
@@ -115,11 +98,7 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "openai", toke
     Raises:
         ValueError: If an invalid LLM Provider is set.
     """
-    token = ""
-    if llm_backend != "gpt4all":
-        token = get_token(token, llm_backend)
-        if token is None:
-            raise ValueError("Please provide a token for the LLM Provider of choice.")
+    token = validate_token
 
     if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
@@ -143,10 +122,7 @@ async def post_upload_documents(files: List[UploadFile] = File(...), llm_backend
     Returns:
         JSONResponse: The response as JSON.
     """
-    if llm_backend != "gpt4all":
-        token = get_token(token, llm_backend)
-        if token is None:
-            raise ValueError("Please provide a token for the LLM Provider of choice.")
+    token = validate_token()
     tmp_dir = create_tmp_folder()
 
     file_names = []
@@ -184,10 +160,7 @@ async def post_embedd_document(file: UploadFile, llm_backend: str = "openai", to
     Returns:
         JSONResponse: A response indicating which files were received and saved.
     """
-    if llm_backend != "gpt4all":
-        token = get_token(token, llm_backend)
-        if token is None:
-            raise ValueError("Please provide a token for the LLM Provider of choice.")
+    token = validate_token()
     # Create a temporary folder to save the files
     tmp_dir = create_tmp_folder()
 
@@ -216,11 +189,7 @@ async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
     Returns:
         JSONResponse: A response indicating that the text was received and saved, along with the name of the file it was saved to.
     """
-    token = ""
-    if request.llm_backend != "gpt4all":
-        token = get_token(request.token, request.llm_backend)
-        if token is None:
-            raise ValueError("Please provide a token for the LLM Provider of choice.")
+    token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
@@ -268,9 +237,7 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> JSONResponse:
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
 
-    token = get_token(request.token, request.llm_backend)
-    if token is None:
-        raise ValueError("Please provide a token for the LLM Provider of choice.")
+    token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     if request.llm_backend is None:
         raise ValueError("Please provide a LLM Provider of choice.")
@@ -293,11 +260,7 @@ def search(request: SearchRequest) -> JSONResponse:
     Returns:
         List[str]: A list of matching documents.
     """
-    token = ""
-    if request.llm_backend != "gpt4all":
-        token = get_token(request.token, request.llm_backend)
-        if token is None:
-            raise ValueError("Please provide a token for the LLM Provider of choice.")
+    token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     if request.llm_backend is None:
         raise ValueError("Please provide a LLM Provider of choice.")
@@ -325,11 +288,7 @@ def question_answer(request: QARequest) -> JSONResponse:
     if request.query is None:
         raise ValueError("Please provide a Question.")
 
-    token = ""
-    if request.llm_backend != "gpt4all":
-        token = get_token(request.token, request.llm_backend)
-        if token is None:
-            raise ValueError("Please provide a token for the LLM Provider of choice.")
+    token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     # if the history flag is activated and the history is not provided, raise an error
     if request.history and request.history is None:
@@ -451,9 +410,7 @@ async def process_document(files: List[UploadFile] = File(...), llm_backend: str
     Returns:
         JSONResponse: _description_
     """
-    token = get_token(token, llm_backend)
-    if not token:
-        raise ValueError("Please provide a token.")
+    token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     # Create a temporary folder to save the files
     tmp_dir = create_tmp_folder()
@@ -492,9 +449,8 @@ def search_database(query: str, llm_backend: str = "openai", token: Optional[str
     Returns:
         List: A list of documents that match the query.
     """
-    token = get_token(token, llm_backend)
-    if not token:
-        raise ValueError("Please provide a token.")
+    token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+
     if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
         documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query, amount=amount)

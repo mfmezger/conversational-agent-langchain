@@ -1,6 +1,7 @@
 """This is the utility module."""
 import os
 import uuid
+from typing import Optional
 
 from jinja2 import Template
 from loguru import logger
@@ -89,3 +90,48 @@ def create_tmp_folder() -> str:
     os.makedirs(tmp_dir)
     logger.info(f"Created new folder {tmp_dir}.")
     return tmp_dir
+
+
+def get_token(token: Optional[str], llm_backend: str, aleph_alpha_key: str, openai_key: str) -> str:
+    """Get the token from the environment variables or the parameter.
+
+    Args:
+        token (str, optional): Token from the REST service.
+        llm_backend (str): LLM provider. Defaults to "openai".
+
+    Returns:
+        str: Token for the LLM Provider of choice.
+
+    Raises:
+        ValueError: If no token is provided.
+    """
+    env_token = aleph_alpha_key if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"} else openai_key
+    if env_token is None and token is None:
+        raise ValueError("No token provided.")  #
+
+    return token or env_token  # type: ignore
+
+
+def validate_token(token: str, llm_backend: str, aleph_alpha_key: str, openai_key: str) -> str:
+    """Test if a token is available, and raise an error if it is missing when needed.
+
+    Args:
+        token (str): Token from the request
+        llm_backend (str): Backend from the request
+        aleph_alpha_key (str): Key from the .env file
+        openai_key (str): Key from the .env file
+
+    Raises:
+        ValueError: If the llm backend is AA or OpenAI and there is no token.
+
+    Returns:
+        str: Token
+    """
+    token = ""
+    if llm_backend != "gpt4all":
+        token = get_token(token, llm_backend, aleph_alpha_key, openai_key)
+        if token is None:
+            raise ValueError("Please provide a token for the LLM Provider of choice.")
+    else:
+        token = "gpt4all"
+    return token
