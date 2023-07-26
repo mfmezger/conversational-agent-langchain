@@ -32,8 +32,8 @@ async def test_upload_documents(provider):
     """Testing the upload of multiple documents."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
         files = [
-            open("tests/ressources/1706.03762v5.pdf", "rb"),
-            open("tests/ressources/1912.01703v1.pdf", "rb"),
+            open("tests/resources/1706.03762v5.pdf", "rb"),
+            open("tests/resources/1912.01703v1.pdf", "rb"),
         ]
         if provider == "openai":
             logger.warning("Using OpenAI API")
@@ -62,7 +62,7 @@ async def test_upload_documents(provider):
 async def test_embedd_one_document():
     """Testing the upload of one document."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
-        tmp_file = open("tests/ressources/1706.03762v5.pdf", "rb")
+        tmp_file = open("tests/resources/1706.03762v5.pdf", "rb")
         response = await ac.post("/embedd_document/", files=[("file", tmp_file)])
 
     assert response.status_code == 200
@@ -112,7 +112,7 @@ def test_wrong_input_explain_output():
 def test_embedd_text():
     """Test the embedd_text function."""
     # load text
-    with open("tests/ressources/file1.txt") as f:
+    with open("tests/resources/file1.txt") as f:
         text = f.read()
 
     response = client.post("/embedd_text", json={"text": text, "llm_backend": "aa", "file_name": "file", "token": os.getenv("ALEPH_ALPHA_API_KEY"), "seperator": "###"})

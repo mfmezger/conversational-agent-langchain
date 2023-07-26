@@ -366,15 +366,12 @@ def process_documents_aleph_alpha(folder: str, token: str, type: str):
         case _:
             raise ValueError("Type must be one of 'qa', 'summarization', or 'invoice'.")
 
-    # load the prompt
-    with open(os.path.join("prompts", str(prompt_name))) as f:
-        template = Template(f.read())
-
+    # generate the prompt
     answers = []
     # iterate over the documents
     for doc in docs:
         # combine the prompt and the text
-        prompt_text = template.render(text=doc.page_content)
+        prompt_text = generate_prompt(prompt_name="aleph-alpha-invoice.j2", text=doc.page_content, language="en")
         # call the luminous api
         answer = send_completion_request(prompt_text, token, model="luminous-base-control")
 

@@ -9,7 +9,7 @@ from agent.backend.gpt4all_service import (
 def test_embedd_text_gpt4all():
     """Test that embedd_text_gpt4all does not raise an error."""
     # assert that it does not raise an error
-    embedd_documents_gpt4all(dir="tests/ressources")
+    embedd_documents_gpt4all(dir="tests/resources")
 
 
 def test_summarize_text_gpt4all():

@@ -3,6 +3,7 @@ import os
 
 from agent.backend.aleph_alpha_service import (
     embedd_documents_aleph_alpha,
+    process_documents_aleph_alpha,
     qa_aleph_alpha,
     search_documents_aleph_alpha,
 )
@@ -38,3 +39,15 @@ def test_qa():
     assert meta_data is not None
     assert len(answer) > 0
     assert len(prompt) > 0
+
+
+def test_process_documents_aleph_alpha():
+    """Test the process_documents_aleph_alpha function."""
+    token = os.getenv("ALEPH_ALPHA_API_KEY")
+    assert token is not None
+    answers = process_documents_aleph_alpha(folder="tests/resources", token=token, type="invoice")
+
+    assert answers is not None
+    assert len(answers) > 0
+    assert answers[0] is not None
+    assert answers[1] is not None
