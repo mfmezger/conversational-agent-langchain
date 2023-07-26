@@ -361,10 +361,10 @@ gitdb==4.0.10 ; python_version >= "3.11" and python_version < "3.12" \
 gitpython==3.1.31 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:8ce3bcf69adfdf7c7d503e78fd3b1c492af782d58893b650adb2ac8912ddd573 \
     --hash=sha256:f04893614f6aa713a60cbbe1e6a97403ef633103cdd0ef5eb6efe0deb98dbe8d
-gpt4all==1.0.5 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:53520c7384566462c3b2207409631423b5767da0bc2c1ef2366595dbab20679e \
-    --hash=sha256:713baa895f6f1bff11b8961959f2e80d53ae9f030b1ed746a1cc4f82fbb2a45f \
-    --hash=sha256:aad3339d2b7f7b767f2c372d62ff029554df3049c686d69d04717700989d1759
+gpt4all==1.0.7 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:1e05210dd0aba72c4b6c6031db5d4a17310a3ac3f7fefcd8ca594389f89e480c \
+    --hash=sha256:414b5c833be7ed34ad109b7f0729f8b62f7db3dc9c0482095c94808146760ac5 \
+    --hash=sha256:58c00178e976689d2d26fe2fd38eb4fd923821737ffa62fcdcb0ea7ca7e87d33
 greenlet==2.0.2 ; python_version >= "3.11" and python_version < "3.12" and platform_machine == "aarch64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "ppc64le" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "x86_64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "amd64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "AMD64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "win32" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "WIN32" \
     --hash=sha256:03a8f4f3430c3b3ff8d10a2a86028c660355ab637cee9333d63d66b56f09d52a \
     --hash=sha256:0bf60faf0bc2468089bdc5edd10555bab6e85152191df713e2ab1fcc86382b5a \
@@ -551,9 +551,9 @@ jinja2==3.1.2 ; python_version >= "3.11" and python_version < "3.12" \
 jsonschema==4.17.3 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:0f864437ab8b6076ba6707453ef8f98a6a0d512a80e93f8abdb676f737ecb60d \
     --hash=sha256:a870ad254da1a8ca84b6a2905cac29d265f805acc57af304784962a2aa6508f6
-langchain==0.0.239 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:a739ae141808e3d0abafe12c3daa4402c81bab8de033da48966702de6f647d96 \
-    --hash=sha256:e353e3290d4e6550788e6cd23828a4872e749008cb1a7564ab81ffc861315fd6
+langchain==0.0.242 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:c5907648ae7713a04069d567d51bbcc15cb16b7cf18e5b937c00b2ebbdab780d \
+    --hash=sha256:ea6e09be2c176dab66ac4d060fe1a042ccf12f1b9c66662d55a5efae18139af1
 langsmith==0.0.12 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:5abf30ac4ebb6b68955bea617669585e80a6fe9def90664503d5fbd6d095e91e \
     --hash=sha256:d7a4360d1984b57689c6470ffcef79dcb217dd7129bdfd3bcfcb22dc058787f6
