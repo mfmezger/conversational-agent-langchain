@@ -12,7 +12,6 @@ from aleph_alpha_client import (  # type: ignore
     SummarizationRequest,
 )
 from dotenv import load_dotenv
-from jinja2 import Template
 from langchain.docstore.document import Document as LangchainDocument
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
@@ -322,9 +321,7 @@ def explain_completion(prompt: str, output: str, token: str):
     # sort the explanations by score
     # explanations = sorted(explanations, key=lambda x: x.score, reverse=True)
 
-    # load the prompt # TODO: remove hardcoded and get over generate prompt method.
-    with open("prompts/de/qa.j2") as f:
-        template = str(Template(f.read()))
+    template = generate_prompt(prompt_name="qa.j2", text="", language="de")
 
     result = {}
     # remove the prompt from the explanations

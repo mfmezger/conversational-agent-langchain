@@ -19,7 +19,6 @@ from agent.utils.utility import generate_prompt
 load_dotenv()
 
 
-# TODO: refactor
 qdrant_client = QdrantClient("http://localhost", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
 collection_name = "GPT4ALL"
 try:
