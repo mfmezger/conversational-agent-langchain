@@ -270,6 +270,7 @@ def search(request: SearchRequest) -> JSONResponse:
         raise ValueError("Please provide a LLM Provider of choice.")
 
     DOCS = search_database(query=request.query, llm_backend=request.llm_backend, token=token, amount=request.amount)
+    logger.info(f"DOCS{DOCS}")
 
     return JSONResponse(content={"documents": DOCS})
 

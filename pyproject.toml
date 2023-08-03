@@ -25,9 +25,9 @@ grpcio-tools = "^1.56.0" # for qdrant
 qdrant-client = "^1.3.2" # for qdrant
 uvicorn = "^0.22.0"
 urllib3 = "1.26.16"
-gpt4all = "^1.0.8"
 starlette = "0.27.0"
 requests = "2.31.0"
+gpt4all = "^1.0.8"
 
 
 [tool.poetry.group.dev.dependencies]

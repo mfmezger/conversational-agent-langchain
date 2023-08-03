@@ -237,7 +237,7 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
         return docs
     except Exception as e:
         logger.error(f"ERROR: Failed to search documents: {e}")
-        raise
+        raise Exception(f"Failed to search documents: {e}")
 
 
 def qa_aleph_alpha(
