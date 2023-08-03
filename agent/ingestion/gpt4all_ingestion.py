@@ -2,7 +2,7 @@
 import os
 
 from dotenv import load_dotenv
-from langchain.document_loaders import DirectoryLoader, PyPDFLoader
+from langchain.document_loaders import DirectoryLoader, PyPDFLoader, TextLoader
 from langchain.embeddings import GPT4AllEmbeddings
 from langchain.vectorstores import Qdrant
 from loguru import logger
@@ -35,11 +35,23 @@ def main():
 
     vector_db = Qdrant(client=qdrant_client, collection_name="GPT4ALL", embeddings=embedding)
 
+    # ingest text files
+    ingest_text_files(dir=data_folder, vector_db=vector_db, file_ending="*.txt")
 
-def ingest_text_files(dir: str):
+    # ingest pdfs
+    ingest_pdfs_with_text(dir=data_folder, vector_db=vector_db)
+
+
+def ingest_text_files(dir: str, vector_db: Qdrant, file_ending: str = "*.txt"):
     """Ingests text files from a directory."""
-    # todo
-    pass
+    loader = DirectoryLoader(dir, glob=file_ending, loader_cls=TextLoader)
+    docs = loader.load()
+
+    logger.info(f"Loaded {len(docs)} documents.")
+    texts = [doc.page_content for doc in docs]
+    metadatas = [doc.metadata for doc in docs]
+    vector_db.add_texts(texts=texts, metadatas=metadatas)
+    logger.info("SUCCESS: Texts embedded.")
 
 
 def ingest_custom_text(text: str, seperator: str = "###"):
@@ -48,7 +60,7 @@ def ingest_custom_text(text: str, seperator: str = "###"):
 
 
 # ingest pdfs
-def ingest_pdfs_with_text(dir: str):
+def ingest_pdfs_with_text(dir: str, vector_db: Qdrant):
     """Ingests pdfs from a directory."""
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
     docs = loader.load()
