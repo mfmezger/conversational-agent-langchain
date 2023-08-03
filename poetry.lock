@@ -823,15 +823,15 @@ gitdb = ">=4.0.1,<5"
 
 [[package]]
 name = "gpt4all"
-version = "1.0.7"
+version = "1.0.8"
 description = "Python bindings for GPT4All"
 category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "gpt4all-1.0.7-py3-none-macosx_10_9_universal2.whl", hash = "sha256:414b5c833be7ed34ad109b7f0729f8b62f7db3dc9c0482095c94808146760ac5"},
-    {file = "gpt4all-1.0.7-py3-none-manylinux1_x86_64.whl", hash = "sha256:1e05210dd0aba72c4b6c6031db5d4a17310a3ac3f7fefcd8ca594389f89e480c"},
-    {file = "gpt4all-1.0.7-py3-none-win_amd64.whl", hash = "sha256:58c00178e976689d2d26fe2fd38eb4fd923821737ffa62fcdcb0ea7ca7e87d33"},
+    {file = "gpt4all-1.0.8-py3-none-macosx_10_9_universal2.whl", hash = "sha256:405180fb9eb924dcb0ded070200923948b25b9b192fa5d059e805f1349ba9b15"},
+    {file = "gpt4all-1.0.8-py3-none-manylinux1_x86_64.whl", hash = "sha256:96b5f8e139784d9ce11aea2cb6d39d7866943d7cb574917af48eca4cccb31a12"},
+    {file = "gpt4all-1.0.8-py3-none-win_amd64.whl", hash = "sha256:96dbe139f4f17bcf8a0e81d241e52b7d812d3b500ffa9b89a34dcb7f63e52100"},
 ]
 
 [package.dependencies]
@@ -3710,4 +3710,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "f4a3712b4794197915e8a46b8a37bc6b87455eedb201e3462ebdd0efcc0fef46"
+content-hash = "6a86d5ecfc070129987ab5eaac5ed16a2725c2958a2f9d5622821a05511cf2b8"

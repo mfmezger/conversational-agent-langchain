@@ -361,10 +361,10 @@ gitdb==4.0.10 ; python_version >= "3.11" and python_version < "3.12" \
 gitpython==3.1.31 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:8ce3bcf69adfdf7c7d503e78fd3b1c492af782d58893b650adb2ac8912ddd573 \
     --hash=sha256:f04893614f6aa713a60cbbe1e6a97403ef633103cdd0ef5eb6efe0deb98dbe8d
-gpt4all==1.0.7 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:1e05210dd0aba72c4b6c6031db5d4a17310a3ac3f7fefcd8ca594389f89e480c \
-    --hash=sha256:414b5c833be7ed34ad109b7f0729f8b62f7db3dc9c0482095c94808146760ac5 \
-    --hash=sha256:58c00178e976689d2d26fe2fd38eb4fd923821737ffa62fcdcb0ea7ca7e87d33
+gpt4all==1.0.8 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:405180fb9eb924dcb0ded070200923948b25b9b192fa5d059e805f1349ba9b15 \
+    --hash=sha256:96b5f8e139784d9ce11aea2cb6d39d7866943d7cb574917af48eca4cccb31a12 \
+    --hash=sha256:96dbe139f4f17bcf8a0e81d241e52b7d812d3b500ffa9b89a34dcb7f63e52100
 greenlet==2.0.2 ; python_version >= "3.11" and python_version < "3.12" and platform_machine == "aarch64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "ppc64le" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "x86_64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "amd64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "AMD64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "win32" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "WIN32" \
     --hash=sha256:03a8f4f3430c3b3ff8d10a2a86028c660355ab637cee9333d63d66b56f09d52a \
     --hash=sha256:0bf60faf0bc2468089bdc5edd10555bab6e85152191df713e2ab1fcc86382b5a \
