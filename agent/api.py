@@ -484,7 +484,7 @@ def search_database(query: str, llm_backend: str = "openai", token: Optional[str
         ValueError: If the LLM provider is not implemented yet.
 
     Returns:
-        List: A list of documents that match the query.
+        JSON List of Documents consisting of the text, page, source and score.
     """
     token = get_token(token, llm_backend)
     if not token:
