@@ -7,6 +7,8 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.openapi.utils import get_openapi
 from langchain.docstore.document import Document as LangchainDocument
 from loguru import logger
+from qdrant_client import QdrantClient, models
+from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
 
 from agent.backend.aleph_alpha_service import (
@@ -116,7 +118,7 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "openai", toke
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
 
-@app.post("/embedd_documents")
+@app.post("/embeddings/documents")
 async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend: str = "openai", token: Optional[str] = None) -> JSONResponse:
     """Uploads multiple documents to the backend.
 
@@ -150,7 +152,7 @@ async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend
     return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
 
 
-@app.post("/embedd_document/")
+@app.post("/embeddings/document/")
 async def post_embedd_document(file: UploadFile, llm_backend: str = "openai", token: Optional[str] = None) -> JSONResponse:
     """Uploads one document to the backend and embeds it in the database.
 
@@ -181,7 +183,7 @@ async def post_embedd_document(file: UploadFile, llm_backend: str = "openai", to
     return JSONResponse(content={"message": "File received and saved.", "filenames": file.filename})
 
 
-@app.post("/embedd_text/")
+@app.post("/embeddings/text/")
 async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
     """Embeds text in the database.
 
@@ -211,7 +213,7 @@ async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
 
-@app.post("/embedd_text_file/")
+@app.post("/embeddings/texts/files")
 async def embedd_text_files(request: EmbeddTextFilesRequest) -> JSONResponse:
     """Embeds text files in the database.
 
@@ -252,7 +254,7 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> JSONResponse:
     return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
 
 
-@app.post("/search")
+@app.post("/semantic/search")
 def search(request: SearchRequest) -> JSONResponse:
     """Searches for a query in the vector database.
 
@@ -351,7 +353,7 @@ def question_answer(request: QARequest) -> JSONResponse:
     return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
 
 
-@app.get("/explain-qa")
+@app.get("/explanation/explain-qa")
 def explain_question_answer(query: Optional[str] = None, llm_backend: str = "openai", token: Optional[str] = None, amount: int = 1) -> JSONResponse:
     """Answer a question & explains it based on the documents in the database.
 
@@ -382,7 +384,7 @@ def explain_question_answer(query: Optional[str] = None, llm_backend: str = "ope
     return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
 
 
-@app.post("/explain")
+@app.post("/explaination/aleph_alpha_explain")
 def explain_output(request: ExplainRequest) -> JSONResponse:
     """Explain the output of the question answering system.
 
@@ -476,3 +478,44 @@ def search_database(query: str, llm_backend: str = "openai", token: Optional[str
 
     logger.info(f"Found {len(documents)} documents.")
     return documents
+
+
+@app.delete("/embeddings/delete/{llm_provider}/{page}/{source}")
+def delete(page: int, source: str, llm_provider: str = "openai") -> UpdateResult:
+    """Delete a Vector from the database based on the page and source.
+
+    Args:
+        page (int): The page of the Document
+        source (str): The name of the Document
+        llm_provider (str, optional): The LLM Provider. Defaults to "openai".
+
+    Returns:
+        _type_: _description_
+    """
+    if llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
+        collection = "aleph-alpha"
+    elif llm_provider == "OpenAI":
+        collection = "aleph-alpha"
+    elif llm_provider == "GPT4ALL":
+        collection = "aleph-alpha"
+    else:
+        raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
+
+    qdrant_client = QdrantClient("http://localhost", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
+
+    result = qdrant_client.delete(
+        collection_name=collection,
+        points_selector=models.FilterSelector(
+            filter=models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="metadata.page",
+                        match=models.MatchValue(value=page),
+                    ),
+                    models.FieldCondition(key="metadata.source", match=models.MatchValue(value=source)),
+                ],
+            )
+        ),
+    )
+
+    return result

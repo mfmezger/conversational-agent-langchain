@@ -188,7 +188,7 @@ def qa_openai(token: str, documents: list[tuple[Document, float]], query: str, s
     try:
 
         # call the luminous api
-        answer = send_completion_request(prompt, token)
+        answer = send_completion(prompt, token)
 
     except ValueError as e:
         # if the code is PROMPT_TOO_LONG, split it into chunks
@@ -202,7 +202,7 @@ def qa_openai(token: str, documents: list[tuple[Document, float]], query: str, s
             prompt = generate_prompt("openai-qa.j2", text=short_text, query=query)
 
             # call the luminous api
-            answer = send_completion_request(prompt, token)
+            answer = send_completion(prompt, token)
 
     # extract the answer
     return answer, prompt, meta_data
