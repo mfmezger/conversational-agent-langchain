@@ -14,7 +14,7 @@ def test_embedd_documents_aleph_alpha():
     # assert that it does not raise an error
     token = os.getenv("ALEPH_ALPHA_API_KEY")
     assert token is not None
-    embedd_documents_aleph_alpha("data/", token)
+    embedd_documents_aleph_alpha("tests/resources/", token)
 
 
 def test_search():

@@ -389,8 +389,6 @@ if __name__ == "__main__":
     with open("data/brustkrebs_input.txt") as f:
         text = f.read()
 
-    # embedd_text_aleph_alpha(text, "file1", token, "###")
-    embedd_text_files_aleph_alpha("data/", token, "###")
     DOCS = search_documents_aleph_alpha(aleph_alpha_token=token, query="Was sind meine Vorteile?")
     logger.info(DOCS)
     answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=token, documents=DOCS, query="What are Attentions?")
