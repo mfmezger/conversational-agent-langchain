@@ -14,9 +14,6 @@ RUN poetry install --no-root --no-dev
 
 COPY . .
 
-# RUN pip install gpt4all-1.0.8-py3-none-manylinux1_x86_64.whl
-RUN pip install gpt4all-1.0.8-py3-none-macosx_10_9_universal2.whl
-# RUN pip install -r requirements.txt
 
 ENTRYPOINT ["uvicorn", "agent.api:app", "--host", "0.0.0.0", "--port", "8001"]
 # watch the logs
