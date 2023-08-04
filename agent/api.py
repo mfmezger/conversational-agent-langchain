@@ -7,6 +7,8 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.openapi.utils import get_openapi
 from langchain.docstore.document import Document as LangchainDocument
 from loguru import logger
+from qdrant_client import QdrantClient, models
+from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
 
 from agent.backend.aleph_alpha_service import (
@@ -476,3 +478,44 @@ def search_database(query: str, llm_backend: str = "openai", token: Optional[str
 
     logger.info(f"Found {len(documents)} documents.")
     return documents
+
+
+@app.delete("/embeddings/delete/{llm_provider}/{page}/{source}")
+def delete(page: int, source: str, llm_provider: str = "openai") -> UpdateResult:
+    """Delete a Vector from the database based on the page and source.
+
+    Args:
+        page (int): The page of the Document
+        source (str): The name of the Document
+        llm_provider (str, optional): The LLM Provider. Defaults to "openai".
+
+    Returns:
+        _type_: _description_
+    """
+    if llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
+        collection = "aleph-alpha"
+    elif llm_provider == "OpenAI":
+        collection = "aleph-alpha"
+    elif llm_provider == "GPT4ALL":
+        collection = "aleph-alpha"
+    else:
+        raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
+
+    qdrant_client = QdrantClient("http://localhost", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
+
+    result = qdrant_client.delete(
+        collection_name=collection,
+        points_selector=models.FilterSelector(
+            filter=models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="metadata.page",
+                        match=models.MatchValue(value=page),
+                    ),
+                    models.FieldCondition(key="metadata.source", match=models.MatchValue(value=source)),
+                ],
+            )
+        ),
+    )
+
+    return result

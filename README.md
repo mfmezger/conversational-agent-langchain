@@ -7,6 +7,7 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
 
 - [Conversational Agent](#conversational-agent)
   - [Recent Updates](#recent-updates)
+  - [Quickstart](#quickstart)
   - [Redoc API Documentation](#redoc-api-documentation)
   - [Project Description](#project-description)
   - [Semantic Search](#semantic-search)
@@ -17,12 +18,26 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
   - [Secret Management](#secret-management)
   - [Installation \& Development Backend](#installation--development-backend)
   - [Development Frontend](#development-frontend)
+  - [Vector Database](#vector-database)
   - [Qdrant API Key](#qdrant-api-key)
 
 
 ## Recent Updates
 - Added Qdrant as a vector database.
 - Added GPT4All as a LLM Backend. It does not work if you build a docker image on a mac device.
+
+
+## Quickstart
+
+To run the complete system with docker use this command:
+
+```bash
+git clone https://github.com/mfmezger/conversational-agent-langchain.git
+cd conversational-agent-langchain
+docker compose up -d
+```
+
+Then go to http://localhost:8001/docs or http://localhost:8001/redoc to see the API documentation.
 
 
 ## Redoc API Documentation
@@ -126,6 +141,12 @@ To run the Frontend use this command in the root directory:
 ```bash
 poetry run streamlit run gui.py
 ```
+
+## Vector Database
+
+Qdrant Dashboard is available at http://localhost:6333/dashboard. There you need to enter the api key.
+
+
 
 ## Qdrant API Key
 To use the Qdrant API you need to set the correct parameters in the .env file.
