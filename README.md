@@ -60,7 +60,7 @@ Features
 Semantic search is an advanced search technique that aims to understand the meaning and context of a user's query, rather than matching keywords. It involves natural language processing (NLP) and machine learning algorithms to analyze and interpret user intent, synonyms, relationships between words, and the structure of content. By considering these factors, semantic search improves the accuracy and relevance of search results, providing a more intuitive and personalized user experience.
 
 ## Architecture
-![Semantic Search Architecture](resources/architecture.png)
+![Semantic Search Architecture](resources/Architecture.png)
 
 ## Components
 
