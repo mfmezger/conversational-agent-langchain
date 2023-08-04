@@ -93,6 +93,20 @@ def test_search_route_invalid_provider():
         assert "ValueError" in response.text
 
 
+def test_search_route():
+    """Testing with wrong backend."""
+    response = client.post(
+        "/search",
+        json={
+            "query": "Was ist Vanilin?",
+            "llm_backend": "aa",
+            "amount": 3,
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() is not None
+
+
 def test_explain_output():
     """Test the function with valid arguments."""
     response = client.post("/explain", json={"prompt": "What is the capital of France?", "output": "Paris", "token": os.getenv("ALEPH_ALPHA_API_KEY")})

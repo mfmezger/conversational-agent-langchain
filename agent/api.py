@@ -34,6 +34,7 @@ from agent.data_model.rest_data_model import (
     ExplainRequest,
     QARequest,
     SearchRequest,
+    SearchResponse,
 )
 from agent.utils.utility import (
     combine_text_from_list,
@@ -270,9 +271,20 @@ def search(request: SearchRequest) -> JSONResponse:
         raise ValueError("Please provide a LLM Provider of choice.")
 
     DOCS = search_database(query=request.query, llm_backend=request.llm_backend, token=token, amount=request.amount)
-    logger.info(f"DOCS{DOCS}")
 
-    return JSONResponse(content={"documents": DOCS})
+    response = []
+    for d in DOCS:
+        score = d[1]
+        text = d[0].page_content
+        page = d[0].metadata["page"]
+        source = d[0].metadata["source"]
+        response.append(SearchResponse(text=text, page=page, source=source, score=score))
+
+    import json
+
+    json_response = json.dumps([r.dict() for r in response])
+
+    return JSONResponse(content=json_response)
 
 
 # TODO: REFACTOR
