@@ -22,7 +22,7 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
 
 ## Recent Updates
 - Added Qdrant as a vector database.
-- Added GPT4All as a LLM Backend.
+- Added GPT4All as a LLM Backend. It does not work if you build a docker image on a mac device.
 
 
 ## Redoc API Documentation

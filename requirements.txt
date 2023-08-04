@@ -538,9 +538,9 @@ jsonschema-specifications==2023.7.1 ; python_version >= "3.11" and python_versio
 jsonschema==4.18.6 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:ce71d2f8c7983ef75a756e568317bf54bc531dc3ad7e66a128eae0d51623d8a3 \
     --hash=sha256:dc274409c36175aad949c68e5ead0853aaffbe8e88c830ae66bb3c7a1728ad2d
-langchain==0.0.245 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:2eed7a6666b190fe9a9a329c57e6a23fd5b6b76af88fb8f7f6cd347a8f2d7b22 \
-    --hash=sha256:52446fe964a5301c4b6be765d13e9a39d0d098f35d6a38c7700b138bf5cd86df
+langchain==0.0.251 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:a70b3e8da7726cf2df87b9ab2df58efb231dcadabd4cdc4849a8f265745e2bbd \
+    --hash=sha256:b0d3054a93b35177c05629d0631fa81bdba88825765b0bffbd7f875d89f4df9a
 langsmith==0.0.18 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:58f3eb029495e3696c3c94c95adfb2dd15043d82928ef932a7829fe020ad5522 \
     --hash=sha256:d8d97542f99352c5470bff74a4fbc9bd322dea850217a8ab71badcefa041566b
