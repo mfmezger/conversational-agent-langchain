@@ -1,3 +1,6 @@
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
+
 # Conversational Agent
 This is a Rest-Backend for a Conversational Agent, that allows to embedd Documentes, search for them using Semantic Search, to QA based on Documents and do document processing with Large Language Models.
 
@@ -6,7 +9,8 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
   - [Recent Updates](#recent-updates)
   - [Redoc API Documentation](#redoc-api-documentation)
   - [Project Description](#project-description)
-  - [Architecture Semantic Search](#architecture-semantic-search)
+  - [Semantic Search](#semantic-search)
+  - [Architecture](#architecture)
   - [Components](#components)
   - [Available LLM Backends](#available-llm-backends)
   - [Deployment](#deployment)
@@ -18,7 +22,7 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
 
 ## Recent Updates
 - Added Qdrant as a vector database.
-- Added GPT4All as a LLM Backend.
+- Added GPT4All as a LLM Backend. It does not work if you build a docker image on a mac device.
 
 
 ## Redoc API Documentation
@@ -35,10 +39,13 @@ Features
 - Provides a REST API built with FastAPI for easy integration with other applications.
 - Has a basic gui.
 
-## Architecture Semantic Search
-![Semantic Search Architecture](resources/Architecture.png)
+## Semantic Search
+![Semantic Search Architecture](resources/search_flow.png)
 
 Semantic search is an advanced search technique that aims to understand the meaning and context of a user's query, rather than matching keywords. It involves natural language processing (NLP) and machine learning algorithms to analyze and interpret user intent, synonyms, relationships between words, and the structure of content. By considering these factors, semantic search improves the accuracy and relevance of search results, providing a more intuitive and personalized user experience.
+
+## Architecture
+![Semantic Search Architecture](resources/architecture.png)
 
 ## Components
 
@@ -84,11 +91,20 @@ pip install poetry
 poetry install
 ```
 
+Start the complete system with:
+
+```bash
+docker compose up -d
+```
+
 To run the Qdrant Database local just run:
 
 ```bash
 docker compose up qdrant
 ```
+
+
+
 
 
 To run the Backend use this command in the root directory:

@@ -64,7 +64,7 @@ def test_embedd_text_files_aleph_alpha():
     token = os.getenv("ALEPH_ALPHA_API_KEY")
     assert token is not None
 
-    embedd_text_files_aleph_alpha(folder="tests/ressources", aleph_alpha_token=token, seperator=" ")
+    embedd_text_files_aleph_alpha(folder="tests/resources", aleph_alpha_token=token, seperator="###")
 
 
 def test_explain_completion():  # todo: rework

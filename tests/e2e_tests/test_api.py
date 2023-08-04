@@ -32,18 +32,18 @@ async def test_upload_documents(provider):
     """Testing the upload of multiple documents."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
         files = [
-            open("tests/ressources/1706.03762v5.pdf", "rb"),
-            open("tests/ressources/1912.01703v1.pdf", "rb"),
+            open("tests/resources/1706.03762v5.pdf", "rb"),
+            open("tests/resources/1912.01703v1.pdf", "rb"),
         ]
         if provider == "openai":
             logger.warning("Using OpenAI API")
             response = await ac.post(
-                "/embedd_documents", params={"aa_or_openai": "openai", "token": os.getenv("OPENAI_API_KEY")}, files=[("files", file) for file in files]
+                "/embedd_documents", params={"llm_backend": "openai", "token": os.getenv("OPENAI_API_KEY")}, files=[("files", file) for file in files]
             )
         else:
             logger.warning("Using Aleph Alpha API")
             response = await ac.post(
-                "/embedd_documents", params={"aa_or_openai": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
+                "/embedd_documents", params={"llm_backend": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
             )
 
     assert response.status_code == 200
@@ -62,7 +62,7 @@ async def test_upload_documents(provider):
 async def test_embedd_one_document():
     """Testing the upload of one document."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
-        tmp_file = open("tests/ressources/1706.03762v5.pdf", "rb")
+        tmp_file = open("tests/resources/1706.03762v5.pdf", "rb")
         response = await ac.post("/embedd_document/", files=[("file", tmp_file)])
 
     assert response.status_code == 200
@@ -84,13 +84,27 @@ def test_search_route_invalid_provider():
             "/search",
             json={
                 "query": "example query",
-                "aa_or_openai": "invalid_provider",
+                "llm_backend": "invalid_provider",
                 "token": "example_token",
                 "amount": 3,
             },
         )
         assert response.status_code == 400
         assert "ValueError" in response.text
+
+
+def test_search_route():
+    """Testing with wrong backend."""
+    response = client.post(
+        "/search",
+        json={
+            "query": "Was ist Vanilin?",
+            "llm_backend": "aa",
+            "amount": 3,
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() is not None
 
 
 def test_explain_output():
@@ -112,10 +126,10 @@ def test_wrong_input_explain_output():
 def test_embedd_text():
     """Test the embedd_text function."""
     # load text
-    with open("tests/ressources/file1.txt") as f:
+    with open("tests/resources/file1.txt") as f:
         text = f.read()
 
-    response = client.post("/embedd_text", json={"text": text, "aa_or_openai": "aa", "file_name": "file", "token": os.getenv("ALEPH_ALPHA_API_KEY"), "seperator": "###"})
+    response = client.post("/embedd_text", json={"text": text, "llm_backend": "aa", "file_name": "file", "token": os.getenv("ALEPH_ALPHA_API_KEY"), "seperator": "###"})
     logger.info(response)
     assert response.status_code == 200
     logger.info(response.json())

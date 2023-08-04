@@ -12,7 +12,6 @@ from aleph_alpha_client import (  # type: ignore
     SummarizationRequest,
 )
 from dotenv import load_dotenv
-from jinja2 import Template
 from langchain.docstore.document import Document as LangchainDocument
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
@@ -56,7 +55,7 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
     vector_db = Qdrant(client=qdrant_client, collection_name="Aleph_Alpha", embeddings=embedding)
-    logger.info("SUCCESS: Chroma DB initialized.")
+    logger.info("SUCCESS: Qdrant DB initialized.")
 
     return vector_db
 
@@ -134,7 +133,7 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
     logger.info(f"Loaded {len(docs)} documents.")
     text_list = [doc.page_content for doc in docs]
     metadata_list = [doc.metadata for doc in docs]
-    vector_db.add_texts(texts=text_list, metadata=metadata_list)
+    vector_db.add_texts(texts=text_list, metadatas=metadata_list)
 
     logger.info("SUCCESS: Texts embedded.")
 
@@ -164,7 +163,7 @@ def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, s
     # add _ and an incrementing number to the metadata
     metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
 
-    vector_db.add_texts(texts=text_list, metadata=metadata_list)
+    vector_db.add_texts(texts=text_list, metadatas=metadata_list)
     logger.info("SUCCESS: Text embedded.")
 
 
@@ -208,7 +207,7 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator
         metadata = os.path.splitext(file)[0]
         # add _ and an incrementing number to the metadata
         metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
-        vector_db.add_texts(texts=text_list, metadata=metadata_list)
+        vector_db.add_texts(texts=text_list, metadatas=metadata_list)
 
     logger.info("SUCCESS: Text embedded.")
 
@@ -238,7 +237,7 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
         return docs
     except Exception as e:
         logger.error(f"ERROR: Failed to search documents: {e}")
-        raise
+        raise Exception(f"Failed to search documents: {e}")
 
 
 def qa_aleph_alpha(
@@ -322,9 +321,7 @@ def explain_completion(prompt: str, output: str, token: str):
     # sort the explanations by score
     # explanations = sorted(explanations, key=lambda x: x.score, reverse=True)
 
-    # load the prompt # TODO: remove hardcoded and get over generate prompt method.
-    with open("prompts/de/qa.j2") as f:
-        template = str(Template(f.read()))
+    template = generate_prompt(prompt_name="qa.j2", text="", language="de")
 
     result = {}
     # remove the prompt from the explanations
@@ -366,15 +363,12 @@ def process_documents_aleph_alpha(folder: str, token: str, type: str):
         case _:
             raise ValueError("Type must be one of 'qa', 'summarization', or 'invoice'.")
 
-    # load the prompt
-    with open(os.path.join("prompts", str(prompt_name))) as f:
-        template = Template(f.read())
-
+    # generate the prompt
     answers = []
     # iterate over the documents
     for doc in docs:
         # combine the prompt and the text
-        prompt_text = template.render(text=doc.page_content)
+        prompt_text = generate_prompt(prompt_name="aleph-alpha-invoice.j2", text=doc.page_content, language="en")
         # call the luminous api
         answer = send_completion_request(prompt_text, token, model="luminous-base-control")
 
@@ -395,8 +389,6 @@ if __name__ == "__main__":
     with open("data/brustkrebs_input.txt") as f:
         text = f.read()
 
-    # embedd_text_aleph_alpha(text, "file1", token, "###")
-    embedd_text_files_aleph_alpha("data/", token, "###")
     DOCS = search_documents_aleph_alpha(aleph_alpha_token=token, query="Was sind meine Vorteile?")
     logger.info(DOCS)
     answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=token, documents=DOCS, query="What are Attentions?")
