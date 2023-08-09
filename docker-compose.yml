@@ -3,7 +3,7 @@
 services:
   agent:
     build: .
-
+    network_mode: "host"
     volumes:
       - ./data:/data
       - ./logs:/logs
@@ -14,6 +14,7 @@ services:
   qdrant:
     image: qdrant/qdrant
     container_name: qdrant
+    network_mode: "host"
     command: ["./qdrant", "--config-path", "config/qdrant.yaml"]
     volumes:
       - ./vector_db:/qdrant/storage
