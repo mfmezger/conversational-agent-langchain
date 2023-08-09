@@ -501,7 +501,7 @@ def delete(page: int, source: str, llm_provider: str = "openai") -> UpdateResult
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
-    qdrant_client = QdrantClient("qdrant", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
+    qdrant_client = QdrantClient("http://qdrant", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
 
     result = qdrant_client.delete(
         collection_name=collection,
