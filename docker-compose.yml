@@ -10,11 +10,12 @@ services:
 
     ports:
       - "8001:8001"
+    network:
+      - qdrant_network
 
   qdrant:
     image: qdrant/qdrant
     container_name: qdrant
-    network_mode: "host"
     command: ["./qdrant", "--config-path", "config/qdrant.yaml"]
     volumes:
       - ./vector_db:/qdrant/storage
@@ -31,3 +32,11 @@ services:
       resources:
         limits:
           memory: 10Gb
+    network:
+      - qdrant_network
+
+# create combined network
+networks:
+  default:
+    external:
+      name: qdrant_network
