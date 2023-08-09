@@ -19,7 +19,7 @@ from agent.utils.utility import generate_prompt
 load_dotenv()
 
 
-qdrant_client = QdrantClient("qdrant", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
+qdrant_client = QdrantClient("0.0.0.0", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
 collection_name = "GPT4ALL"
 try:
     qdrant_client.get_collection(collection_name=collection_name)
