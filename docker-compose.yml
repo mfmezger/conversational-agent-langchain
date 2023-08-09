@@ -24,8 +24,8 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-file: 1
-        max-size: 10m
+        max-file: "1"
+        max-size: "10m"
     deploy:
       resources:
         limits:
