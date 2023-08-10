@@ -29,12 +29,20 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
 
 ## Quickstart
 
+
+
 To run the complete system with docker use this command:
 
 ```bash
 git clone https://github.com/mfmezger/conversational-agent-langchain.git
 cd conversational-agent-langchain
-docker compose up -d
+```
+Create a .env file from the .env-template and set the qdrant api key. For tests just set it to test.
+QDRANT_API_KEY="test"
+
+Then start the system with
+```bash
+  docker compose up -d
 ```
 
 Then go to http://localhost:8001/docs or http://localhost:8001/redoc to see the API documentation.
