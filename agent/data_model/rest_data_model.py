@@ -65,6 +65,7 @@ class SearchResponse(BaseModel):
 
 class CustomPromptCompletion(BaseModel):
     """The Custom Prompt Completion Model."""
+
     token: str = Field(..., title="Token", description="The API token for the LLM provider.")
     prompt: str = Field(..., title="Prompt", description="The prompt to use for the completion.")
     model: str = Field(..., title="Model", description="The model to use for the completion.")

@@ -108,7 +108,10 @@ def completion_text_gpt4all(text: str, query: str) -> str:
 
     return output
 
-def custom_completion_prompt_gpt4all(prompt: str, token: str = None, model: str = "orca-mini-3b.ggmlv3.q4_0.bin", max_tokens: int = 256, stop_sequences: List[str] = ["###"], temperature: float = 0) -> str:
+
+def custom_completion_prompt_gpt4all(
+    prompt: str, token: str = None, model: str = "orca-mini-3b.ggmlv3.q4_0.bin", max_tokens: int = 256, stop_sequences: List[str] = ["###"], temperature: float = 0
+) -> str:
     """This method sents a custom completion request to the Aleph Alpha API.
 
     Args:
@@ -126,7 +129,6 @@ def custom_completion_prompt_gpt4all(prompt: str, token: str = None, model: str 
     output = model.generate(prompt, max_tokens=max_tokens, temp=temperature)
 
     return str(output)
-
 
 
 def search_documents_gpt4all(query: str, amount: int) -> List[Tuple[Document, float]]:

@@ -150,7 +150,15 @@ def send_completion(text: str, query: str, token: str, cfg: DictConfig) -> str:
 
     return response.choices[0].text
 
-def send_custom_completion_openai(token: str, prompt: str, model: str = "gpt3.5", max_tokens: int = 256, stop_sequences: List[str] = ["###"], temperature: float = 0,) -> str:
+
+def send_custom_completion_openai(
+    token: str,
+    prompt: str,
+    model: str = "gpt3.5",
+    max_tokens: int = 256,
+    stop_sequences: List[str] = ["###"],
+    temperature: float = 0,
+) -> str:
     """Sent completion request to OpenAI API.
 
     Args:

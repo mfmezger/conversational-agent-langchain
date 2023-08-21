@@ -12,6 +12,7 @@ from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
 
 from agent.backend.aleph_alpha_service import (
+    custom_completion_prompt_aleph_alpha,
     embedd_documents_aleph_alpha,
     embedd_text_aleph_alpha,
     embedd_text_files_aleph_alpha,
@@ -20,13 +21,12 @@ from agent.backend.aleph_alpha_service import (
     qa_aleph_alpha,
     search_documents_aleph_alpha,
     summarize_text_aleph_alpha,
-    custom_completion_prompt_aleph_alpha,
 )
 from agent.backend.gpt4all_service import (
+    custom_completion_prompt_gpt4all,
     embedd_documents_gpt4all,
     search_documents_gpt4all,
     summarize_text_gpt4all,
-    custom_completion_prompt_gpt4all
 )
 from agent.backend.open_ai_service import (
     embedd_documents_openai,
@@ -34,13 +34,13 @@ from agent.backend.open_ai_service import (
     send_custom_completion_openai,
 )
 from agent.data_model.rest_data_model import (
+    CustomPromptCompletion,
     EmbeddTextFilesRequest,
     EmbeddTextRequest,
     ExplainRequest,
     QARequest,
     SearchRequest,
     SearchResponse,
-    CustomPromptCompletion,
 )
 from agent.utils.utility import (
     combine_text_from_list,
@@ -483,18 +483,52 @@ def search_database(query: str, llm_backend: str = "openai", token: Optional[str
     logger.info(f"Found {len(documents)} documents.")
     return documents
 
+
 app.post("/llm/completion/custom")
-def custom_prompt_llm(request: CustomPromptCompletion):
+
+
+def custom_prompt_llm(request: CustomPromptCompletion) -> JSONResponse:
+    """This method sents a custom completion request to the LLM Provider.
+
+    Args:
+        request (CustomPromptCompletion): The request parameters.
+
+    Raises:
+        ValueError: If the LLM provider is not implemented yet.
+    """
     if request.llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
         # sent a completion
-        custom_completion_prompt_aleph_alpha(prompt=request.prompt, token=request.token, model=request.model, stop_sequences=request.stop_sequences, temperature=request.temperature, max_tokens=request.max_tokens)
+        answer = custom_completion_prompt_aleph_alpha(
+            prompt=request.prompt,
+            token=request.token,
+            model=request.model,
+            stop_sequences=request.stop_sequences,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+        )
     elif request.llm_provider == "OpenAI":
-        send_custom_completion_openai(prompt=request.prompt, token=request.token, model=request.model, stop_sequences=request.stop_sequences, temperature=request.temperature, max_tokens=request.max_tokens)
+        answer = send_custom_completion_openai(
+            prompt=request.prompt,
+            token=request.token,
+            model=request.model,
+            stop_sequences=request.stop_sequences,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+        )
     elif request.llm_provider == "GPT4ALL":
-        custom_completion_prompt_gpt4all(prompt=request.prompt, token=request.token, model=request.model, stop_sequences=request.stop_sequences, temperature=request.temperature, max_tokens=request.max_tokens)
-    
+        answer = custom_completion_prompt_gpt4all(
+            prompt=request.prompt,
+            token=request.token,
+            model=request.model,
+            stop_sequences=request.stop_sequences,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+        )
+
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
+
+    return JSONResponse(content={"answer": answer})
 
 
 @app.delete("/embeddings/delete/{llm_provider}/{page}/{source}")

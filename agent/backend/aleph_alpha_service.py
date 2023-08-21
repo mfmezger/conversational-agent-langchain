@@ -376,7 +376,15 @@ def process_documents_aleph_alpha(folder: str, token: str, type: str):
 
     return answers
 
-def custom_completion_prompt_aleph_alpha(token: str, prompt: str, model: str = "luminous-extended-control", max_tokens: int = 256, stop_sequences: List[str] = ["###"], temperature: float = 0,) -> str:
+
+def custom_completion_prompt_aleph_alpha(
+    token: str,
+    prompt: str,
+    model: str = "luminous-extended-control",
+    max_tokens: int = 256,
+    stop_sequences: List[str] = ["###"],
+    temperature: float = 0,
+) -> str:
     """This method sents a custom completion request to the Aleph Alpha API.
 
     Args:
