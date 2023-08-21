@@ -108,6 +108,26 @@ def completion_text_gpt4all(text: str, query: str) -> str:
 
     return output
 
+def custom_completion_prompt_gpt4all(prompt: str, token: str = None, model: str = "orca-mini-3b.ggmlv3.q4_0.bin", max_tokens: int = 256, stop_sequences: List[str] = ["###"], temperature: float = 0) -> str:
+    """This method sents a custom completion request to the Aleph Alpha API.
+
+    Args:
+        token (str): The token for the Aleph Alpha API.
+        prompt (str): The prompt to be sent to the API.
+
+    Raises:
+        ValueError: Error if their are no completions or the completion is empty or the prompt and tokenis empty.
+    """
+    if not prompt:
+        raise ValueError("Prompt cannot be None or empty.")
+
+    model = GPT4All(model)
+
+    output = model.generate(prompt, max_tokens=max_tokens, temp=temperature)
+
+    return str(output)
+
+
 
 def search_documents_gpt4all(query: str, amount: int) -> List[Tuple[Document, float]]:
     """Searches the documents in the Chroma DB with a specific query.

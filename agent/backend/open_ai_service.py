@@ -150,6 +150,29 @@ def send_completion(text: str, query: str, token: str, cfg: DictConfig) -> str:
 
     return response.choices[0].text
 
+def send_custom_completion_openai(token: str, prompt: str, model: str = "gpt3.5", max_tokens: int = 256, stop_sequences: List[str] = ["###"], temperature: float = 0,) -> str:
+    """Sent completion request to OpenAI API.
+
+    Args:
+        text (str): The text on which the completion should be based.
+        query (str): The query for the completion.
+        token (str): The token for the OpenAI API.
+        cfg (DictConfig):
+
+    Returns:
+        str: Response from the OpenAI API.
+    """
+    openai.api_key = token
+    response = openai.Completion.create(
+        engine=model,
+        prompt=prompt,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        stop_sequences=stop_sequences,
+    )
+
+    return response.choices[0].text
+
 
 def qa_openai(token: str, documents: list[tuple[Document, float]], query: str, summarization: bool = False) -> str:
     """QA Function for OpenAI LLMs.

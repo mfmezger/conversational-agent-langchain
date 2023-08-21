@@ -376,6 +376,36 @@ def process_documents_aleph_alpha(folder: str, token: str, type: str):
 
     return answers
 
+def custom_completion_prompt_aleph_alpha(token: str, prompt: str, model: str = "luminous-extended-control", max_tokens: int = 256, stop_sequences: List[str] = ["###"], temperature: float = 0,) -> str:
+    """This method sents a custom completion request to the Aleph Alpha API.
+
+    Args:
+        token (str): The token for the Aleph Alpha API.
+        prompt (str): The prompt to be sent to the API.
+
+    Raises:
+        ValueError: Error if their are no completions or the completion is empty or the prompt and tokenis empty.
+    """
+    if not prompt:
+        raise ValueError("Prompt cannot be None or empty.")
+    if not token:
+        raise ValueError("Token cannot be None or empty.")
+
+    client = Client(token=token)
+
+    request = CompletionRequest(prompt=Prompt.from_text(prompt), maximum_tokens=max_tokens, stop_sequences=stop_sequences, temperature=temperature)
+    response = client.complete(request, model=model)
+
+    # ensure that the response is not empty
+    if not response.completions:
+        raise ValueError("Response is empty.")
+
+    # ensure that the completion is not empty
+    if not response.completions[0].completion:
+        raise ValueError("Completion is empty.")
+
+    return str(response.completions[0].completion)
+
 
 if __name__ == "__main__":
 
