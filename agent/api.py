@@ -484,10 +484,8 @@ def search_database(query: str, llm_backend: str = "openai", token: Optional[str
     return documents
 
 
-app.post("/llm/completion/custom")
-
-
-def custom_prompt_llm(request: CustomPromptCompletion) -> JSONResponse:
+@app.post("/llm/completion/custom")
+async def custom_prompt_llm(request: CustomPromptCompletion) -> JSONResponse:
     """This method sents a custom completion request to the LLM Provider.
 
     Args:
