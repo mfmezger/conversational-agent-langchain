@@ -38,12 +38,12 @@ async def test_upload_documents(provider):
         if provider == "openai":
             logger.warning("Using OpenAI API")
             response = await ac.post(
-                "/embedd_documents", params={"llm_backend": "openai", "token": os.getenv("OPENAI_API_KEY")}, files=[("files", file) for file in files]
+                "/embeddings/documents", params={"llm_backend": "openai", "token": os.getenv("OPENAI_API_KEY")}, files=[("files", file) for file in files]
             )
         else:
             logger.warning("Using Aleph Alpha API")
             response = await ac.post(
-                "/embedd_documents", params={"llm_backend": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
+                "/embeddings/documents", params={"llm_backend": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
             )
 
     assert response.status_code == 200
@@ -63,7 +63,7 @@ async def test_embedd_one_document():
     """Testing the upload of one document."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
         tmp_file = open("tests/resources/1706.03762v5.pdf", "rb")
-        response = await ac.post("/embedd_document/", files=[("file", tmp_file)])
+        response = await ac.post("/embeddings/document/", files=[("file", tmp_file)])
 
     assert response.status_code == 200
     assert response.json() == {
@@ -81,7 +81,7 @@ def test_search_route_invalid_provider():
     """Testing with wrong backend."""
     with pytest.raises(ValueError):
         response = client.post(
-            "/search",
+            "/semantic/search",
             json={
                 "query": "example query",
                 "llm_backend": "invalid_provider",
@@ -96,7 +96,7 @@ def test_search_route_invalid_provider():
 def test_search_route():
     """Testing with wrong backend."""
     response = client.post(
-        "/search",
+        "/semantic/search",
         json={
             "query": "Was ist Vanilin?",
             "llm_backend": "aa",
@@ -109,18 +109,20 @@ def test_search_route():
 
 def test_explain_output():
     """Test the function with valid arguments."""
-    response = client.post("/explain", json={"prompt": "What is the capital of France?", "output": "Paris", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
+    response = client.post(
+        "/explaination/aleph_alpha_explain", json={"prompt": "What is the capital of France?", "output": "Paris", "token": os.getenv("ALEPH_ALPHA_API_KEY")}
+    )
     assert response.status_code == 200
 
 
 def test_wrong_input_explain_output():
     """Test the function with wrong arguments."""
     with pytest.raises(ValueError):
-        client.post("/explain", json={"prompt": "", "output": "", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
+        client.post("/explaination/aleph_alpha_explain", json={"prompt": "", "output": "", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
     with pytest.raises(ValueError):
-        client.post("/explain", json={"prompt": "", "output": "asdfasdf", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
+        client.post("/explaination/aleph_alpha_explain", json={"prompt": "", "output": "asdfasdf", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
     with pytest.raises(ValueError):
-        client.post("/explain", json={"prompt": "asdfasdf", "output": "", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
+        client.post("/explaination/aleph_alpha_explain", json={"prompt": "asdfasdf", "output": "", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
 
 
 def test_embedd_text():
@@ -129,7 +131,9 @@ def test_embedd_text():
     with open("tests/resources/file1.txt") as f:
         text = f.read()
 
-    response = client.post("/embedd_text", json={"text": text, "llm_backend": "aa", "file_name": "file", "token": os.getenv("ALEPH_ALPHA_API_KEY"), "seperator": "###"})
+    response = client.post(
+        "/embeddings/text/", json={"text": text, "llm_backend": "aa", "file_name": "file", "token": os.getenv("ALEPH_ALPHA_API_KEY"), "seperator": "###"}
+    )
     logger.info(response)
     assert response.status_code == 200
     logger.info(response.json())
