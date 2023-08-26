@@ -205,7 +205,7 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator
         # get the name of the file
         metadata = os.path.splitext(file)[0]
         # add _ and an incrementing number to the metadata
-        metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
+        metadata_list: List = [{"filename": metadata + "_" + str(i)} for i in range(len(text_list))]
         vector_db.add_texts(texts=text_list, metadatas=metadata_list)
 
     logger.info("SUCCESS: Text embedded.")
