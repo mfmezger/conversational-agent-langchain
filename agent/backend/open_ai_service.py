@@ -19,7 +19,7 @@ from agent.utils.utility import generate_prompt
 load_dotenv()
 
 
-qdrant_client = QdrantClient("http://localhost", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
+qdrant_client = QdrantClient("http://127.0.0.1", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
 collection_name = "OpenAI"
 try:
     qdrant_client.get_collection(collection_name=collection_name)
