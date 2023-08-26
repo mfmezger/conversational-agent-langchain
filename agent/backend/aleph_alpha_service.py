@@ -161,8 +161,7 @@ def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, s
 
     metadata = file_name
     # add _ and an incrementing number to the metadata
-    metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
-
+    metadata_list: List = [{"filename": metadata + "_" + str(i)} for i in range(len(text_list))]
     vector_db.add_texts(texts=text_list, metadatas=metadata_list)
     logger.info("SUCCESS: Text embedded.")
 
@@ -232,7 +231,7 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
 
     try:
         vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
-        docs = vector_db.similarity_search_with_score(query, k=amount)
+        docs = vector_db.similarity_search_with_score(query=query, k=amount)
         logger.info("SUCCESS: Documents found.")
         return docs
     except Exception as e:
