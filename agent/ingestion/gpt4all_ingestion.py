@@ -20,7 +20,7 @@ def main():
     # Define the name of the collection you want to embedd the documents into.
 
     # this creates the collection if it does not exist
-    qdrant_client = QdrantClient("http://qdrant", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
+    qdrant_client = QdrantClient("http://localhost", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
     try:
         qdrant_client.get_collection(collection_name=collection_name)
         logger.info("SUCCESS: Collection already exists.")
