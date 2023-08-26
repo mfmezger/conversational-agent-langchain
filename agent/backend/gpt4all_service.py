@@ -19,7 +19,7 @@ from agent.utils.utility import generate_prompt
 load_dotenv()
 
 
-qdrant_client = QdrantClient("http://qdrant", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
+qdrant_client = QdrantClient("http://localhost", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
 collection_name = "GPT4ALL"
 try:
     qdrant_client.get_collection(collection_name=collection_name)
@@ -34,20 +34,20 @@ except Exception:
 
 @load_config(location="config/db.yml")
 def get_db_connection(cfg: DictConfig) -> Qdrant:
-    """Initializes a connection to the Chroma DB.
+    """Initializes a connection to the Qdrant DB.
 
     Args:
         cfg (DictConfig): The configuration file loaded via OmegaConf.
         aleph_alpha_token (str): The Aleph Alpha API token.
 
     Returns:
-        Chroma: The Chroma DB connection.
+        Qdrant: The Qdrant DB connection.
     """
     embedding = GPT4AllEmbeddings()
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
     vector_db = Qdrant(client=qdrant_client, collection_name="GPT4ALL", embeddings=embedding)
-    logger.info("SUCCESS: Chroma DB initialized.")
+    logger.info("SUCCESS: Qdrant DB initialized.")
 
     return vector_db
 
@@ -70,6 +70,33 @@ def embedd_documents_gpt4all(dir: str) -> None:
     metadatas = [doc.metadata for doc in docs]
     vector_db.add_texts(texts=texts, metadatas=metadatas)
     logger.info("SUCCESS: Texts embedded.")
+
+
+def embedd_text_gpt4all(text: str, file_name: str, seperator: str) -> None:
+    """embedd_documents embedds the documents in the given directory.
+
+    :param cfg: Configuration from the file
+    :type cfg: DictConfig
+    :param dir: PDF Directory
+    :type dir: str
+    """
+    vector_db: Qdrant = get_db_connection()
+
+    # split the text at the seperator
+    text_list: List = text.split(seperator)
+
+    # check if first and last element are empty
+    if not text_list[0]:
+        text_list.pop(0)
+    if not text_list[-1]:
+        text_list.pop(-1)
+
+    metadata = file_name
+    # add _ and an incrementing number to the metadata
+    metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
+
+    vector_db.add_texts(texts=text_list, metadatas=metadata_list)
+    logger.info("SUCCESS: Text embedded.")
 
 
 def summarize_text_gpt4all(text: str) -> str:
@@ -132,7 +159,7 @@ def custom_completion_prompt_gpt4all(
 
 
 def search_documents_gpt4all(query: str, amount: int) -> List[Tuple[Document, float]]:
-    """Searches the documents in the Chroma DB with a specific query.
+    """Searches the documents in the Qdrant DB with a specific query.
 
     Args:
         open_ai_token (str): The OpenAI API token.

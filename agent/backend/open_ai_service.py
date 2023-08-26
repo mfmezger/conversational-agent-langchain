@@ -1,4 +1,4 @@
-"""This script is used to initialize the chroma db backend with Azure OpenAI."""
+"""This script is used to initialize the Qdrant db backend with Azure OpenAI."""
 import os
 from typing import List, Tuple
 
@@ -19,7 +19,7 @@ from agent.utils.utility import generate_prompt
 load_dotenv()
 
 
-qdrant_client = QdrantClient("http://qdrant", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
+qdrant_client = QdrantClient("http://localhost", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
 collection_name = "OpenAI"
 try:
     qdrant_client.get_collection(collection_name=collection_name)
@@ -34,14 +34,14 @@ except Exception:
 
 @load_config(location="config/db.yml")
 def get_db_connection(open_ai_token: str, cfg: DictConfig) -> Qdrant:
-    """get_db_connection initializes the connection to the chroma db.
+    """get_db_connection initializes the connection to the Qdrant db.
 
     :param cfg: OmegaConf configuration
     :type cfg: DictConfig
     :param open_ai_token: OpenAI API Token
     :type open_ai_token: str
-    :return: Chroma DB connection
-    :rtype: Chroma
+    :return: Qdrant DB connection
+    :rtype: Qdrant
     """
     embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
@@ -74,7 +74,7 @@ def embedd_documents_openai(dir: str, open_ai_token: str) -> None:
 
 
 def search_documents_openai(open_ai_token: str, query: str, amount: int) -> List[Tuple[Document, float]]:
-    """Searches the documents in the Chroma DB with a specific query.
+    """Searches the documents in the Qdrant DB with a specific query.
 
     Args:
         open_ai_token (str): The OpenAI API token.

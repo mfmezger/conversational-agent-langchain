@@ -1,4 +1,4 @@
-"""The script to initialize the chroma db backend with aleph alpha."""
+"""The script to initialize the Qdrant db backend with aleph alpha."""
 import os
 from typing import Any, Dict, List, Tuple, Union
 
@@ -27,7 +27,7 @@ from agent.utils.utility import generate_prompt
 load_dotenv()
 
 
-qdrant_client = QdrantClient("http://qdrant", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
+qdrant_client = QdrantClient("http://localhost", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
 collection_name = "Aleph_Alpha"
 try:
     qdrant_client.get_collection(collection_name=collection_name)
@@ -42,14 +42,14 @@ except Exception:
 
 @load_config(location="config/db.yml")
 def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
-    """Initializes a connection to the Chroma DB.
+    """Initializes a connection to the Qdrant DB.
 
     Args:
         cfg (DictConfig): The configuration file loaded via OmegaConf.
         aleph_alpha_token (str): The Aleph Alpha API token.
 
     Returns:
-        Chroma: The Chroma DB connection.
+        Qdrant: The Qdrant DB connection.
     """
     embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
@@ -116,7 +116,7 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
     """Embeds the documents in the given directory in the Aleph Alpha database.
 
     This method uses the Directory Loader for PDFs and the PyPDFLoader to load the documents.
-    The documents are then added to the Chroma DB which embeds them without deleting the old collection.
+    The documents are then added to the Qdrant DB which embeds them without deleting the old collection.
 
     Args:
         dir (str): The directory containing the PDFs to embed.

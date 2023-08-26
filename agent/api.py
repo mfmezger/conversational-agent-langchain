@@ -1,4 +1,5 @@
 """FastAPI Backend for the Knowledge Agent."""
+import json
 import os
 from typing import List, Optional
 
@@ -25,6 +26,7 @@ from agent.backend.aleph_alpha_service import (
 from agent.backend.gpt4all_service import (
     custom_completion_prompt_gpt4all,
     embedd_documents_gpt4all,
+    embedd_text_gpt4all,
     search_documents_gpt4all,
     summarize_text_gpt4all,
 )
@@ -132,6 +134,7 @@ async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend
     Returns:
         JSONResponse: The response as JSON.
     """
+    logger.info("Embedding Multiple Documents")
     token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
     tmp_dir = create_tmp_folder()
 
@@ -171,6 +174,7 @@ async def post_embedd_document(file: UploadFile, llm_backend: str = "openai", to
     Returns:
         JSONResponse: A response indicating which files were received and saved.
     """
+    logger.info("Embedding Single Document")
     token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
     # Create a temporary folder to save the files
     tmp_dir = create_tmp_folder()
@@ -200,8 +204,10 @@ async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
     Returns:
         JSONResponse: A response indicating that the text was received and saved, along with the name of the file it was saved to.
     """
+    logger.info("Embedding Text")
     token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
+    logger.info(f"Requested Backend is: {request.llm_backend}")
     if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
         embedd_text_aleph_alpha(text=request.text, file_name=request.file_name, aleph_alpha_token=token, seperator=request.seperator)
@@ -209,10 +215,11 @@ async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
         return JSONResponse(content={"message": "Text received and saved.", "filenames": request.file_name})
     elif request.llm_backend == "openai":
         # Embedd the documents with OpenAI
+        # TODO: Implement
         raise ValueError("Not implemented yet.")
     elif request.llm_backend == "gpt4all":
-        # embedd_documents_gpt4all(dir=)
-        raise ValueError("Not implemented yet.")
+        embedd_text_gpt4all(text=request.text, file_name=request.file_name, seperator=request.seperator)
+
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
@@ -230,6 +237,7 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> JSONResponse:
     Returns:
         JSONResponse: A response indicating that the files were received and saved, along with the names of the files they were saved to.
     """
+    logger.info("Embedding Text Files")
     tmp_dir = create_tmp_folder()
 
     file_names = []
@@ -271,6 +279,7 @@ def search(request: SearchRequest) -> JSONResponse:
     Returns:
         List[str]: A list of matching documents.
     """
+    logger.info("Searching for Documents")
     token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     if request.llm_backend is None:
@@ -278,6 +287,10 @@ def search(request: SearchRequest) -> JSONResponse:
 
     DOCS = search_database(query=request.query, llm_backend=request.llm_backend, token=token, amount=request.amount)
 
+    if not DOCS:
+        logger.info("No Documents found.")
+        return JSONResponse(content={"message": "No documents found."})
+    logger.info(f"Found {len(DOCS)} documents.")
     response = []
     for d in DOCS:
         score = d[1]
@@ -285,8 +298,6 @@ def search(request: SearchRequest) -> JSONResponse:
         page = d[0].metadata["page"]
         source = d[0].metadata["source"]
         response.append(SearchResponse(text=text, page=page, source=source, score=score))
-
-    import json
 
     json_response = json.dumps([r.dict() for r in response])
 
@@ -307,6 +318,7 @@ def question_answer(request: QARequest) -> JSONResponse:
     Returns:
         Tuple: Answer, Prompt and Meta Data
     """
+    logger.info("Answering Question")
     # if the query is not provided, raise an error
     if request.query is None:
         raise ValueError("Please provide a Question.")
@@ -374,6 +386,7 @@ def explain_question_answer(query: Optional[str] = None, llm_backend: str = "ope
     Returns:
         Tuple: Answer, Prompt and Meta Data
     """
+    logger.info("Answering Question and Explaining it.")
     # if the query is not provided, raise an error
     if query is None:
         raise ValueError("Please provide a Question.")
@@ -401,6 +414,7 @@ def explain_output(request: ExplainRequest) -> JSONResponse:
     Returns:
         Dict[str, float]: A dictionary containing the prompt and the score of the output.
     """
+    logger.info("Explain Output")
     # fail if prompt or output are not provided
     if request.prompt is None or request.output is None:
         raise ValueError("Please provide a prompt and output.")
@@ -427,6 +441,7 @@ async def process_document(files: List[UploadFile] = File(...), llm_backend: str
     Returns:
         JSONResponse: _description_
     """
+    logger.info("Processing Document")
     token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     # Create a temporary folder to save the files
@@ -466,6 +481,7 @@ def search_database(query: str, llm_backend: str = "openai", token: Optional[str
     Returns:
         JSON List of Documents consisting of the text, page, source and score.
     """
+    logger.info("Searching for Documents")
     token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
@@ -494,6 +510,7 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> JSONResponse:
     Raises:
         ValueError: If the LLM provider is not implemented yet.
     """
+    logger.info("Sending Custom Completion Request")
     if request.llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
         # sent a completion
         answer = custom_completion_prompt_aleph_alpha(
@@ -541,6 +558,7 @@ def delete(page: int, source: str, llm_provider: str = "openai") -> UpdateResult
     Returns:
         _type_: _description_
     """
+    logger.info("Deleting Vector from Database")
     if llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
         collection = "aleph-alpha"
     elif llm_provider == "OpenAI":
@@ -550,7 +568,7 @@ def delete(page: int, source: str, llm_provider: str = "openai") -> UpdateResult
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
-    qdrant_client = QdrantClient("http://qdrant", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
+    qdrant_client = QdrantClient("http://localhost", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
 
     result = qdrant_client.delete(
         collection_name=collection,
