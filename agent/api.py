@@ -8,6 +8,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.openapi.utils import get_openapi
 from langchain.docstore.document import Document as LangchainDocument
 from loguru import logger
+from omegaconf import DictConfig
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
@@ -44,6 +45,7 @@ from agent.data_model.rest_data_model import (
     SearchRequest,
     SearchResponse,
 )
+from agent.utils.configuration import load_config
 from agent.utils.utility import (
     combine_text_from_list,
     create_tmp_folder,
@@ -547,7 +549,13 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> JSONResponse:
 
 
 @app.delete("/embeddings/delete/{llm_provider}/{page}/{source}")
-def delete(page: int, source: str, llm_provider: str = "openai") -> UpdateResult:
+@load_config("config/db.yml")
+def delete(
+    page: int,
+    source: str,
+    cfg: DictConfig,
+    llm_provider: str = "openai",
+) -> UpdateResult:
     """Delete a Vector from the database based on the page and source.
 
     Args:
@@ -556,7 +564,7 @@ def delete(page: int, source: str, llm_provider: str = "openai") -> UpdateResult
         llm_provider (str, optional): The LLM Provider. Defaults to "openai".
 
     Returns:
-        _type_: _description_
+        UpdateResult: The result of the Deletion Operation from the Vector Database.
     """
     logger.info("Deleting Vector from Database")
     if llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
@@ -568,7 +576,7 @@ def delete(page: int, source: str, llm_provider: str = "openai") -> UpdateResult
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
-    qdrant_client = QdrantClient("http://127.0.0.1", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
+    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
     result = qdrant_client.delete(
         collection_name=collection,

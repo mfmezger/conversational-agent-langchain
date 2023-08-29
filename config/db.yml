@@ -1,4 +1,4 @@
 qdrant:
-  url: http://127.0.0.1
+  url: http://qdrant
   port: 6333
   prefer_grpc: false
