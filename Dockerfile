@@ -14,6 +14,7 @@ RUN poetry install --no-root --no-dev
 
 COPY . .
 
+RUN initialize_vector_db.sh
 
 ENTRYPOINT ["uvicorn", "agent.api:app", "--host", "0.0.0.0", "--port", "8001"]
 # watch the logs

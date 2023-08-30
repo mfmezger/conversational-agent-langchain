@@ -19,25 +19,11 @@ from langchain.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
-from qdrant_client.http import models
 
 from agent.utils.configuration import load_config
 from agent.utils.utility import generate_prompt
 
 load_dotenv()
-
-
-qdrant_client = QdrantClient("http://qdrant", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
-collection_name = "Aleph_Alpha"
-try:
-    qdrant_client.get_collection(collection_name=collection_name)
-    logger.info("SUCCESS: Collection already exists.")
-except Exception:
-    qdrant_client.recreate_collection(
-        collection_name=collection_name,
-        vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
-    )
-    logger.info("SUCCESS: Collection created.")
 
 
 @load_config(location="config/db.yml")
@@ -78,7 +64,8 @@ def summarize_text_aleph_alpha(text: str, token: str) -> str:
     return response.summary
 
 
-def send_completion_request(text: str, token: str, model: str = "luminous-extended-control") -> str:
+@load_config(location="config/ai/aleph_alpha.yml")
+def send_completion_request(text: str, token: str, cfg: DictConfig) -> str:
     """Sends a completion request to the Luminous API.
 
     Args:
@@ -98,8 +85,13 @@ def send_completion_request(text: str, token: str, model: str = "luminous-extend
 
     client = Client(token=token)
 
-    request = CompletionRequest(prompt=Prompt.from_text(text), maximum_tokens=256, stop_sequences=["###"])
-    response = client.complete(request, model=model)
+    request = CompletionRequest(
+        prompt=Prompt.from_text(text),
+        maximum_tokens=cfg.aleph_alpha_completion.model,
+        stop_sequences=cfg.aleph_alpha_completion.stop_sequences,
+        repetition_penalties_include_completion=cfg.aleph_alpha_completion.repetition_penalties_include_completion,
+    )
+    response = client.complete(request, model=cfg.model)
 
     # ensure that the response is not empty
     if not response.completions:

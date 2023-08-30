@@ -11,25 +11,11 @@ from langchain.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
-from qdrant_client.http import models
 
 from agent.utils.configuration import load_config
 from agent.utils.utility import generate_prompt
 
 load_dotenv()
-
-
-qdrant_client = QdrantClient("http://qdrant", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
-collection_name = "OpenAI"
-try:
-    qdrant_client.get_collection(collection_name=collection_name)
-    logger.info("SUCCESS: Collection already exists.")
-except Exception:
-    qdrant_client.recreate_collection(
-        collection_name=collection_name,
-        vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
-    )
-    logger.info("SUCCESS: Collection created.")
 
 
 @load_config(location="config/db.yml")

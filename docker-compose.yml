@@ -1,13 +1,11 @@
-# create build for local docker file
-
 services:
   agent:
     build: .
-
     volumes:
       - ./data:/data
       - ./logs:/logs
-
+    depends_on:
+      - qdrant
     ports:
       - "8001:8001"
 
