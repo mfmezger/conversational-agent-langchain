@@ -13,6 +13,10 @@ from qdrant_client import QdrantClient, models
 from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
 
+from omegaconf import DictConfig
+
+from utils.configuration import load_config
+
 from agent.backend.aleph_alpha_service import (
     custom_completion_prompt_aleph_alpha,
     embedd_documents_aleph_alpha,
@@ -56,7 +60,6 @@ from agent.utils.utility import (
 logger.add("logs/file_{time}.log", backtrace=False, diagnose=False)
 logger.info("Startup.")
 
-# TODO: Refactor
 
 
 def my_schema() -> dict:
@@ -80,7 +83,6 @@ app = FastAPI(debug=True)
 app.openapi = my_schema
 
 load_dotenv()
-
 
 # load the token from the environment variables, is None if not set.
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
@@ -570,9 +572,9 @@ def delete(
     if llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
         collection = "aleph-alpha"
     elif llm_provider == "OpenAI":
-        collection = "aleph-alpha"
+        collection = "openai"
     elif llm_provider == "GPT4ALL":
-        collection = "aleph-alpha"
+        collection = "gpt4all"
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
@@ -593,4 +595,70 @@ def delete(
         ),
     )
 
+    logger.info("Deleted Point from Database via Metadata.")
     return result
+
+
+@load_config(location="config/db.yml")
+def initialize_aleph_alpha_vector_db(cfg: DictConfig):
+    """Initializes the Aleph Alpha vector db.
+
+    Args:
+        cfg (DictConfig): Configuration from the file
+    """
+    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
+    collection_name = "Aleph_Alpha"
+    try:
+        qdrant_client.get_collection(collection_name=collection_name)
+        logger.info(f"SUCCESS: Collection {collection_name} already exists.")
+    except Exception:
+        qdrant_client.recreate_collection(
+            collection_name=collection_name,
+            vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
+        )
+        logger.info(f"SUCCESS: Collection {collection_name} created.")
+
+
+@load_config(location="config/db.yml")
+def initialize_open_ai_vector_db(cfg: DictConfig):
+    """Initializes the OpenAI vector db.
+
+    Args:
+        cfg (DictConfig): Configuration from the file
+    """
+    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
+    collection_name = "OpenAI"
+    try:
+        qdrant_client.get_collection(collection_name=collection_name)
+        logger.info(f"SUCCESS: Collection {collection_name} already exists.")
+    except Exception:
+        qdrant_client.recreate_collection(
+            collection_name=collection_name,
+            vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
+        )
+        logger.info(f"SUCCESS: Collection {collection_name} created.")
+
+
+@load_config(location="config/db.yml")
+def initialize_gpt4all_vector_db(cfg: DictConfig):
+    """Initializes the GPT4ALL vector db.
+
+    Args:
+        cfg (DictConfig): Configuration from the file
+    """
+    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
+    collection_name = "GPT4ALL"
+    try:
+        qdrant_client.get_collection(collection_name=collection_name)
+        logger.info(f"SUCCESS: Collection {collection_name} already exists.")
+    except Exception:
+        qdrant_client.recreate_collection(
+            collection_name=collection_name,
+            vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
+        )
+        logger.info(f"SUCCESS: Collection {collection_name} created.")
+
+# initialize the databases
+initialize_open_ai_vector_db()
+initialize_aleph_alpha_vector_db()
+initialize_gpt4all_vector_db()
