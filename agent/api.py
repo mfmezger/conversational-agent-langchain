@@ -15,8 +15,6 @@ from starlette.responses import JSONResponse
 
 from omegaconf import DictConfig
 
-from utils.configuration import load_config
-
 from agent.backend.aleph_alpha_service import (
     custom_completion_prompt_aleph_alpha,
     embedd_documents_aleph_alpha,
