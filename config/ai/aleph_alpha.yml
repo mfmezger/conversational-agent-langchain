@@ -1,5 +1,5 @@
 aleph_alpha_completion:
-  model: luminous-extended-control
+  model: "luminous-extended-control"
   temperature: 0
   max_tokens: 200
   top_p: 1

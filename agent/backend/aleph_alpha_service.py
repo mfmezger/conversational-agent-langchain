@@ -87,11 +87,11 @@ def send_completion_request(text: str, token: str, cfg: DictConfig) -> str:
 
     request = CompletionRequest(
         prompt=Prompt.from_text(text),
-        maximum_tokens=cfg.aleph_alpha_completion.model,
+        maximum_tokens=cfg.aleph_alpha_completion.max_tokens,
         stop_sequences=cfg.aleph_alpha_completion.stop_sequences,
         repetition_penalties_include_completion=cfg.aleph_alpha_completion.repetition_penalties_include_completion,
     )
-    response = client.complete(request, model=cfg.model)
+    response = client.complete(request, model=cfg.aleph_alpha_completion.model)
 
     # ensure that the response is not empty
     if not response.completions:

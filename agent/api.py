@@ -13,8 +13,6 @@ from qdrant_client import QdrantClient, models
 from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
 
-from omegaconf import DictConfig
-
 from agent.backend.aleph_alpha_service import (
     custom_completion_prompt_aleph_alpha,
     embedd_documents_aleph_alpha,
@@ -57,7 +55,6 @@ from agent.utils.utility import (
 # add file logger for loguru
 logger.add("logs/file_{time}.log", backtrace=False, diagnose=False)
 logger.info("Startup.")
-
 
 
 def my_schema() -> dict:
@@ -655,6 +652,7 @@ def initialize_gpt4all_vector_db(cfg: DictConfig):
             vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
         )
         logger.info(f"SUCCESS: Collection {collection_name} created.")
+
 
 # initialize the databases
 initialize_open_ai_vector_db()
