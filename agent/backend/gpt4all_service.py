@@ -85,7 +85,8 @@ def embedd_text_gpt4all(text: str, file_name: str, seperator: str) -> None:
     logger.info("SUCCESS: Text embedded.")
 
 
-def summarize_text_gpt4all(text: str) -> str:
+@load_config(location="config/ai/gpt4all.yml")
+def summarize_text_gpt4all(text: str, cfg: DictConfig) -> str:
     """Summarize text with GPT4ALL.
 
     Args:
@@ -96,14 +97,15 @@ def summarize_text_gpt4all(text: str) -> str:
     """
     prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, language="de")
 
-    model = GPT4All("orca-mini-3b.ggmlv3.q4_0.bin")
+    model = GPT4All(cfg.gpt4all.completion_model)
 
     output = model.generate(prompt, max_tokens=300)
 
     return output
 
 
-def completion_text_gpt4all(text: str, query: str) -> str:
+@load_config(location="config/ai/gpt4all.yml")
+def completion_text_gpt4all(text: str, query: str, cfg: DictConfig) -> str:
     """Complete text with GPT4ALL.
 
     Args:
@@ -115,7 +117,7 @@ def completion_text_gpt4all(text: str, query: str) -> str:
     """
     prompt = generate_prompt(prompt_name="gpt4all-completion.j2", text=text, query=query, language="de")
 
-    model = GPT4All("orca-mini-3b.ggmlv3.q4_0.bin")
+    model = GPT4All(cfg.gpt4all.completion_model)
 
     output = model.generate(prompt, max_tokens=300)
 

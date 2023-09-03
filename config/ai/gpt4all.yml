@@ -1,0 +1,2 @@
+gpt4all:
+  completion_model: "orca-mini-3b.ggmlv3.q4_0.bin"

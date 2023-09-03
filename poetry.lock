@@ -221,14 +221,14 @@ files = [
 
 [[package]]
 name = "anyio"
-version = "4.0.0"
+version = "3.7.1"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
 category = "main"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.7"
 files = [
-    {file = "anyio-4.0.0-py3-none-any.whl", hash = "sha256:cfdb2b588b9fc25ede96d8db56ed50848b0b649dca3dd1df0b11f683bb9e0b5f"},
-    {file = "anyio-4.0.0.tar.gz", hash = "sha256:f7ed51751b2c2add651e5747c891b47e26d2a21be5d32d9311dfe9692f3e5d7a"},
+    {file = "anyio-3.7.1-py3-none-any.whl", hash = "sha256:91dee416e570e92c64041bd18b900d1d6fa78dff7048769ce5ac5ddad004fbb5"},
+    {file = "anyio-3.7.1.tar.gz", hash = "sha256:44a3c9aba0f5defa43261a8b3efb97891f2bd7d804e0e1f56419befa1adfc780"},
 ]
 
 [package.dependencies]
@@ -236,9 +236,9 @@ idna = ">=2.8"
 sniffio = ">=1.1"
 
 [package.extras]
-doc = ["Sphinx (>=7)", "packaging", "sphinx-autodoc-typehints (>=1.2.0)"]
-test = ["anyio[trio]", "coverage[toml] (>=7)", "hypothesis (>=4.0)", "psutil (>=5.9)", "pytest (>=7.0)", "pytest-mock (>=3.6.1)", "trustme", "uvloop (>=0.17)"]
-trio = ["trio (>=0.22)"]
+doc = ["Sphinx", "packaging", "sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme (>=1.2.2)", "sphinxcontrib-jquery"]
+test = ["anyio[trio]", "coverage[toml] (>=4.5)", "hypothesis (>=4.0)", "mock (>=4)", "psutil (>=5.9)", "pytest (>=7.0)", "pytest-mock (>=3.6.1)", "trustme", "uvloop (>=0.17)"]
+trio = ["trio (<0.22)"]
 
 [[package]]
 name = "astroid"
@@ -656,17 +656,18 @@ graph = ["objgraph (>=1.7.2)"]
 
 [[package]]
 name = "fastapi"
-version = "0.101.1"
+version = "0.103.1"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "fastapi-0.101.1-py3-none-any.whl", hash = "sha256:aef5f8676eb1b8389952e1fe734abe20f04b71f6936afcc53b320ba79b686a4b"},
-    {file = "fastapi-0.101.1.tar.gz", hash = "sha256:7b32000d14ca9992f7461117b81e4ef9ff0c07936af641b4fe40e67d5f9d63cb"},
+    {file = "fastapi-0.103.1-py3-none-any.whl", hash = "sha256:5e5f17e826dbd9e9b5a5145976c5cd90bcaa61f2bf9a69aca423f2bcebe44d83"},
+    {file = "fastapi-0.103.1.tar.gz", hash = "sha256:345844e6a82062f06a096684196aaf96c1198b25c06b72c1311b882aa2d8a35d"},
 ]
 
 [package.dependencies]
+anyio = ">=3.7.1,<4.0.0"
 pydantic = ">=1.7.4,<1.8 || >1.8,<1.8.1 || >1.8.1,<2.0.0 || >2.0.0,<2.0.1 || >2.0.1,<2.1.0 || >2.1.0,<3.0.0"
 starlette = ">=0.27.0,<0.28.0"
 typing-extensions = ">=4.5.0"
@@ -777,15 +778,15 @@ gitdb = ">=4.0.1,<5"
 
 [[package]]
 name = "gpt4all"
-version = "1.0.8"
+version = "1.0.9"
 description = "Python bindings for GPT4All"
 category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "gpt4all-1.0.8-py3-none-macosx_10_9_universal2.whl", hash = "sha256:405180fb9eb924dcb0ded070200923948b25b9b192fa5d059e805f1349ba9b15"},
-    {file = "gpt4all-1.0.8-py3-none-manylinux1_x86_64.whl", hash = "sha256:96b5f8e139784d9ce11aea2cb6d39d7866943d7cb574917af48eca4cccb31a12"},
-    {file = "gpt4all-1.0.8-py3-none-win_amd64.whl", hash = "sha256:96dbe139f4f17bcf8a0e81d241e52b7d812d3b500ffa9b89a34dcb7f63e52100"},
+    {file = "gpt4all-1.0.9-py3-none-macosx_10_9_universal2.whl", hash = "sha256:b47c28cd16676fe64a827897a2803498a380d3c5419951652452ab5e158398d5"},
+    {file = "gpt4all-1.0.9-py3-none-manylinux1_x86_64.whl", hash = "sha256:365e99207f0d473878e2bae9fc56a1f0c985ac62fa3aef38e6ba1c94765f414b"},
+    {file = "gpt4all-1.0.9-py3-none-win_amd64.whl", hash = "sha256:c163c41dbadcc3cf12ebb558de1822f17fec7a80abfd9b1b8daf20bc566f35ba"},
 ]
 
 [package.dependencies]
@@ -3784,4 +3785,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "2ba277f971503d5d11325390be4138d5dffa86b04669d0645ccd7d0204c8989e"
+content-hash = "87b7dff11287a144db4958d9b56736546a44d9f3b190b4e4bc18f609e06ed9e2"

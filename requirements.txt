@@ -103,9 +103,9 @@ altair==5.1.1 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:bb421459b53c80ad45f2bd009c87da2a81165b8f7d5a90658e0fc1ffc741bf34
 antlr4-python3-runtime==4.9.3 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:f224469b4168294902bb1efa80a8bf7855f24c99aef99cbefc1bcd3cce77881b
-anyio==4.0.0 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:cfdb2b588b9fc25ede96d8db56ed50848b0b649dca3dd1df0b11f683bb9e0b5f \
-    --hash=sha256:f7ed51751b2c2add651e5747c891b47e26d2a21be5d32d9311dfe9692f3e5d7a
+anyio==3.7.1 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:44a3c9aba0f5defa43261a8b3efb97891f2bd7d804e0e1f56419befa1adfc780 \
+    --hash=sha256:91dee416e570e92c64041bd18b900d1d6fa78dff7048769ce5ac5ddad004fbb5
 async-timeout==4.0.3 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:4640d96be84d82d02ed59ea2b7105a0f7b33abe8703703cd0ab0bf87c427522f \
     --hash=sha256:7405140ff1230c310e51dc27b3145b9092d659ce68ff733fb0cefe3ee42be028
@@ -271,9 +271,9 @@ colorama==0.4.6 ; python_version >= "3.11" and python_version < "3.12" and sys_p
 dataclasses-json==0.5.14 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:5ec6fed642adb1dbdb4182badb01e0861badfd8fda82e3b67f44b2d1e9d10d21 \
     --hash=sha256:d82896a94c992ffaf689cd1fafc180164e2abdd415b8f94a7f78586af5886236
-fastapi==0.101.1 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:7b32000d14ca9992f7461117b81e4ef9ff0c07936af641b4fe40e67d5f9d63cb \
-    --hash=sha256:aef5f8676eb1b8389952e1fe734abe20f04b71f6936afcc53b320ba79b686a4b
+fastapi==0.103.1 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:345844e6a82062f06a096684196aaf96c1198b25c06b72c1311b882aa2d8a35d \
+    --hash=sha256:5e5f17e826dbd9e9b5a5145976c5cd90bcaa61f2bf9a69aca423f2bcebe44d83
 frozenlist==1.4.0 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:007df07a6e3eb3e33e9a1fe6a9db7af152bbd8a185f9aaa6ece10a3529e3e1c6 \
     --hash=sha256:008eb8b31b3ea6896da16c38c1b136cb9fec9e249e77f6211d479db79a4eaf01 \
@@ -342,10 +342,10 @@ gitdb==4.0.10 ; python_version >= "3.11" and python_version < "3.12" \
 gitpython==3.1.33 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:11f22466f982211ad8f3bdb456c03be8466c71d4da8774f3a9f68344e89559cb \
     --hash=sha256:13aaa3dff88a23afec2d00eb3da3f2e040e2282e41de484c5791669b31146084
-gpt4all==1.0.8 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:405180fb9eb924dcb0ded070200923948b25b9b192fa5d059e805f1349ba9b15 \
-    --hash=sha256:96b5f8e139784d9ce11aea2cb6d39d7866943d7cb574917af48eca4cccb31a12 \
-    --hash=sha256:96dbe139f4f17bcf8a0e81d241e52b7d812d3b500ffa9b89a34dcb7f63e52100
+gpt4all==1.0.9 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:365e99207f0d473878e2bae9fc56a1f0c985ac62fa3aef38e6ba1c94765f414b \
+    --hash=sha256:b47c28cd16676fe64a827897a2803498a380d3c5419951652452ab5e158398d5 \
+    --hash=sha256:c163c41dbadcc3cf12ebb558de1822f17fec7a80abfd9b1b8daf20bc566f35ba
 greenlet==2.0.2 ; python_version >= "3.11" and python_version < "3.12" and platform_machine == "aarch64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "ppc64le" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "x86_64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "amd64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "AMD64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "win32" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "WIN32" \
     --hash=sha256:03a8f4f3430c3b3ff8d10a2a86028c660355ab637cee9333d63d66b56f09d52a \
     --hash=sha256:0bf60faf0bc2468089bdc5edd10555bab6e85152191df713e2ab1fcc86382b5a \
