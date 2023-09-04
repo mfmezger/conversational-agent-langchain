@@ -398,7 +398,7 @@ def explain_question_answer(query: Optional[str] = None, llm_backend: str = "ope
     documents = search_database(query=query, llm_backend=llm_backend, token=token, amount=1)
 
     # call the qa function
-    explanation, score, text, answer, meta_data = explain_qa(query=query, documents=documents, aleph_alpha_token=token)
+    explanation, score, text, answer, meta_data = explain_qa(query=query, document=documents, aleph_alpha_token=token)
 
     return JSONResponse(content={"explanation": explanation, "score": score, "text": text, "answer": answer, "meta_data": meta_data})
 
