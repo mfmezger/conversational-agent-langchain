@@ -11,7 +11,6 @@ from langchain.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
-from qdrant_client.http import models
 
 from agent.utils.configuration import load_config
 from agent.utils.utility import generate_prompt
@@ -19,35 +18,22 @@ from agent.utils.utility import generate_prompt
 load_dotenv()
 
 
-qdrant_client = QdrantClient("http://qdrant", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
-collection_name = "GPT4ALL"
-try:
-    qdrant_client.get_collection(collection_name=collection_name)
-    logger.info("SUCCESS: Collection already exists.")
-except Exception:
-    qdrant_client.recreate_collection(
-        collection_name=collection_name,
-        vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
-    )
-    logger.info("SUCCESS: Collection created.")
-
-
 @load_config(location="config/db.yml")
 def get_db_connection(cfg: DictConfig) -> Qdrant:
-    """Initializes a connection to the Chroma DB.
+    """Initializes a connection to the Qdrant DB.
 
     Args:
         cfg (DictConfig): The configuration file loaded via OmegaConf.
         aleph_alpha_token (str): The Aleph Alpha API token.
 
     Returns:
-        Chroma: The Chroma DB connection.
+        Qdrant: The Qdrant DB connection.
     """
     embedding = GPT4AllEmbeddings()
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
     vector_db = Qdrant(client=qdrant_client, collection_name="GPT4ALL", embeddings=embedding)
-    logger.info("SUCCESS: Chroma DB initialized.")
+    logger.info("SUCCESS: Qdrant DB initialized.")
 
     return vector_db
 
@@ -72,7 +58,35 @@ def embedd_documents_gpt4all(dir: str) -> None:
     logger.info("SUCCESS: Texts embedded.")
 
 
-def summarize_text_gpt4all(text: str) -> str:
+def embedd_text_gpt4all(text: str, file_name: str, seperator: str) -> None:
+    """embedd_documents embedds the documents in the given directory.
+
+    :param cfg: Configuration from the file
+    :type cfg: DictConfig
+    :param dir: PDF Directory
+    :type dir: str
+    """
+    vector_db: Qdrant = get_db_connection()
+
+    # split the text at the seperator
+    text_list: List = text.split(seperator)
+
+    # check if first and last element are empty
+    if not text_list[0]:
+        text_list.pop(0)
+    if not text_list[-1]:
+        text_list.pop(-1)
+
+    metadata = file_name
+    # add _ and an incrementing number to the metadata
+    metadata_list: List = [{"filename": metadata + "_" + str(i)} for i in range(len(text_list))]
+
+    vector_db.add_texts(texts=text_list, metadatas=metadata_list)
+    logger.info("SUCCESS: Text embedded.")
+
+
+@load_config(location="config/ai/gpt4all.yml")
+def summarize_text_gpt4all(text: str, cfg: DictConfig) -> str:
     """Summarize text with GPT4ALL.
 
     Args:
@@ -83,14 +97,15 @@ def summarize_text_gpt4all(text: str) -> str:
     """
     prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, language="de")
 
-    model = GPT4All("orca-mini-3b.ggmlv3.q4_0.bin")
+    model = GPT4All(cfg.gpt4all.completion_model)
 
     output = model.generate(prompt, max_tokens=300)
 
     return output
 
 
-def completion_text_gpt4all(text: str, query: str) -> str:
+@load_config(location="config/ai/gpt4all.yml")
+def completion_text_gpt4all(text: str, query: str, cfg: DictConfig) -> str:
     """Complete text with GPT4ALL.
 
     Args:
@@ -102,15 +117,33 @@ def completion_text_gpt4all(text: str, query: str) -> str:
     """
     prompt = generate_prompt(prompt_name="gpt4all-completion.j2", text=text, query=query, language="de")
 
-    model = GPT4All("orca-mini-3b.ggmlv3.q4_0.bin")
+    model = GPT4All(cfg.gpt4all.completion_model)
 
     output = model.generate(prompt, max_tokens=300)
 
     return output
 
 
+def custom_completion_prompt_gpt4all(prompt: str, model: str = "orca-mini-3b.ggmlv3.q4_0.bin", max_tokens: int = 256, temperature: float = 0) -> str:
+    """This method sents a custom completion request to the Aleph Alpha API.
+
+    Args:
+        token (str): The token for the Aleph Alpha API.
+        prompt (str): The prompt to be sent to the API.
+
+    Raises:
+        ValueError: Error if their are no completions or the completion is empty or the prompt and tokenis empty.
+    """
+    if not prompt:
+        raise ValueError("Prompt cannot be None or empty.")
+
+    output = (GPT4All(model)).generate(prompt, max_tokens=max_tokens, temp=temperature)
+
+    return str(output)
+
+
 def search_documents_gpt4all(query: str, amount: int) -> List[Tuple[Document, float]]:
-    """Searches the documents in the Chroma DB with a specific query.
+    """Searches the documents in the Qdrant DB with a specific query.
 
     Args:
         open_ai_token (str): The OpenAI API token.

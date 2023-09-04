@@ -14,7 +14,6 @@ RUN poetry install --no-root --no-dev
 
 COPY . .
 
-
 ENTRYPOINT ["uvicorn", "agent.api:app", "--host", "0.0.0.0", "--port", "8001"]
 # watch the logs
 # CMD ["tail", "-f", "/dev/null"]

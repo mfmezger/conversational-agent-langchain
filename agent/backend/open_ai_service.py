@@ -1,6 +1,6 @@
-"""This script is used to initialize the chroma db backend with Azure OpenAI."""
+"""This script is used to initialize the Qdrant db backend with Azure OpenAI."""
 import os
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 import openai
 from dotenv import load_dotenv
@@ -11,7 +11,6 @@ from langchain.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
-from qdrant_client.http import models
 
 from agent.utils.configuration import load_config
 from agent.utils.utility import generate_prompt
@@ -19,31 +18,18 @@ from agent.utils.utility import generate_prompt
 load_dotenv()
 
 
-qdrant_client = QdrantClient("http://qdrant", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
-collection_name = "OpenAI"
-try:
-    qdrant_client.get_collection(collection_name=collection_name)
-    logger.info("SUCCESS: Collection already exists.")
-except Exception:
-    qdrant_client.recreate_collection(
-        collection_name=collection_name,
-        vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
-    )
-    logger.info("SUCCESS: Collection created.")
-
-
 @load_config(location="config/db.yml")
 def get_db_connection(open_ai_token: str, cfg: DictConfig) -> Qdrant:
-    """get_db_connection initializes the connection to the chroma db.
+    """get_db_connection initializes the connection to the Qdrant db.
 
     :param cfg: OmegaConf configuration
     :type cfg: DictConfig
     :param open_ai_token: OpenAI API Token
     :type open_ai_token: str
-    :return: Chroma DB connection
-    :rtype: Chroma
+    :return: Qdrant DB connection
+    :rtype: Qdrant
     """
-    embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)
+    embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)  # type: ignore
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
     vector_db = Qdrant(client=qdrant_client, collection_name="OpenAI", embeddings=embedding)
@@ -74,7 +60,7 @@ def embedd_documents_openai(dir: str, open_ai_token: str) -> None:
 
 
 def search_documents_openai(open_ai_token: str, query: str, amount: int) -> List[Tuple[Document, float]]:
-    """Searches the documents in the Chroma DB with a specific query.
+    """Searches the documents in the Qdrant DB with a specific query.
 
     Args:
         open_ai_token (str): The OpenAI API token.
@@ -151,7 +137,38 @@ def send_completion(text: str, query: str, token: str, cfg: DictConfig) -> str:
     return response.choices[0].text
 
 
-def qa_openai(token: str, documents: list[tuple[Document, float]], query: str, summarization: bool = False) -> str:
+def send_custom_completion_openai(
+    token: str,
+    prompt: str,
+    model: str = "gpt3.5",
+    max_tokens: int = 256,
+    stop_sequences: List[str] = ["###"],
+    temperature: float = 0,
+) -> str:
+    """Sent completion request to OpenAI API.
+
+    Args:
+        text (str): The text on which the completion should be based.
+        query (str): The query for the completion.
+        token (str): The token for the OpenAI API.
+        cfg (DictConfig):
+
+    Returns:
+        str: Response from the OpenAI API.
+    """
+    openai.api_key = token
+    response = openai.Completion.create(
+        engine=model,
+        prompt=prompt,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        stop_sequences=stop_sequences,
+    )
+
+    return response.choices[0].text
+
+
+def qa_openai(token: str, documents: list[tuple[Document, float]], query: str, summarization: bool = False) -> tuple[Any, str, dict[Any, Any]]:
     """QA Function for OpenAI LLMs.
 
     Args:

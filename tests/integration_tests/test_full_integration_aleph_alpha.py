@@ -36,7 +36,7 @@ def test_embedd_text_aleph_alpha():
     # assert that it does not raise an error
     token = os.getenv("ALEPH_ALPHA_API_KEY")
     assert token is not None
-    embedd_text_aleph_alpha("This is a test", "file", token, " ")
+    embedd_text_aleph_alpha("This is a test", "file", token, "+++")
 
 
 def test_search_documents_aleph_alpha_wrong_token():

@@ -1,4 +1,5 @@
 qdrant:
   url: http://qdrant
+  # url: http://localhost
   port: 6333
   prefer_grpc: false

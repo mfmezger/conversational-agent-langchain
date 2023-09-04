@@ -45,7 +45,7 @@ Then start the system with
   docker compose up -d
 ```
 
-Then go to http://localhost:8001/docs or http://localhost:8001/redoc to see the API documentation.
+Then go to http://127.0.0.1:8001/docs or http://127.0.0.1:8001/redoc to see the API documentation.
 
 
 ## Redoc API Documentation
@@ -152,7 +152,7 @@ poetry run streamlit run gui.py
 
 ## Vector Database
 
-Qdrant Dashboard is available at http://localhost:6333/dashboard. There you need to enter the api key.
+Qdrant Dashboard is available at http://127.0.0.1:6333/dashboard. There you need to enter the api key.
 
 
 

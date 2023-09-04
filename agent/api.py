@@ -1,4 +1,5 @@
 """FastAPI Backend for the Knowledge Agent."""
+import json
 import os
 from typing import List, Optional
 
@@ -7,11 +8,13 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.openapi.utils import get_openapi
 from langchain.docstore.document import Document as LangchainDocument
 from loguru import logger
+from omegaconf import DictConfig
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
 
 from agent.backend.aleph_alpha_service import (
+    custom_completion_prompt_aleph_alpha,
     embedd_documents_aleph_alpha,
     embedd_text_aleph_alpha,
     embedd_text_files_aleph_alpha,
@@ -22,15 +25,19 @@ from agent.backend.aleph_alpha_service import (
     summarize_text_aleph_alpha,
 )
 from agent.backend.gpt4all_service import (
+    custom_completion_prompt_gpt4all,
     embedd_documents_gpt4all,
+    embedd_text_gpt4all,
     search_documents_gpt4all,
     summarize_text_gpt4all,
 )
 from agent.backend.open_ai_service import (
     embedd_documents_openai,
     search_documents_openai,
+    send_custom_completion_openai,
 )
 from agent.data_model.rest_data_model import (
+    CustomPromptCompletion,
     EmbeddTextFilesRequest,
     EmbeddTextRequest,
     ExplainRequest,
@@ -38,6 +45,7 @@ from agent.data_model.rest_data_model import (
     SearchRequest,
     SearchResponse,
 )
+from agent.utils.configuration import load_config
 from agent.utils.utility import (
     combine_text_from_list,
     create_tmp_folder,
@@ -47,8 +55,6 @@ from agent.utils.utility import (
 # add file logger for loguru
 logger.add("logs/file_{time}.log", backtrace=False, diagnose=False)
 logger.info("Startup.")
-
-# TODO: Refactor
 
 
 def my_schema() -> dict:
@@ -69,10 +75,9 @@ def my_schema() -> dict:
 
 # initialize the Fast API Application.
 app = FastAPI(debug=True)
-app.openapi = my_schema
+app.openapi = my_schema  # type: ignore
 
 load_dotenv()
-
 
 # load the token from the environment variables, is None if not set.
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
@@ -128,6 +133,7 @@ async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend
     Returns:
         JSONResponse: The response as JSON.
     """
+    logger.info("Embedding Multiple Documents")
     token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
     tmp_dir = create_tmp_folder()
 
@@ -167,6 +173,7 @@ async def post_embedd_document(file: UploadFile, llm_backend: str = "openai", to
     Returns:
         JSONResponse: A response indicating which files were received and saved.
     """
+    logger.info("Embedding Single Document")
     token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
     # Create a temporary folder to save the files
     tmp_dir = create_tmp_folder()
@@ -196,8 +203,10 @@ async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
     Returns:
         JSONResponse: A response indicating that the text was received and saved, along with the name of the file it was saved to.
     """
+    logger.info("Embedding Text")
     token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
+    logger.info(f"Requested Backend is: {request.llm_backend}")
     if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
         embedd_text_aleph_alpha(text=request.text, file_name=request.file_name, aleph_alpha_token=token, seperator=request.seperator)
@@ -205,12 +214,15 @@ async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
         return JSONResponse(content={"message": "Text received and saved.", "filenames": request.file_name})
     elif request.llm_backend == "openai":
         # Embedd the documents with OpenAI
+        # TODO: Implement
         raise ValueError("Not implemented yet.")
     elif request.llm_backend == "gpt4all":
-        # embedd_documents_gpt4all(dir=)
-        raise ValueError("Not implemented yet.")
+        embedd_text_gpt4all(text=request.text, file_name=request.file_name, seperator=request.seperator)
+
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
+
+    return JSONResponse(content={"message": "Text received and saved.", "filenames": request.file_name})
 
 
 @app.post("/embeddings/texts/files")
@@ -226,6 +238,7 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> JSONResponse:
     Returns:
         JSONResponse: A response indicating that the files were received and saved, along with the names of the files they were saved to.
     """
+    logger.info("Embedding Text Files")
     tmp_dir = create_tmp_folder()
 
     file_names = []
@@ -267,6 +280,7 @@ def search(request: SearchRequest) -> JSONResponse:
     Returns:
         List[str]: A list of matching documents.
     """
+    logger.info("Searching for Documents")
     token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     if request.llm_backend is None:
@@ -274,6 +288,10 @@ def search(request: SearchRequest) -> JSONResponse:
 
     DOCS = search_database(query=request.query, llm_backend=request.llm_backend, token=token, amount=request.amount)
 
+    if not DOCS:
+        logger.info("No Documents found.")
+        return JSONResponse(content={"message": "No documents found."})
+    logger.info(f"Found {len(DOCS)} documents.")
     response = []
     for d in DOCS:
         score = d[1]
@@ -281,8 +299,6 @@ def search(request: SearchRequest) -> JSONResponse:
         page = d[0].metadata["page"]
         source = d[0].metadata["source"]
         response.append(SearchResponse(text=text, page=page, source=source, score=score))
-
-    import json
 
     json_response = json.dumps([r.dict() for r in response])
 
@@ -303,6 +319,7 @@ def question_answer(request: QARequest) -> JSONResponse:
     Returns:
         Tuple: Answer, Prompt and Meta Data
     """
+    logger.info("Answering Question")
     # if the query is not provided, raise an error
     if request.query is None:
         raise ValueError("Please provide a Question.")
@@ -370,6 +387,7 @@ def explain_question_answer(query: Optional[str] = None, llm_backend: str = "ope
     Returns:
         Tuple: Answer, Prompt and Meta Data
     """
+    logger.info("Answering Question and Explaining it.")
     # if the query is not provided, raise an error
     if query is None:
         raise ValueError("Please provide a Question.")
@@ -397,6 +415,7 @@ def explain_output(request: ExplainRequest) -> JSONResponse:
     Returns:
         Dict[str, float]: A dictionary containing the prompt and the score of the output.
     """
+    logger.info("Explain Output")
     # fail if prompt or output are not provided
     if request.prompt is None or request.output is None:
         raise ValueError("Please provide a prompt and output.")
@@ -423,6 +442,7 @@ async def process_document(files: List[UploadFile] = File(...), llm_backend: str
     Returns:
         JSONResponse: _description_
     """
+    logger.info("Processing Document")
     token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     # Create a temporary folder to save the files
@@ -462,6 +482,7 @@ def search_database(query: str, llm_backend: str = "openai", token: Optional[str
     Returns:
         JSON List of Documents consisting of the text, page, source and score.
     """
+    logger.info("Searching for Documents")
     token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
@@ -480,8 +501,58 @@ def search_database(query: str, llm_backend: str = "openai", token: Optional[str
     return documents
 
 
+@app.post("/llm/completion/custom")
+async def custom_prompt_llm(request: CustomPromptCompletion) -> JSONResponse:
+    """This method sents a custom completion request to the LLM Provider.
+
+    Args:
+        request (CustomPromptCompletion): The request parameters.
+
+    Raises:
+        ValueError: If the LLM provider is not implemented yet.
+    """
+    logger.info("Sending Custom Completion Request")
+    if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
+        # sent a completion
+        answer = custom_completion_prompt_aleph_alpha(
+            prompt=request.prompt,
+            token=request.token,
+            model=request.model,
+            stop_sequences=request.stop_sequences,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+        )
+    elif request.llm_backend == "OpenAI":
+        answer = send_custom_completion_openai(
+            prompt=request.prompt,
+            token=request.token,
+            model=request.model,
+            stop_sequences=request.stop_sequences,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+        )
+    elif request.llm_backend == "GPT4ALL":
+        answer = custom_completion_prompt_gpt4all(
+            prompt=request.prompt,
+            model=request.model,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+        )
+
+    else:
+        raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
+
+    return JSONResponse(content={"answer": answer})
+
+
 @app.delete("/embeddings/delete/{llm_provider}/{page}/{source}")
-def delete(page: int, source: str, llm_provider: str = "openai") -> UpdateResult:
+@load_config("config/db.yml")
+def delete(
+    page: int,
+    source: str,
+    cfg: DictConfig,
+    llm_provider: str = "openai",
+) -> UpdateResult:
     """Delete a Vector from the database based on the page and source.
 
     Args:
@@ -490,18 +561,19 @@ def delete(page: int, source: str, llm_provider: str = "openai") -> UpdateResult
         llm_provider (str, optional): The LLM Provider. Defaults to "openai".
 
     Returns:
-        _type_: _description_
+        UpdateResult: The result of the Deletion Operation from the Vector Database.
     """
+    logger.info("Deleting Vector from Database")
     if llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
         collection = "aleph-alpha"
     elif llm_provider == "OpenAI":
-        collection = "aleph-alpha"
+        collection = "openai"
     elif llm_provider == "GPT4ALL":
-        collection = "aleph-alpha"
+        collection = "gpt4all"
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
-    qdrant_client = QdrantClient("http://qdrant", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
+    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
     result = qdrant_client.delete(
         collection_name=collection,
@@ -518,4 +590,71 @@ def delete(page: int, source: str, llm_provider: str = "openai") -> UpdateResult
         ),
     )
 
+    logger.info("Deleted Point from Database via Metadata.")
     return result
+
+
+@load_config(location="config/db.yml")
+def initialize_aleph_alpha_vector_db(cfg: DictConfig):
+    """Initializes the Aleph Alpha vector db.
+
+    Args:
+        cfg (DictConfig): Configuration from the file
+    """
+    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
+    collection_name = "Aleph_Alpha"
+    try:
+        qdrant_client.get_collection(collection_name=collection_name)
+        logger.info(f"SUCCESS: Collection {collection_name} already exists.")
+    except Exception:
+        qdrant_client.recreate_collection(
+            collection_name=collection_name,
+            vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
+        )
+        logger.info(f"SUCCESS: Collection {collection_name} created.")
+
+
+@load_config(location="config/db.yml")
+def initialize_open_ai_vector_db(cfg: DictConfig):
+    """Initializes the OpenAI vector db.
+
+    Args:
+        cfg (DictConfig): Configuration from the file
+    """
+    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
+    collection_name = "OpenAI"
+    try:
+        qdrant_client.get_collection(collection_name=collection_name)
+        logger.info(f"SUCCESS: Collection {collection_name} already exists.")
+    except Exception:
+        qdrant_client.recreate_collection(
+            collection_name=collection_name,
+            vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
+        )
+        logger.info(f"SUCCESS: Collection {collection_name} created.")
+
+
+@load_config(location="config/db.yml")
+def initialize_gpt4all_vector_db(cfg: DictConfig):
+    """Initializes the GPT4ALL vector db.
+
+    Args:
+        cfg (DictConfig): Configuration from the file
+    """
+    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
+    collection_name = "GPT4ALL"
+    try:
+        qdrant_client.get_collection(collection_name=collection_name)
+        logger.info(f"SUCCESS: Collection {collection_name} already exists.")
+    except Exception:
+        qdrant_client.recreate_collection(
+            collection_name=collection_name,
+            vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
+        )
+        logger.info(f"SUCCESS: Collection {collection_name} created.")
+
+
+# initialize the databases
+initialize_open_ai_vector_db()
+initialize_aleph_alpha_vector_db()
+initialize_gpt4all_vector_db()

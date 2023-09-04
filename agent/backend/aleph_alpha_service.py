@@ -1,4 +1,4 @@
-"""The script to initialize the chroma db backend with aleph alpha."""
+"""The script to initialize the Qdrant db backend with aleph alpha."""
 import os
 from typing import Any, Dict, List, Tuple, Union
 
@@ -19,7 +19,6 @@ from langchain.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
-from qdrant_client.http import models
 
 from agent.utils.configuration import load_config
 from agent.utils.utility import generate_prompt
@@ -27,29 +26,16 @@ from agent.utils.utility import generate_prompt
 load_dotenv()
 
 
-qdrant_client = QdrantClient("http://qdrant", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
-collection_name = "Aleph_Alpha"
-try:
-    qdrant_client.get_collection(collection_name=collection_name)
-    logger.info("SUCCESS: Collection already exists.")
-except Exception:
-    qdrant_client.recreate_collection(
-        collection_name=collection_name,
-        vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
-    )
-    logger.info("SUCCESS: Collection created.")
-
-
 @load_config(location="config/db.yml")
 def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
-    """Initializes a connection to the Chroma DB.
+    """Initializes a connection to the Qdrant DB.
 
     Args:
         cfg (DictConfig): The configuration file loaded via OmegaConf.
         aleph_alpha_token (str): The Aleph Alpha API token.
 
     Returns:
-        Chroma: The Chroma DB connection.
+        Qdrant: The Qdrant DB connection.
     """
     embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
@@ -78,7 +64,8 @@ def summarize_text_aleph_alpha(text: str, token: str) -> str:
     return response.summary
 
 
-def send_completion_request(text: str, token: str, model: str = "luminous-extended-control") -> str:
+@load_config(location="config/ai/aleph_alpha.yml")
+def send_completion_request(text: str, token: str, cfg: DictConfig) -> str:
     """Sends a completion request to the Luminous API.
 
     Args:
@@ -98,8 +85,13 @@ def send_completion_request(text: str, token: str, model: str = "luminous-extend
 
     client = Client(token=token)
 
-    request = CompletionRequest(prompt=Prompt.from_text(text), maximum_tokens=256, stop_sequences=["###"])
-    response = client.complete(request, model=model)
+    request = CompletionRequest(
+        prompt=Prompt.from_text(text),
+        maximum_tokens=cfg.aleph_alpha_completion.max_tokens,
+        stop_sequences=[cfg.aleph_alpha_completion.stop_sequences],
+        repetition_penalties_include_completion=cfg.aleph_alpha_completion.repetition_penalties_include_completion,
+    )
+    response = client.complete(request, model=cfg.aleph_alpha_completion.model)
 
     # ensure that the response is not empty
     if not response.completions:
@@ -116,7 +108,7 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
     """Embeds the documents in the given directory in the Aleph Alpha database.
 
     This method uses the Directory Loader for PDFs and the PyPDFLoader to load the documents.
-    The documents are then added to the Chroma DB which embeds them without deleting the old collection.
+    The documents are then added to the Qdrant DB which embeds them without deleting the old collection.
 
     Args:
         dir (str): The directory containing the PDFs to embed.
@@ -161,7 +153,7 @@ def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, s
 
     metadata = file_name
     # add _ and an incrementing number to the metadata
-    metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
+    metadata_list: List = [{"source": f"{metadata}_{str(i)}", "page": 0} for i in range(len(text_list))]
 
     vector_db.add_texts(texts=text_list, metadatas=metadata_list)
     logger.info("SUCCESS: Text embedded.")
@@ -206,7 +198,7 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator
         # get the name of the file
         metadata = os.path.splitext(file)[0]
         # add _ and an incrementing number to the metadata
-        metadata_list: List = [metadata + "_" + str(i) for i in range(len(text_list))]
+        metadata_list: List = [{"source": f"{metadata}_{str(i)}", "page": 0} for i in range(len(text_list))]
         vector_db.add_texts(texts=text_list, metadatas=metadata_list)
 
     logger.info("SUCCESS: Text embedded.")
@@ -232,7 +224,7 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
 
     try:
         vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
-        docs = vector_db.similarity_search_with_score(query, k=amount)
+        docs = vector_db.similarity_search_with_score(query=query, k=amount)
         logger.info("SUCCESS: Documents found.")
         return docs
     except Exception as e:
@@ -370,11 +362,49 @@ def process_documents_aleph_alpha(folder: str, token: str, type: str):
         # combine the prompt and the text
         prompt_text = generate_prompt(prompt_name="aleph-alpha-invoice.j2", text=doc.page_content, language="en")
         # call the luminous api
-        answer = send_completion_request(prompt_text, token, model="luminous-base-control")
+        answer = send_completion_request(prompt_text, token)
 
         answers.append(answer)
 
     return answers
+
+
+def custom_completion_prompt_aleph_alpha(
+    token: str,
+    prompt: str,
+    model: str = "luminous-extended-control",
+    max_tokens: int = 256,
+    stop_sequences: List[str] = ["###"],
+    temperature: float = 0,
+) -> str:
+    """This method sents a custom completion request to the Aleph Alpha API.
+
+    Args:
+        token (str): The token for the Aleph Alpha API.
+        prompt (str): The prompt to be sent to the API.
+
+    Raises:
+        ValueError: Error if their are no completions or the completion is empty or the prompt and tokenis empty.
+    """
+    if not prompt:
+        raise ValueError("Prompt cannot be None or empty.")
+    if not token:
+        raise ValueError("Token cannot be None or empty.")
+
+    client = Client(token=token)
+
+    request = CompletionRequest(prompt=Prompt.from_text(prompt), maximum_tokens=max_tokens, stop_sequences=stop_sequences, temperature=temperature)
+    response = client.complete(request, model=model)
+
+    # ensure that the response is not empty
+    if not response.completions:
+        raise ValueError("Response is empty.")
+
+    # ensure that the completion is not empty
+    if not response.completions[0].completion:
+        raise ValueError("Completion is empty.")
+
+    return str(response.completions[0].completion)
 
 
 if __name__ == "__main__":
