@@ -88,7 +88,7 @@ def send_completion_request(text: str, token: str, cfg: DictConfig) -> str:
     request = CompletionRequest(
         prompt=Prompt.from_text(text),
         maximum_tokens=cfg.aleph_alpha_completion.max_tokens,
-        stop_sequences=cfg.aleph_alpha_completion.stop_sequences,
+        stop_sequences=[cfg.aleph_alpha_completion.stop_sequences],
         repetition_penalties_include_completion=cfg.aleph_alpha_completion.repetition_penalties_include_completion,
     )
     response = client.complete(request, model=cfg.aleph_alpha_completion.model)
@@ -153,7 +153,8 @@ def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, s
 
     metadata = file_name
     # add _ and an incrementing number to the metadata
-    metadata_list: List = [{"filename": metadata + "_" + str(i)} for i in range(len(text_list))]
+    metadata_list: List = [{"source": f"{metadata}_{str(i)}", "page": 0} for i in range(len(text_list))]
+
     vector_db.add_texts(texts=text_list, metadatas=metadata_list)
     logger.info("SUCCESS: Text embedded.")
 
@@ -197,7 +198,7 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator
         # get the name of the file
         metadata = os.path.splitext(file)[0]
         # add _ and an incrementing number to the metadata
-        metadata_list: List = [{"filename": metadata + "_" + str(i)} for i in range(len(text_list))]
+        metadata_list: List = [{"source": f"{metadata}_{str(i)}", "page": 0} for i in range(len(text_list))]
         vector_db.add_texts(texts=text_list, metadatas=metadata_list)
 
     logger.info("SUCCESS: Text embedded.")
@@ -361,7 +362,7 @@ def process_documents_aleph_alpha(folder: str, token: str, type: str):
         # combine the prompt and the text
         prompt_text = generate_prompt(prompt_name="aleph-alpha-invoice.j2", text=doc.page_content, language="en")
         # call the luminous api
-        answer = send_completion_request(prompt_text, token, model="luminous-base-control")
+        answer = send_completion_request(prompt_text, token)
 
         answers.append(answer)
 

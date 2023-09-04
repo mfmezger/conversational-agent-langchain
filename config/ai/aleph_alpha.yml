@@ -7,5 +7,5 @@ aleph_alpha_completion:
   presence_penalty: 0
   best_of: 1
   repetition_penalties_include_prompt: True
-  stop_sequences: ["###"]
+  stop_sequences: "###"
   repetition_penalties_include_completion: True

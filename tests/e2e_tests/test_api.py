@@ -63,7 +63,7 @@ async def test_embedd_one_document():
     """Testing the upload of one document."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
         tmp_file = open("tests/resources/1706.03762v5.pdf", "rb")
-        response = await ac.post("/embeddings/document/", files=[("file", tmp_file)])
+        response = await ac.post("/embeddings/document/", params={"llm_backend": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("file", tmp_file)])
 
     assert response.status_code == 200
     assert response.json() == {
