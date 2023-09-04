@@ -6,8 +6,11 @@ from langchain.document_loaders import DirectoryLoader, PyPDFLoader, TextLoader
 from langchain.embeddings import GPT4AllEmbeddings
 from langchain.vectorstores import Qdrant
 from loguru import logger
+from omegaconf import DictConfig
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
+
+from agent.utils.configuration import load_config
 
 load_dotenv()
 
@@ -15,12 +18,13 @@ collection_name = "GPT4ALL"
 data_folder = "resources/data"
 
 
-def main():
+@load_config(location="config/db.yml")
+def main(cfg: DictConfig):
     """Main function for the GPT4ALL ingestion service."""
     # Define the name of the collection you want to embedd the documents into.
 
     # this creates the collection if it does not exist
-    qdrant_client = QdrantClient("http://qdrant", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
+    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
     try:
         qdrant_client.get_collection(collection_name=collection_name)
         logger.info("SUCCESS: Collection already exists.")

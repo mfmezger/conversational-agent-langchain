@@ -68,7 +68,8 @@ class CustomPromptCompletion(BaseModel):
 
     token: str = Field(..., title="Token", description="The API token for the LLM provider.")
     prompt: str = Field(..., title="Prompt", description="The prompt to use for the completion.")
+    llm_backend: str = Field("openai", title="LLM Provider", description="The LLM provider to use for embedding.")
     model: str = Field(..., title="Model", description="The model to use for the completion.")
-    max_tokens: str = Field(..., title="Max Tokens", description="The maximum number of tokens to generate.")
+    max_tokens: int = Field(256, title="Max Tokens", description="The maximum number of tokens to generate.")
     temperature: float = Field(..., title="Temperature", description="The temperature to use for the completion.")
     stop_sequences: List[str] = Field(..., title="Stop Sequences", description="The stop sequences to use for the completion.")

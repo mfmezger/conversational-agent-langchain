@@ -1,6 +1,6 @@
 """This script is used to initialize the Qdrant db backend with Azure OpenAI."""
 import os
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 import openai
 from dotenv import load_dotenv
@@ -29,7 +29,7 @@ def get_db_connection(open_ai_token: str, cfg: DictConfig) -> Qdrant:
     :return: Qdrant DB connection
     :rtype: Qdrant
     """
-    embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)
+    embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)  # type: ignore
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
     vector_db = Qdrant(client=qdrant_client, collection_name="OpenAI", embeddings=embedding)
@@ -168,7 +168,7 @@ def send_custom_completion_openai(
     return response.choices[0].text
 
 
-def qa_openai(token: str, documents: list[tuple[Document, float]], query: str, summarization: bool = False) -> str:
+def qa_openai(token: str, documents: list[tuple[Document, float]], query: str, summarization: bool = False) -> tuple[Any, str, dict[Any, Any]]:
     """QA Function for OpenAI LLMs.
 
     Args:

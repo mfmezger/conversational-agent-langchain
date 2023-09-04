@@ -75,7 +75,7 @@ def my_schema() -> dict:
 
 # initialize the Fast API Application.
 app = FastAPI(debug=True)
-app.openapi = my_schema
+app.openapi = my_schema  # type: ignore
 
 load_dotenv()
 
@@ -221,6 +221,8 @@ async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
 
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
+
+    return JSONResponse(content={"message": "Text received and saved.", "filenames": request.file_name})
 
 
 @app.post("/embeddings/texts/files")
@@ -510,7 +512,7 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> JSONResponse:
         ValueError: If the LLM provider is not implemented yet.
     """
     logger.info("Sending Custom Completion Request")
-    if request.llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
+    if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # sent a completion
         answer = custom_completion_prompt_aleph_alpha(
             prompt=request.prompt,
@@ -520,7 +522,7 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> JSONResponse:
             temperature=request.temperature,
             max_tokens=request.max_tokens,
         )
-    elif request.llm_provider == "OpenAI":
+    elif request.llm_backend == "OpenAI":
         answer = send_custom_completion_openai(
             prompt=request.prompt,
             token=request.token,
@@ -529,12 +531,10 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> JSONResponse:
             temperature=request.temperature,
             max_tokens=request.max_tokens,
         )
-    elif request.llm_provider == "GPT4ALL":
+    elif request.llm_backend == "GPT4ALL":
         answer = custom_completion_prompt_gpt4all(
             prompt=request.prompt,
-            token=request.token,
             model=request.model,
-            stop_sequences=request.stop_sequences,
             temperature=request.temperature,
             max_tokens=request.max_tokens,
         )
