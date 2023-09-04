@@ -291,6 +291,29 @@ def qa_aleph_alpha(
     return answer, prompt, meta_data
 
 
+def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, summarization: bool = False):
+    """Explian QA WIP."""
+    text = document[0][0].page_content
+    meta_data = document[0][0].metadata
+
+    # load the prompt
+    prompt = generate_prompt("qa.j2", text=text, query=query)
+
+    answer = send_completion_request(prompt, aleph_alpha_token)
+
+    exp_req = ExplanationRequest(Prompt.from_text(prompt), answer, control_factor=0.1, prompt_granularity="sentence")
+
+    # TODO: find out how to make a prediction if the answer is based on the text.
+
+    result = {}
+    # remove the prompt from the explanations
+    for item in explanations:
+        start = item.start
+        end = item.start + item.length
+        if not prompt[start:end] in template:
+            result[prompt[start:end]] = np.round(item.score, decimals=3)
+
+
 def explain_completion(prompt: str, output: str, token: str):
     """Returns an explanation of the given completion.
 
