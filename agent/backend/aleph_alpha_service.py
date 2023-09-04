@@ -229,7 +229,7 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
         return docs
     except Exception as e:
         logger.error(f"ERROR: Failed to search documents: {e}")
-        raise Exception(f"Failed to search documents: {e}")
+        raise Exception(f"Failed to search documents: {e}") from e
 
 
 def qa_aleph_alpha(
@@ -291,6 +291,45 @@ def qa_aleph_alpha(
     return answer, prompt, meta_data
 
 
+def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, summarization: bool = False):
+    """Explian QA WIP."""
+    text = document[0][0].page_content
+    meta_data = document[0][0].metadata
+
+    # load the prompt
+    prompt = generate_prompt("qa.j2", text=text, query=query)
+
+    answer = send_completion_request(prompt, aleph_alpha_token)
+
+    exp_req = ExplanationRequest(Prompt.from_text(prompt), answer, control_factor=0.1, prompt_granularity="sentence", normalize=True)
+    client = Client(token=aleph_alpha_token)
+    response_explain = client.explain(exp_req, model="luminous-extended-control")
+
+    explanations = response_explain[1][0].items[0][0]
+
+    # if all of the scores are belo 0.9 raise an error
+    if all(item.score < 0.9 for item in explanations):
+        raise ValueError("All scores are below 0.9.")
+
+    # pick the top explanation based on score
+    top_explanation = max(explanations, key=lambda x: x.score)
+
+    # get the start and end of the explanation
+    start = top_explanation.start
+    end = top_explanation.start + top_explanation.length
+
+    # get the explanation from the prompt
+    explanation = prompt[start:end]
+
+    # get the score
+    score = np.round(top_explanation.score, decimals=3)
+
+    # get the text from the document
+    text = document[0][0].page_content
+
+    return explanation, score, text, answer, meta_data
+
+
 def explain_completion(prompt: str, output: str, token: str):
     """Returns an explanation of the given completion.
 
@@ -320,7 +359,7 @@ def explain_completion(prompt: str, output: str, token: str):
     for item in explanations:
         start = item.start
         end = item.start + item.length
-        if not prompt[start:end] in template:
+        if prompt[start:end] not in template:
             result[prompt[start:end]] = np.round(item.score, decimals=3)
 
     return result
@@ -351,7 +390,7 @@ def process_documents_aleph_alpha(folder: str, token: str, type: str):
             raise NotImplementedError
         case "invoice":
             # load the prompt
-            prompt_name = "invoice.j2"
+            prompt_name = "aleph-alpha-invoice.j2"
         case _:
             raise ValueError("Type must be one of 'qa', 'summarization', or 'invoice'.")
 
@@ -360,7 +399,7 @@ def process_documents_aleph_alpha(folder: str, token: str, type: str):
     # iterate over the documents
     for doc in docs:
         # combine the prompt and the text
-        prompt_text = generate_prompt(prompt_name="aleph-alpha-invoice.j2", text=doc.page_content, language="en")
+        prompt_text = generate_prompt(prompt_name=prompt_name, text=doc.page_content, language="en")
         # call the luminous api
         answer = send_completion_request(prompt_text, token)
 

@@ -19,6 +19,7 @@ from agent.backend.aleph_alpha_service import (
     embedd_text_aleph_alpha,
     embedd_text_files_aleph_alpha,
     explain_completion,
+    explain_qa,
     process_documents_aleph_alpha,
     qa_aleph_alpha,
     search_documents_aleph_alpha,
@@ -394,12 +395,12 @@ def explain_question_answer(query: Optional[str] = None, llm_backend: str = "ope
 
     token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
-    documents = search_database(query=query, llm_backend=llm_backend, token=token, amount=amount)
+    documents = search_database(query=query, llm_backend=llm_backend, token=token, amount=1)
 
     # call the qa function
-    answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)
+    explanation, score, text, answer, meta_data = explain_qa(query=query, document=documents, aleph_alpha_token=token)
 
-    return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
+    return JSONResponse(content={"explanation": explanation, "score": score, "text": text, "answer": answer, "meta_data": meta_data})
 
 
 @app.post("/explaination/aleph_alpha_explain")
