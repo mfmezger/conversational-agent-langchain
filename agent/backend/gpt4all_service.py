@@ -79,7 +79,7 @@ def embedd_text_gpt4all(text: str, file_name: str, seperator: str) -> None:
 
     metadata = file_name
     # add _ and an incrementing number to the metadata
-    metadata_list: List = [{"filename": metadata + "_" + str(i)} for i in range(len(text_list))]
+    metadata_list: List = [{"source": f"{metadata}_{str(i)}", "page": 0} for i in range(len(text_list))]
 
     vector_db.add_texts(texts=text_list, metadatas=metadata_list)
     logger.info("SUCCESS: Text embedded.")
