@@ -363,7 +363,7 @@ def question_answer(request: QARequest) -> JSONResponse:
         # todo:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
     elif request.llm_backend == "gpt4all":
-        qa_gpt4all(documents=documents, query=request.query, summarization=request.summarization, language=request.language)
+        answer, prompt, meta_data = qa_gpt4all(documents=documents, query=request.query, summarization=request.summarization, language=request.language)
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
