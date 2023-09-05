@@ -293,7 +293,9 @@ def search(request: SearchRequest) -> JSONResponse:
     if not DOCS:
         logger.info("No Documents found.")
         return JSONResponse(content={"message": "No documents found."})
+
     logger.info(f"Found {len(DOCS)} documents.")
+
     response = []
     for d in DOCS:
         score = d[1]
