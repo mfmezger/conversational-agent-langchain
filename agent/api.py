@@ -335,7 +335,6 @@ def question_answer(request: QARequest) -> JSONResponse:
     if request.history:
         # combine the texts
         text = combine_text_from_list(request.history_list)
-        # TODO: refactor for match.
         if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
 
             # summarize the text
