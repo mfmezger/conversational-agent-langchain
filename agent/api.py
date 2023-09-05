@@ -29,6 +29,7 @@ from agent.backend.gpt4all_service import (
     custom_completion_prompt_gpt4all,
     embedd_documents_gpt4all,
     embedd_text_gpt4all,
+    qa_gpt4all,
     search_documents_gpt4all,
     summarize_text_gpt4all,
 )
@@ -306,7 +307,6 @@ def search(request: SearchRequest) -> JSONResponse:
     return JSONResponse(content=json_response)
 
 
-# TODO: REFACTOR
 @app.post("/qa")
 def question_answer(request: QARequest) -> JSONResponse:
     """Answer a question based on the documents in the database.
@@ -363,8 +363,7 @@ def question_answer(request: QARequest) -> JSONResponse:
         # todo:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
     elif request.llm_backend == "gpt4all":
-        # todo:
-        raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
+        qa_gpt4all(documents=documents, query=request.query, summarization=request.summarization, language=request.language)
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 

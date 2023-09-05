@@ -105,7 +105,7 @@ def summarize_text_gpt4all(text: str, cfg: DictConfig) -> str:
 
 
 @load_config(location="config/ai/gpt4all.yml")
-def completion_text_gpt4all(text: str, query: str, cfg: DictConfig) -> str:
+def completion_text_gpt4all(prompt: str, cfg: DictConfig) -> str:
     """Complete text with GPT4ALL.
 
     Args:
@@ -115,13 +115,9 @@ def completion_text_gpt4all(text: str, query: str, cfg: DictConfig) -> str:
     Returns:
         str: The completed text.
     """
-    prompt = generate_prompt(prompt_name="gpt4all-completion.j2", text=text, query=query, language="de")
-
     model = GPT4All(cfg.gpt4all.completion_model)
 
-    output = model.generate(prompt, max_tokens=300)
-
-    return output
+    return model.generate(prompt, max_tokens=100)
 
 
 def custom_completion_prompt_gpt4all(prompt: str, model: str = "orca-mini-3b.ggmlv3.q4_0.bin", max_tokens: int = 256, temperature: float = 0) -> str:
@@ -160,67 +156,70 @@ def search_documents_gpt4all(query: str, amount: int) -> List[Tuple[Document, fl
     return docs
 
 
-# def qa_gpt4all(documents: list[tuple[LangchainDocument, float]], query: str, summarization: bool = False)
-# -> Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]:
-#     """QA takes a list of documents and returns a list of answers.
+def qa_gpt4all(documents: list[tuple[Document, float]], query: str, summarization: bool = False, language: str = "de"):
+    """QA takes a list of documents and returns a list of answers.
 
-#     Args:
-#         aleph_alpha_token (str): The Aleph Alpha API token.
-#         documents (List[Tuple[Document, float]]): A list of tuples containing the document and its relevance score.
-#         query (str): The query to ask.
-#         summarization (bool, optional): Whether to use summarization. Defaults to False.
+    Args:
+        aleph_alpha_token (str): The Aleph Alpha API token.
+        documents (List[Tuple[Document, float]]): A list of tuples containing the document and its relevance score.
+        query (str): The query to ask.
+        summarization (bool, optional): Whether to use summarization. Defaults to False.
 
-#     Returns:
-#         Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]: A tuple containing the answer, the prompt, and the metadata for the documents.
-#     """
-#     # if the list of documents contains only one document extract the text directly
-#     if len(documents) == 1:
-#         text = documents[0][0].page_content
-#         meta_data = documents[0][0].metadata
+    Returns:
+        Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]: A tuple containing the answer, the prompt, and the metadata for the documents.
+    """
+    # if the list of documents contains only one document extract the text directly
+    if len(documents) == 1:
+        text = documents[0][0].page_content
+        meta_data = documents[0][0].metadata
 
-#     else:
-#         # extract the text from the documents
-#         texts = [doc[0].page_content for doc in documents]
-#         if summarization:
-#             # call summarization
-#             text = ""
-#             for t in texts:
-#                 text += summarize_text_gpt4all(t)
+    else:
+        # extract the text from the documents
+        texts = [doc[0].page_content for doc in documents]
+        if summarization:
+            text = "".join(summarize_text_gpt4all(t) for t in texts)
+        else:
+            # combine the texts to one text
+            text = " ".join(texts)
+        meta_data = [doc[0].metadata for doc in documents]
 
-#         else:
-#             # combine the texts to one text
-#             text = " ".join(texts)
-#         meta_data = [doc[0].metadata for doc in documents]
+    # load the prompt
+    prompt = generate_prompt("gpt4all-completion.j2", text=text, query=query, language=language)
 
-#     # load the prompt
-#     prompt = generate_prompt("qa.j2", text=text, query=query)
+    try:
 
-#     try:
+        # call the luminous api
+        logger.info("starting completion")
+        answer = completion_text_gpt4all(prompt)
+        logger.info(f"completion done with answer {answer}")
 
-#         # call the luminous api
-#         answer = completion_text_gpt4all(prompt)
+    except ValueError as e:
+        # if the code is PROMPT_TOO_LONG, split it into chunks
+        if e.args[0] == "PROMPT_TOO_LONG":
+            logger.info("Prompt too long. Summarizing.")
 
-#     except ValueError as e:
-#         # if the code is PROMPT_TOO_LONG, split it into chunks
-#         if e.args[0] == "PROMPT_TOO_LONG":
-#             logger.info("Prompt too long. Summarizing.")
+            # summarize the text
+            short_text = summarize_text_gpt4all(text)
 
-#             # summarize the text
-#             short_text = summarize_text_gpt4all(text)
+            # generate the prompt
+            prompt = generate_prompt("gpt4all-completion.j2", text=short_text, query=query, language=language)
 
-#             # generate the prompt
-#             prompt = generate_prompt("qa.j2", text=short_text, query=query)
+            # call the luminous api
+            answer = completion_text_gpt4all(prompt)
 
-#             # call the luminous api
-#             answer = completion_text_gpt4all(prompt)
-
-#     # extract the answer
-#     return answer, prompt, meta_data
+    # extract the answer
+    return answer, prompt, meta_data
 
 
 if __name__ == "__main__":
     embedd_documents_gpt4all(dir="data")
 
-    print(f'Summary: {summarize_text_gpt4all(text="Das ist ein Test.")}')
+    # print(f'Summary: {summarize_text_gpt4all(text="Das ist ein Test.")}')
 
-    print(f'Completion: {completion_text_gpt4all(text="Das ist ein Test.", query="Was ist das?")}')
+    # print(f'Completion: {completion_text_gpt4all(text="Das ist ein Test.", query="Was ist das?")}')
+
+    answer, prompt, meta_data = qa_gpt4all(documents=search_documents_gpt4all(query="Das ist ein Test.", amount=1), query="Was ist das?")
+
+    logger.info(f"Answer: {answer}")
+    logger.info(f"Prompt: {prompt}")
+    logger.info(f"Metadata: {meta_data}")

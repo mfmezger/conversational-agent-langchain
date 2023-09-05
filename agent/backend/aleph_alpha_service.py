@@ -1,5 +1,7 @@
 """The script to initialize the Qdrant db backend with aleph alpha."""
+
 import os
+import pathlib
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
@@ -179,9 +181,7 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator
             continue
 
         # read the text from the file
-        with open(os.path.join(folder, file)) as f:
-            text = f.read()
-
+        text = pathlib.Path(os.path.join(folder, file)).read_text()
         text_list: List = text.split(seperator)
 
         # check if first and last element are empty
@@ -255,11 +255,7 @@ def qa_aleph_alpha(
         # extract the text from the documents
         texts = [doc[0].page_content for doc in documents]
         if summarization:
-            # call summarization
-            text = ""
-            for t in texts:
-                text += summarize_text_aleph_alpha(t, aleph_alpha_token)
-
+            text = "".join(summarize_text_aleph_alpha(t, aleph_alpha_token) for t in texts)
         else:
             # combine the texts to one text
             text = " ".join(texts)
