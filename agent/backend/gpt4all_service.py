@@ -99,9 +99,7 @@ def summarize_text_gpt4all(text: str, cfg: DictConfig) -> str:
 
     model = GPT4All(cfg.gpt4all.completion_model)
 
-    output = model.generate(prompt, max_tokens=300)
-
-    return output
+    return model.generate(prompt, max_tokens=300)
 
 
 @load_config(location="config/ai/gpt4all.yml")

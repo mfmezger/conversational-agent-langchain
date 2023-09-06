@@ -532,7 +532,7 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> JSONResponse:
             temperature=request.temperature,
             max_tokens=request.max_tokens,
         )
-    elif request.llm_backend == "GPT4ALL":
+    elif request.llm_backend == "gpt4all":
         answer = custom_completion_prompt_gpt4all(
             prompt=request.prompt,
             model=request.model,
