@@ -22,7 +22,7 @@ openai = "^0.27.8"
 jinja2 = "^3.1.2"
 grpcio = "^1.56.0"
 grpcio-tools = "^1.56.0" # for qdrant
-qdrant-client = "^1.4.0" # for qdrant
+qdrant-client = "^1.5.0" # for qdrant
 uvicorn = "^0.23.2"
 urllib3 = "1.26.16"
 starlette = "0.27.0"
@@ -62,10 +62,10 @@ types-tzlocal = "^5.0.1.1"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[settings]
+[tool.settings]
 known_third_party = ["aleph_alpha_client", "dotenv", "fastapi", "gpt4all", "httpx", "jinja2", "langchain", "loguru", "numpy", "omegaconf", "openai", "pydantic", "pytest", "qdrant_client", "starlette", "streamlit"]
 
-[mypy]
+[tool.mypy]
 # Disallow dynamic typing
 disallow_any_unimported=true
 disallow_any_expr = true
