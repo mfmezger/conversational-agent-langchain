@@ -56,9 +56,6 @@ def setup_connection_vector_db(cfg: DictConfig):
     return vector_db
 
 
-# first parse the texts
-
-
 def parse_txts(text: str, file_name: str, seperator: str, vector_db: Qdrant):
     """Parse the texts and add them to the vector db.
 

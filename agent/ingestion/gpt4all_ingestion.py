@@ -13,8 +13,6 @@ from qdrant_client.http import models
 from agent.utils.configuration import load_config
 
 load_dotenv()
-
-collection_name = "GPT4ALL"
 data_folder = "resources/data"
 
 
@@ -30,7 +28,7 @@ def main(cfg: DictConfig):
         logger.info("SUCCESS: Collection already exists.")
     except Exception:
         qdrant_client.recreate_collection(
-            collection_name=collection_name,
+            collection_name=cfg.qdrant.collection_name_gpt4all,
             vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
         )
         logger.info("SUCCESS: Collection created.")
