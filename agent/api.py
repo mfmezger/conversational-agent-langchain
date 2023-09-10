@@ -603,16 +603,15 @@ def initialize_aleph_alpha_vector_db(cfg: DictConfig):
         cfg (DictConfig): Configuration from the file
     """
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
-    collection_name = "Aleph_Alpha"
     try:
-        qdrant_client.get_collection(collection_name=collection_name)
-        logger.info(f"SUCCESS: Collection {collection_name} already exists.")
+        qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_aa)
+        logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_aa} already exists.")
     except Exception:
         qdrant_client.recreate_collection(
-            collection_name=collection_name,
+            collection_name=cfg.qdrant.collection_name_aa,
             vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
         )
-        logger.info(f"SUCCESS: Collection {collection_name} created.")
+        logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_aa} created.")
 
 
 @load_config(location="config/db.yml")
@@ -623,16 +622,15 @@ def initialize_open_ai_vector_db(cfg: DictConfig):
         cfg (DictConfig): Configuration from the file
     """
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
-    collection_name = "OpenAI"
     try:
-        qdrant_client.get_collection(collection_name=collection_name)
-        logger.info(f"SUCCESS: Collection {collection_name} already exists.")
+        qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_openai)
+        logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_openai} already exists.")
     except Exception:
         qdrant_client.recreate_collection(
-            collection_name=collection_name,
+            collection_name=cfg.qdrant.collection_name_openai,
             vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
         )
-        logger.info(f"SUCCESS: Collection {collection_name} created.")
+        logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_openai} created.")
 
 
 @load_config(location="config/db.yml")
@@ -643,16 +641,15 @@ def initialize_gpt4all_vector_db(cfg: DictConfig):
         cfg (DictConfig): Configuration from the file
     """
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
-    collection_name = "GPT4ALL"
     try:
-        qdrant_client.get_collection(collection_name=collection_name)
-        logger.info(f"SUCCESS: Collection {collection_name} already exists.")
+        qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_gpt4all)
+        logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_gpt4all} already exists.")
     except Exception:
         qdrant_client.recreate_collection(
-            collection_name=collection_name,
+            collection_name=cfg.qdrant.collection_name_gpt4all,
             vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
         )
-        logger.info(f"SUCCESS: Collection {collection_name} created.")
+        logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_gpt4all} created.")
 
 
 # initialize the databases

@@ -32,7 +32,7 @@ def get_db_connection(open_ai_token: str, cfg: DictConfig) -> Qdrant:
     embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)  # type: ignore
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
-    vector_db = Qdrant(client=qdrant_client, collection_name="OpenAI", embeddings=embedding)
+    vector_db = Qdrant(client=qdrant_client, collection_name=cfg.qdrant.collection_name_openai, embeddings=embedding)
     logger.info("SUCCESS: Qdrant DB Connection.")
     return vector_db
 
