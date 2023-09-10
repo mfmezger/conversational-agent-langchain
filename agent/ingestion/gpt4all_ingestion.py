@@ -13,8 +13,6 @@ from qdrant_client.http import models
 from agent.utils.configuration import load_config
 
 load_dotenv()
-
-collection_name = "GPT4ALL"
 data_folder = "resources/data"
 
 
@@ -26,18 +24,18 @@ def main(cfg: DictConfig):
     # this creates the collection if it does not exist
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
     try:
-        qdrant_client.get_collection(collection_name=collection_name)
+        qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_gpt4all)
         logger.info("SUCCESS: Collection already exists.")
     except Exception:
         qdrant_client.recreate_collection(
-            collection_name=collection_name,
+            collection_name=cfg.qdrant.collection_name_gpt4all,
             vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
         )
         logger.info("SUCCESS: Collection created.")
 
     embedding = GPT4AllEmbeddings()
 
-    vector_db = Qdrant(client=qdrant_client, collection_name="GPT4ALL", embeddings=embedding)
+    vector_db = Qdrant(client=qdrant_client, collection_name=cfg.qdrant.collection_name_gpt4all, embeddings=embedding)
 
     # ingest text files
     ingest_text_files(dir=data_folder, vector_db=vector_db, file_ending="*.txt")

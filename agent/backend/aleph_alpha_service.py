@@ -40,7 +40,7 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
     embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
-    vector_db = Qdrant(client=qdrant_client, collection_name="Aleph_Alpha", embeddings=embedding)
+    vector_db = Qdrant(client=qdrant_client, collection_name=cfg.qdrant.collection_name_aa, embeddings=embedding)
     logger.info("SUCCESS: Qdrant DB initialized.")
 
     return vector_db
