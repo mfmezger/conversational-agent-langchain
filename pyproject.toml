@@ -62,10 +62,10 @@ types-tzlocal = "^5.0.1.1"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[settings]
+[tool.settings]
 known_third_party = ["aleph_alpha_client", "dotenv", "fastapi", "gpt4all", "httpx", "jinja2", "langchain", "loguru", "numpy", "omegaconf", "openai", "pydantic", "pytest", "qdrant_client", "starlette", "streamlit"]
 
-[mypy]
+[tool.mypy]
 # Disallow dynamic typing
 disallow_any_unimported=true
 disallow_any_expr = true
