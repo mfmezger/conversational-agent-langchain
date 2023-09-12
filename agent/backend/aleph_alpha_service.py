@@ -291,7 +291,8 @@ def qa_aleph_alpha(
     return answer, prompt, meta_data
 
 
-def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, summarization: bool = False):
+@load_config(location="config/ai/aleph_alpha.yml")
+def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, cfg: DictConfig):
     """Explian QA WIP."""
     text = document[0][0].page_content
     meta_data = document[0][0].metadata
@@ -303,13 +304,19 @@ def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, 
 
     exp_req = ExplanationRequest(Prompt.from_text(prompt), answer, control_factor=0.1, prompt_granularity="sentence", normalize=True)
     client = Client(token=aleph_alpha_token)
-    response_explain = client.explain(exp_req, model="luminous-extended-control")
 
+    response_explain = client.explain(exp_req, model=cfg.aleph_alpha_completion.model)
     explanations = response_explain[1][0].items[0][0]
 
-    # if all of the scores are belo 0.9 raise an error
-    if all(item.score < 0.9 for item in explanations):
+    # if all of the scores are belo 0.7 raise an error
+    if all(item.score < 0.7 for item in explanations):
         raise ValueError("All scores are below 0.9.")
+
+    # remove element if the text contains Response: or Instructions:
+    for exp in explanations:
+        txt = prompt[exp.start : exp.start + exp.length]
+        if "Response:" in txt or "Instruction:" in txt:
+            explanations.remove(exp)
 
     # pick the top explanation based on score
     top_explanation = max(explanations, key=lambda x: x.score)
@@ -453,15 +460,13 @@ if __name__ == "__main__":
     if not token:
         raise ValueError("Token cannot be None or empty.")
 
-    # embedd_documents_aleph_alpha("data", token)
+    embedd_documents_aleph_alpha("data", token)
     # open the text file and read the text
-    with open("data/brustkrebs_input.txt") as f:
-        text = f.read()
-
-    DOCS = search_documents_aleph_alpha(aleph_alpha_token=token, query="Was sind meine Vorteile?")
+    DOCS = search_documents_aleph_alpha(aleph_alpha_token=token, query="what is a recurrent model?", amount=1)
     logger.info(DOCS)
-    answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=token, documents=DOCS, query="What are Attentions?")
-    logger.info(f"Answer: {answer}")
-    explanations = explain_completion(prompt, answer, token)
+    explanation, score, text, answer, meta_data = explain_qa(aleph_alpha_token=token, document=DOCS, query="What are Attentions?")
+    # logger.info(f"Answer: {answer}")
+    # explanations = explain_completion(prompt, answer, token)
 
-    print(explanations)
+    print(explanation)
+    print(answer)
