@@ -96,7 +96,7 @@ def read_root() -> str:
     return "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
-def embedd_documents_wrapper(folder_name: str, llm_backend: str = "openai", token: Optional[str] = None) -> None:
+def embedd_documents_wrapper(folder_name: str, llm_backend: str = "aa", token: Optional[str] = None) -> None:
     """Call the right embedding function for the chosen backend.
 
     Args:
@@ -125,7 +125,7 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "openai", toke
 
 
 @app.post("/embeddings/documents")
-async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend: str = "openai", token: Optional[str] = None) -> JSONResponse:
+async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend: str = "aa", token: Optional[str] = None) -> JSONResponse:
     """Uploads multiple documents to the backend.
 
     Args:
@@ -160,7 +160,7 @@ async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend
 
 
 @app.post("/embeddings/document/")
-async def post_embedd_document(file: UploadFile, llm_backend: str = "openai", token: Optional[str] = None) -> JSONResponse:
+async def post_embedd_document(file: UploadFile, llm_backend: str = "aa", token: Optional[str] = None) -> JSONResponse:
     """Uploads one document to the backend and embeds it in the database.
 
     Args:
@@ -372,8 +372,8 @@ def question_answer(request: QARequest) -> JSONResponse:
 
 
 @app.get("/explanation/explain-qa")
-def explain_question_answer(query: Optional[str] = None, llm_backend: str = "openai", token: Optional[str] = None, amount: int = 1) -> JSONResponse:
-    """Answer a question & explains it based on the documents in the database.
+def explain_question_answer(query: Optional[str] = None, llm_backend: str = "aa", token: Optional[str] = None, amount: int = 1) -> JSONResponse:
+    """Answer a question & explains it based on the documents in the database. This only works with Aleph Alpha.
 
     This uses the normal qa but combines it with the explain function.
     Args:
@@ -431,7 +431,7 @@ def explain_output(request: ExplainRequest) -> JSONResponse:
 
 
 @app.post("/process_document")
-async def process_document(files: List[UploadFile] = File(...), llm_backend: str = "openai", token: Optional[str] = None, type: str = "invoice") -> None:
+async def process_document(files: List[UploadFile] = File(...), llm_backend: str = "aa", token: Optional[str] = None, type: str = "invoice") -> None:
     """Process a document.
 
     Args:
@@ -468,7 +468,7 @@ async def process_document(files: List[UploadFile] = File(...), llm_backend: str
     process_documents_aleph_alpha(folder=tmp_dir, token=token, type=type)
 
 
-def search_database(query: str, llm_backend: str = "openai", token: Optional[str] = None, amount: int = 3) -> List[tuple[LangchainDocument, float]]:
+def search_database(query: str, llm_backend: str = "aa", token: Optional[str] = None, amount: int = 3) -> List[tuple[LangchainDocument, float]]:
     """Searches the database for a query.
 
     Args:
