@@ -778,15 +778,15 @@ gitdb = ">=4.0.1,<5"
 
 [[package]]
 name = "gpt4all"
-version = "1.0.9"
+version = "1.0.11"
 description = "Python bindings for GPT4All"
 category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "gpt4all-1.0.9-py3-none-macosx_10_9_universal2.whl", hash = "sha256:b47c28cd16676fe64a827897a2803498a380d3c5419951652452ab5e158398d5"},
-    {file = "gpt4all-1.0.9-py3-none-manylinux1_x86_64.whl", hash = "sha256:365e99207f0d473878e2bae9fc56a1f0c985ac62fa3aef38e6ba1c94765f414b"},
-    {file = "gpt4all-1.0.9-py3-none-win_amd64.whl", hash = "sha256:c163c41dbadcc3cf12ebb558de1822f17fec7a80abfd9b1b8daf20bc566f35ba"},
+    {file = "gpt4all-1.0.11-py3-none-macosx_10_9_universal2.whl", hash = "sha256:c5db10f052346c503e221a066fe75ff6a11d3091066b2d0a83e4916d5f91644b"},
+    {file = "gpt4all-1.0.11-py3-none-manylinux1_x86_64.whl", hash = "sha256:bc467f9b4437a4cf3cf1b75eb9127004329cc1e3531d96d5cf9fbea65fb09828"},
+    {file = "gpt4all-1.0.11-py3-none-win_amd64.whl", hash = "sha256:21a88e53d2d4a58ab3348dcc3a745b1b649ae344e43dbb0d1c8c4b6aac099c42"},
 ]
 
 [package.dependencies]
@@ -2482,14 +2482,14 @@ files = [
 
 [[package]]
 name = "qdrant-client"
-version = "1.5.0"
+version = "1.5.4"
 description = "Client library for the Qdrant vector search engine"
 category = "main"
 optional = false
 python-versions = ">=3.8,<3.12"
 files = [
-    {file = "qdrant_client-1.5.0-py3-none-any.whl", hash = "sha256:ecfe95f8299c02c9fcb8676966edfd01d081d173f898722d52af3d28b9bbbcf6"},
-    {file = "qdrant_client-1.5.0.tar.gz", hash = "sha256:64285465c0d45c8fa871fb10a36ab2da5ed5f163a0f5637925f02f288b5ef906"},
+    {file = "qdrant_client-1.5.4-py3-none-any.whl", hash = "sha256:b0247886c51d755f70dc1a62545f38ba5c7d72971ab533f1264fb695c21a6d8f"},
+    {file = "qdrant_client-1.5.4.tar.gz", hash = "sha256:6ffbca94f7cab23230001710b7dc04684dbc18dadf66982179a37531b4c4b178"},
 ]
 
 [package.dependencies]
@@ -2500,6 +2500,9 @@ numpy = {version = ">=1.21", markers = "python_version >= \"3.8\""}
 portalocker = ">=2.7.0,<3.0.0"
 pydantic = ">=1.10.8"
 urllib3 = ">=1.26.14,<2.0.0"
+
+[package.extras]
+fastembed = ["fastembed (==0.0.4)"]
 
 [[package]]
 name = "referencing"
@@ -3795,4 +3798,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "40ed507eb63ac41a37c2c20f24e0ded335dce9c589cb051268619cb6351dd886"
+content-hash = "8c675eee6c170adf4617749906aba8779f143fa024f2250057c8c107a280d6eb"

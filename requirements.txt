@@ -342,10 +342,10 @@ gitdb==4.0.10 ; python_version >= "3.11" and python_version < "3.12" \
 gitpython==3.1.33 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:11f22466f982211ad8f3bdb456c03be8466c71d4da8774f3a9f68344e89559cb \
     --hash=sha256:13aaa3dff88a23afec2d00eb3da3f2e040e2282e41de484c5791669b31146084
-gpt4all==1.0.9 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:365e99207f0d473878e2bae9fc56a1f0c985ac62fa3aef38e6ba1c94765f414b \
-    --hash=sha256:b47c28cd16676fe64a827897a2803498a380d3c5419951652452ab5e158398d5 \
-    --hash=sha256:c163c41dbadcc3cf12ebb558de1822f17fec7a80abfd9b1b8daf20bc566f35ba
+gpt4all==1.0.11 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:21a88e53d2d4a58ab3348dcc3a745b1b649ae344e43dbb0d1c8c4b6aac099c42 \
+    --hash=sha256:bc467f9b4437a4cf3cf1b75eb9127004329cc1e3531d96d5cf9fbea65fb09828 \
+    --hash=sha256:c5db10f052346c503e221a066fe75ff6a11d3091066b2d0a83e4916d5f91644b
 greenlet==2.0.2 ; python_version >= "3.11" and python_version < "3.12" and platform_machine == "aarch64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "ppc64le" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "x86_64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "amd64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "AMD64" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "win32" or python_version >= "3.11" and python_version < "3.12" and platform_machine == "WIN32" \
     --hash=sha256:03a8f4f3430c3b3ff8d10a2a86028c660355ab637cee9333d63d66b56f09d52a \
     --hash=sha256:0bf60faf0bc2468089bdc5edd10555bab6e85152191df713e2ab1fcc86382b5a \
@@ -1088,9 +1088,9 @@ pyyaml==6.0.1 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:fca0e3a251908a499833aa292323f32437106001d436eca0e6e7833256674585 \
     --hash=sha256:fd1592b3fdf65fff2ad0004b5e363300ef59ced41c2e6b3a99d4089fa8c5435d \
     --hash=sha256:fd66fc5d0da6d9815ba2cebeb4205f95818ff4b79c3ebe268e75d961704af52f
-qdrant-client==1.5.0 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:64285465c0d45c8fa871fb10a36ab2da5ed5f163a0f5637925f02f288b5ef906 \
-    --hash=sha256:ecfe95f8299c02c9fcb8676966edfd01d081d173f898722d52af3d28b9bbbcf6
+qdrant-client==1.5.4 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:6ffbca94f7cab23230001710b7dc04684dbc18dadf66982179a37531b4c4b178 \
+    --hash=sha256:b0247886c51d755f70dc1a62545f38ba5c7d72971ab533f1264fb695c21a6d8f
 referencing==0.30.2 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:449b6669b6121a9e96a7f9e410b245d471e8d48964c67113ce9afe50c8dd7bdf \
     --hash=sha256:794ad8003c65938edcdbc027f1933215e0d0ccc0291e3ce20a4d87432b59efc0
