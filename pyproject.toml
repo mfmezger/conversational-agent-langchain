@@ -63,7 +63,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.settings]
-known_third_party = ["aleph_alpha_client", "dotenv", "fastapi", "gpt4all", "httpx", "jinja2", "langchain", "loguru", "numpy", "omegaconf", "openai", "pydantic", "pytest", "qdrant_client", "starlette", "streamlit"]
+known_third_party = ["aleph_alpha_client", "dotenv", "fastapi", "gpt4all", "httpx", "jinja2", "langchain", "loguru", "numpy", "omegaconf", "openai", "pydantic", "pytest", "qdrant_client", "requests", "starlette", "streamlit"]
 
 [tool.mypy]
 # Disallow dynamic typing

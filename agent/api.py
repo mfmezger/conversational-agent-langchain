@@ -301,9 +301,7 @@ def search(request: SearchRequest) -> JSONResponse:
         text = d[0].page_content
         page = d[0].metadata["page"]
         source = d[0].metadata["source"]
-        response.append(SearchResponse(text=text, page=page, source=source, score=score).json)
-
-    # json_response = json.dumps([r.dict() for r in response])
+        response.append(SearchResponse(text=text, page=page, source=source, score=score))
 
     return response
 
@@ -370,7 +368,7 @@ def question_answer(request: QARequest) -> JSONResponse:
     return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
 
 
-@app.get("/explanation/explain-qa")
+@app.post("/explanation/explain-qa")
 def explain_question_answer(query: Optional[str] = None, llm_backend: str = "aa", token: Optional[str] = None, amount: int = 1) -> JSONResponse:
     """Answer a question & explains it based on the documents in the database. This only works with Aleph Alpha.
 
@@ -394,7 +392,7 @@ def explain_question_answer(query: Optional[str] = None, llm_backend: str = "aa"
 
     token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
-    documents = search_database(query=query, llm_backend=llm_backend, token=token, amount=1)
+    documents = search_database(query=query, llm_backend=llm_backend, token=token, amount=amount)
 
     # call the qa function
     explanation, score, text, answer, meta_data = explain_qa(query=query, document=documents, aleph_alpha_token=token)
