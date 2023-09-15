@@ -54,7 +54,7 @@ def initialize() -> None:
             },
         ).json()
 
-        st.write(documents)
+        # iterate over the objects in the json documents
 
 
 # Start the GUI app

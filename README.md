@@ -147,7 +147,7 @@ poetry run coverage run -m pytest -o log_cli=true -vvv tests
 To run the Frontend use this command in the root directory:
 
 ```bash
-poetry run streamlit run gui.py
+poetry run streamlit run gui.py --theme.base="dark"
 ```
 
 ## Vector Database

@@ -1,5 +1,4 @@
 """FastAPI Backend for the Knowledge Agent."""
-import json
 import os
 from typing import List, Optional
 
@@ -302,11 +301,11 @@ def search(request: SearchRequest) -> JSONResponse:
         text = d[0].page_content
         page = d[0].metadata["page"]
         source = d[0].metadata["source"]
-        response.append(SearchResponse(text=text, page=page, source=source, score=score))
+        response.append(SearchResponse(text=text, page=page, source=source, score=score).json)
 
-    json_response = json.dumps([r.dict() for r in response])
+    # json_response = json.dumps([r.dict() for r in response])
 
-    return JSONResponse(content=json_response)
+    return response
 
 
 @app.post("/qa")
