@@ -1,5 +1,4 @@
 """FastAPI Backend for the Knowledge Agent."""
-import json
 import os
 from typing import List, Optional
 
@@ -29,6 +28,7 @@ from agent.backend.gpt4all_service import (
     custom_completion_prompt_gpt4all,
     embedd_documents_gpt4all,
     embedd_text_gpt4all,
+    qa_gpt4all,
     search_documents_gpt4all,
     summarize_text_gpt4all,
 )
@@ -292,7 +292,9 @@ def search(request: SearchRequest) -> JSONResponse:
     if not DOCS:
         logger.info("No Documents found.")
         return JSONResponse(content={"message": "No documents found."})
+
     logger.info(f"Found {len(DOCS)} documents.")
+
     response = []
     for d in DOCS:
         score = d[1]
@@ -301,12 +303,9 @@ def search(request: SearchRequest) -> JSONResponse:
         source = d[0].metadata["source"]
         response.append(SearchResponse(text=text, page=page, source=source, score=score))
 
-    json_response = json.dumps([r.dict() for r in response])
-
-    return JSONResponse(content=json_response)
+    return response
 
 
-# TODO: REFACTOR
 @app.post("/qa")
 def question_answer(request: QARequest) -> JSONResponse:
     """Answer a question based on the documents in the database.
@@ -335,7 +334,6 @@ def question_answer(request: QARequest) -> JSONResponse:
     if request.history:
         # combine the texts
         text = combine_text_from_list(request.history_list)
-        # TODO: refactor for match.
         if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
 
             # summarize the text
@@ -363,15 +361,14 @@ def question_answer(request: QARequest) -> JSONResponse:
         # todo:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
     elif request.llm_backend == "gpt4all":
-        # todo:
-        raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
+        answer, prompt, meta_data = qa_gpt4all(documents=documents, query=request.query, summarization=request.summarization, language=request.language)
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
     return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
 
 
-@app.get("/explanation/explain-qa")
+@app.post("/explanation/explain-qa")
 def explain_question_answer(query: Optional[str] = None, llm_backend: str = "aa", token: Optional[str] = None, amount: int = 1) -> JSONResponse:
     """Answer a question & explains it based on the documents in the database. This only works with Aleph Alpha.
 
@@ -395,7 +392,7 @@ def explain_question_answer(query: Optional[str] = None, llm_backend: str = "aa"
 
     token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
-    documents = search_database(query=query, llm_backend=llm_backend, token=token, amount=1)
+    documents = search_database(query=query, llm_backend=llm_backend, token=token, amount=amount)
 
     # call the qa function
     explanation, score, text, answer, meta_data = explain_qa(query=query, document=documents, aleph_alpha_token=token)
@@ -532,7 +529,7 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> JSONResponse:
             temperature=request.temperature,
             max_tokens=request.max_tokens,
         )
-    elif request.llm_backend == "GPT4ALL":
+    elif request.llm_backend == "gpt4all":
         answer = custom_completion_prompt_gpt4all(
             prompt=request.prompt,
             model=request.model,

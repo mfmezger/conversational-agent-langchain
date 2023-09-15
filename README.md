@@ -25,6 +25,9 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
 ## Recent Updates
 - Added Qdrant as a vector database.
 - Added GPT4All as a LLM Backend. It does not work if you build a docker image on a mac device.
+- Frontend
+![Frontend](resources/research.png)
+
 
 
 ## Quickstart
@@ -147,7 +150,7 @@ poetry run coverage run -m pytest -o log_cli=true -vvv tests
 To run the Frontend use this command in the root directory:
 
 ```bash
-poetry run streamlit run gui.py
+poetry run streamlit run gui.py --theme.base="dark"
 ```
 
 ## Vector Database

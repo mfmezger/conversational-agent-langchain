@@ -9,6 +9,13 @@ services:
     ports:
       - "8001:8001"
 
+  streamlit_app:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "8501:8501"
+
   qdrant:
     image: qdrant/qdrant
     container_name: qdrant

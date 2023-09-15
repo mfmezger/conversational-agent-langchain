@@ -1,16 +1,18 @@
 """The main gui."""
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any, Tuple
 
 import streamlit as st
 from loguru import logger
 
 from agent.backend.aleph_alpha_service import (
-    embedd_documents_aleph_alpha,
     explain_completion,
     qa_aleph_alpha,
     search_documents_aleph_alpha,
 )
+
+# TODO: Background Image
+
 
 # Constants
 PDF_FILE_TYPE = "pdf"
@@ -30,23 +32,6 @@ st.title("Conversational AI")
 def create_folder_structure(folder_path: str) -> None:
     """Create the folder structure."""
     Path(folder_path).mkdir(parents=True, exist_ok=True)
-
-
-def upload_files(save_path_input: str) -> List[Tuple[str, bytes]]:
-    """Upload PDF files and save them to the file system."""
-    uploaded_files = st.file_uploader("Upload PDF Files", type=PDF_FILE_TYPE, accept_multiple_files=True)
-    files = []
-
-    for file in uploaded_files:
-        with open(f"{save_path_input}{file.name}", "wb") as f:
-            f.write(file.getbuffer())
-        files.append((file.name, file.getbuffer()))
-    return files
-
-
-def start_embedding(file_path: str, token: str) -> None:
-    """Start the embedding process."""
-    embedd_documents_aleph_alpha(dir=file_path, aleph_alpha_token=token)
 
 
 def search_documents(token: str, query: str) -> Tuple[str, str, str, Any]:
@@ -72,15 +57,9 @@ def initialize() -> None:
 
     # The user needs to enter the aleph alpha api key
     aleph_alpha_api_key = st.text_input("Aleph Alpha Token", type="password")
+
+    st.session_state.api_key = aleph_alpha_api_key
     logger.debug("API Key was entered")
-
-    # Upload PDF files
-    files = upload_files(save_path_input)
-
-    # Start the embedding process
-    if st.button("Start Embedding", key="start_embedding"):
-        logger.debug("Embedding was started")
-        start_embedding(save_path_input, aleph_alpha_api_key)
 
     # Search the documents
     search_query = st.text_input("Search Query")
