@@ -10,8 +10,8 @@ PDF_FILE_TYPE = "pdf"
 META_DATA_HEIGHT = 500
 EXPLANATION_HEIGHT = 300
 
-url_search = "http://localhost:8001/semantic/search"
-url_qa = "http://localhost:8001/explanation/explain-qa"
+url_search = "http://agent:8001/semantic/search"
+url_qa = "http://agent:8001/explanation/explain-qa"
 
 
 logger.info("Starting Application.")

@@ -13,4 +13,4 @@ COPY . .
 RUN poetry install --no-root --no-dev
 
 # CMD ["tail", "-f", "/dev/null"]
-ENTRYPOINT ["poetry", "run", "streamlit", "run", "frontend/gui.py", "--theme.base='dark'"]
+CMD ["poetry", "run", "streamlit", "run", "frontend/gui.py", "--theme.base='dark'"]
