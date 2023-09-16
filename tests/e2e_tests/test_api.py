@@ -48,8 +48,8 @@ async def test_upload_documents(provider):
 
     assert response.status_code == 200
     assert response.json() == {
-        "message": "Files received and saved.",
-        "filenames": ["1706.03762v5.pdf", "1912.01703v1.pdf"],
+        "status": "success",
+        "files": ["1706.03762v5.pdf", "1912.01703v1.pdf"],
     }
 
     # Clean up temporary folders
@@ -67,8 +67,8 @@ async def test_embedd_one_document():
 
     assert response.status_code == 200
     assert response.json() == {
-        "message": "File received and saved.",
-        "filenames": "1706.03762v5.pdf",
+        "status": "success",
+        "files": ["1706.03762v5.pdf"],
     }
 
     # Clean up temporary folders

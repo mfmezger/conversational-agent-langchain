@@ -18,3 +18,21 @@ class EmbeddingResponse(BaseModel):
 
     status: str = Field(..., title="Status", description="The status of the request.")
     files: List[str] = Field(..., title="Files", description="The list of files that were embedded.")
+
+
+class QAResponse(BaseModel):
+    """The Response for the QA endpoint."""
+
+    answer: str = Field(..., title="Answer", description="The answer to the question.")
+    prompt: str = Field(..., title="Prompt", description="The prompt used to generate the answer.")
+    meta_data: dict = Field(..., title="Meta Data", description="The meta data of the answer.")
+
+
+class ExplainQAResponse(BaseModel):
+    """The Response for the Explain QA endpoint."""
+
+    answer: str = Field(..., title="Answer", description="The answer to the question.")
+    meta_data: dict = Field(..., title="Meta Data", description="The meta data of the answer.")
+    explanation: str = Field(..., title="Explanation", description="The explanation for the answer.")
+    text: str = Field(..., title="Text", description="The text of the document.")
+    score: float = Field(..., title="Score", description="The score of the document.")
