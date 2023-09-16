@@ -54,15 +54,6 @@ class ExplainRequest(BaseModel):
     llm_backend: str = Field("aa", title="LLM Provider", description="The LLM provider to use for embedding.")
 
 
-class SearchResponse(BaseModel):
-    """The request parameters for explaining the output."""
-
-    text: str = Field(..., title="Text", description="The text of the document.")
-    page: int = Field(..., title="Page", description="The page of the document.")
-    source: str = Field(..., title="Source", description="The source of the document.")
-    score: float = Field(..., title="Score", description="The score of the document.")
-
-
 class CustomPromptCompletion(BaseModel):
     """The Custom Prompt Completion Model."""
 

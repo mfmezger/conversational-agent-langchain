@@ -37,15 +37,15 @@ from agent.backend.open_ai_service import (
     search_documents_openai,
     send_custom_completion_openai,
 )
-from agent.data_model.rest_data_model import (
+from agent.data_model.request_data_model import (
     CustomPromptCompletion,
     EmbeddTextFilesRequest,
     EmbeddTextRequest,
     ExplainRequest,
     QARequest,
     SearchRequest,
-    SearchResponse,
 )
+from agent.data_model.response_data_model import EmbeddingResponse, SearchResponse
 from agent.utils.configuration import load_config
 from agent.utils.utility import (
     combine_text_from_list,
@@ -125,7 +125,7 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "aa", token: O
 
 
 @app.post("/embeddings/documents")
-async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend: str = "aa", token: Optional[str] = None) -> JSONResponse:
+async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend: str = "aa", token: Optional[str] = None) -> EmbeddingResponse:
     """Uploads multiple documents to the backend.
 
     Args:
@@ -156,11 +156,11 @@ async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend
 
     embedd_documents_wrapper(folder_name=tmp_dir, llm_backend=llm_backend, token=token)
 
-    return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
+    return EmbeddingResponse(status="success", files=file_names)
 
 
 @app.post("/embeddings/document/")
-async def post_embedd_document(file: UploadFile, llm_backend: str = "aa", token: Optional[str] = None) -> JSONResponse:
+async def post_embedd_document(file: UploadFile, llm_backend: str = "aa", token: Optional[str] = None) -> EmbeddingResponse:
     """Uploads one document to the backend and embeds it in the database.
 
     Args:
@@ -188,11 +188,11 @@ async def post_embedd_document(file: UploadFile, llm_backend: str = "aa", token:
         f.write(await file.read())
 
     embedd_documents_wrapper(folder_name=tmp_dir, llm_backend=llm_backend, token=token)
-    return JSONResponse(content={"message": "File received and saved.", "filenames": file.filename})
+    return EmbeddingResponse(status="success", files=[file.filename])
 
 
 @app.post("/embeddings/text/")
-async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
+async def embedd_text(request: EmbeddTextRequest) -> EmbeddingResponse:
     """Embeds text in the database.
 
     Args:
@@ -223,7 +223,7 @@ async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
-    return JSONResponse(content={"message": "Text received and saved.", "filenames": request.file_name})
+    return EmbeddingResponse(status="success", files=[request.file_name])
 
 
 @app.post("/embeddings/texts/files")
@@ -265,11 +265,11 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> JSONResponse:
 
     embedd_text_files_aleph_alpha(folder=tmp_dir, aleph_alpha_token=token, seperator=request.seperator)
 
-    return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
+    return EmbeddingResponse(status="success", files=file_names)
 
 
 @app.post("/semantic/search")
-def search(request: SearchRequest) -> JSONResponse:
+def search(request: SearchRequest) -> List[SearchResponse]:
     """Searches for a query in the vector database.
 
     Args:
