@@ -37,13 +37,18 @@ from agent.backend.open_ai_service import (
     search_documents_openai,
     send_custom_completion_openai,
 )
-from agent.data_model.rest_data_model import (
+from agent.data_model.request_data_model import (
     CustomPromptCompletion,
     EmbeddTextFilesRequest,
     EmbeddTextRequest,
     ExplainRequest,
     QARequest,
     SearchRequest,
+)
+from agent.data_model.response_data_model import (
+    EmbeddingResponse,
+    ExplainQAResponse,
+    QAResponse,
     SearchResponse,
 )
 from agent.utils.configuration import load_config
@@ -125,7 +130,7 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "aa", token: O
 
 
 @app.post("/embeddings/documents")
-async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend: str = "aa", token: Optional[str] = None) -> JSONResponse:
+async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend: str = "aa", token: Optional[str] = None) -> EmbeddingResponse:
     """Uploads multiple documents to the backend.
 
     Args:
@@ -156,11 +161,11 @@ async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend
 
     embedd_documents_wrapper(folder_name=tmp_dir, llm_backend=llm_backend, token=token)
 
-    return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
+    return EmbeddingResponse(status="success", files=file_names)
 
 
 @app.post("/embeddings/document/")
-async def post_embedd_document(file: UploadFile, llm_backend: str = "aa", token: Optional[str] = None) -> JSONResponse:
+async def post_embedd_document(file: UploadFile, llm_backend: str = "aa", token: Optional[str] = None) -> EmbeddingResponse:
     """Uploads one document to the backend and embeds it in the database.
 
     Args:
@@ -188,11 +193,11 @@ async def post_embedd_document(file: UploadFile, llm_backend: str = "aa", token:
         f.write(await file.read())
 
     embedd_documents_wrapper(folder_name=tmp_dir, llm_backend=llm_backend, token=token)
-    return JSONResponse(content={"message": "File received and saved.", "filenames": file.filename})
+    return EmbeddingResponse(status="success", files=[file.filename])
 
 
 @app.post("/embeddings/text/")
-async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
+async def embedd_text(request: EmbeddTextRequest) -> EmbeddingResponse:
     """Embeds text in the database.
 
     Args:
@@ -223,11 +228,11 @@ async def embedd_text(request: EmbeddTextRequest) -> JSONResponse:
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
-    return JSONResponse(content={"message": "Text received and saved.", "filenames": request.file_name})
+    return EmbeddingResponse(status="success", files=[request.file_name])
 
 
 @app.post("/embeddings/texts/files")
-async def embedd_text_files(request: EmbeddTextFilesRequest) -> JSONResponse:
+async def embedd_text_files(request: EmbeddTextFilesRequest) -> EmbeddingResponse:
     """Embeds text files in the database.
 
     Args:
@@ -265,11 +270,11 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> JSONResponse:
 
     embedd_text_files_aleph_alpha(folder=tmp_dir, aleph_alpha_token=token, seperator=request.seperator)
 
-    return JSONResponse(content={"message": "Files received and saved.", "filenames": file_names})
+    return EmbeddingResponse(status="success", files=file_names)
 
 
 @app.post("/semantic/search")
-def search(request: SearchRequest) -> JSONResponse:
+def search(request: SearchRequest) -> List[SearchResponse]:
     """Searches for a query in the vector database.
 
     Args:
@@ -307,7 +312,7 @@ def search(request: SearchRequest) -> JSONResponse:
 
 
 @app.post("/qa")
-def question_answer(request: QARequest) -> JSONResponse:
+def question_answer(request: QARequest) -> QAResponse:
     """Answer a question based on the documents in the database.
 
     Args:
@@ -365,11 +370,11 @@ def question_answer(request: QARequest) -> JSONResponse:
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
-    return JSONResponse(content={"answer": answer, "prompt": prompt, "meta_data": meta_data})
+    return QAResponse(answer=answer, prompt=prompt, meta_data=meta_data)
 
 
 @app.post("/explanation/explain-qa")
-def explain_question_answer(query: Optional[str] = None, llm_backend: str = "aa", token: Optional[str] = None, amount: int = 1) -> JSONResponse:
+def explain_question_answer(query: Optional[str] = None, llm_backend: str = "aa", token: Optional[str] = None, amount: int = 1) -> ExplainQAResponse:
     """Answer a question & explains it based on the documents in the database. This only works with Aleph Alpha.
 
     This uses the normal qa but combines it with the explain function.
@@ -397,7 +402,7 @@ def explain_question_answer(query: Optional[str] = None, llm_backend: str = "aa"
     # call the qa function
     explanation, score, text, answer, meta_data = explain_qa(query=query, document=documents, aleph_alpha_token=token)
 
-    return JSONResponse(content={"explanation": explanation, "score": score, "text": text, "answer": answer, "meta_data": meta_data})
+    return ExplainQAResponse(explanation=explanation, score=score, text=text, answer=answer, meta_data=meta_data)
 
 
 @app.post("/explaination/aleph_alpha_explain")
@@ -500,7 +505,7 @@ def search_database(query: str, llm_backend: str = "aa", token: Optional[str] = 
 
 
 @app.post("/llm/completion/custom")
-async def custom_prompt_llm(request: CustomPromptCompletion) -> JSONResponse:
+async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
     """This method sents a custom completion request to the LLM Provider.
 
     Args:
@@ -540,15 +545,13 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> JSONResponse:
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
-    return JSONResponse(content={"answer": answer})
+    return answer
 
 
 @app.delete("/embeddings/delete/{llm_provider}/{page}/{source}")
-@load_config("config/db.yml")
 def delete(
     page: int,
     source: str,
-    cfg: DictConfig,
     llm_provider: str = "openai",
 ) -> UpdateResult:
     """Delete a Vector from the database based on the page and source.
@@ -571,7 +574,7 @@ def delete(
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
-    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
+    qdrant_client = load_vec_db_conn()
 
     result = qdrant_client.delete(
         collection_name=collection,

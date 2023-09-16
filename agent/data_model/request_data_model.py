@@ -54,21 +54,14 @@ class ExplainRequest(BaseModel):
     llm_backend: str = Field("aa", title="LLM Provider", description="The LLM provider to use for embedding.")
 
 
-class SearchResponse(BaseModel):
-    """The request parameters for explaining the output."""
-
-    text: str = Field(..., title="Text", description="The text of the document.")
-    page: int = Field(..., title="Page", description="The page of the document.")
-    source: str = Field(..., title="Source", description="The source of the document.")
-    score: float = Field(..., title="Score", description="The score of the document.")
-
-
 class CustomPromptCompletion(BaseModel):
     """The Custom Prompt Completion Model."""
 
     token: str = Field(..., title="Token", description="The API token for the LLM provider.")
     prompt: str = Field(..., title="Prompt", description="The prompt to use for the completion.")
-    llm_backend: str = Field("aa", title="LLM Provider", description="The LLM provider to use for embedding.")
+    llm_backend: str = Field(
+        "aa", title="LLM Provider", description="The LLM provider to use for embedding. Can be 'aa' for Aleph Alpha or 'openai' for OpenAI, or 'gpt4allL'."
+    )
     model: str = Field(..., title="Model", description="The model to use for the completion.")
     max_tokens: int = Field(256, title="Max Tokens", description="The maximum number of tokens to generate.")
     temperature: float = Field(..., title="Temperature", description="The temperature to use for the completion.")

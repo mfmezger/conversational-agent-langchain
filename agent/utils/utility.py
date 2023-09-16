@@ -4,6 +4,10 @@ import uuid
 
 from jinja2 import Template
 from loguru import logger
+from omegaconf import DictConfig
+from qdrant_client import QdrantClient
+
+from agent.utils.configuration import load_config
 
 
 def combine_text_from_list(input_list: list) -> str:
@@ -126,6 +130,13 @@ def validate_token(token: str | None, llm_backend: str, aleph_alpha_key: str | N
     else:
         token = "gpt4all"
     return token
+
+
+@load_config("config/db.yml")
+def load_vec_db_conn(cfg: DictConfig):
+    """Load the Vector Database Connection."""
+    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
+    return qdrant_client
 
 
 if __name__ == "__main__":
