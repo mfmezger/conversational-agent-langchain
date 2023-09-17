@@ -5,7 +5,7 @@ import pathlib
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-from aleph_alpha_client import (  # type: ignore
+from aleph_alpha_client import (
     Client,
     CompletionRequest,
     Document,

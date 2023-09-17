@@ -1,8 +1,9 @@
 """The main gui."""
 from pathlib import Path
-from typing import Any, Tuple
+from typing import List, Tuple
 
 import streamlit as st
+from langchain.docstore.document import Document
 from loguru import logger
 
 from agent.backend.aleph_alpha_service import (
@@ -34,7 +35,7 @@ def create_folder_structure(folder_path: str) -> None:
     Path(folder_path).mkdir(parents=True, exist_ok=True)
 
 
-def search_documents(token: str, query: str) -> Tuple[str, str, str, Any]:
+def search_documents(token: str, query: str) -> Tuple[str, str, str, List[Tuple[Document, float]]]:
     """Search the documents and return the answer, prompt, and metadata."""
     documents = search_documents_aleph_alpha(query=query, aleph_alpha_token=token)
     answer, prompt, meta_data = qa_aleph_alpha(query=query, documents=documents, aleph_alpha_token=token)

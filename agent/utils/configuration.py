@@ -2,7 +2,7 @@
 from omegaconf import OmegaConf
 
 
-def load_config(location):
+def load_config(location) -> dict:
     """Loads the configuration file.
 
     Args:
@@ -12,10 +12,10 @@ def load_config(location):
         dict: A dictionary containing the configuration settings.
     """
 
-    def decorator(func):
+    def decorator(func) -> dict:
         """Decorator to load the configuration file."""
 
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs) -> dict:
             """Wrapper to load the configuration file."""
             # Load the config file
             cfg = OmegaConf.load(location)
