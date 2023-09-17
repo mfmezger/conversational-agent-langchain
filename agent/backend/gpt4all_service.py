@@ -1,6 +1,6 @@
 """GPT4ALL Backend Service."""
 import os
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from dotenv import load_dotenv
 from gpt4all import GPT4All
@@ -31,8 +31,9 @@ def get_db_connection(cfg: DictConfig) -> Qdrant:
     """
     embedding = GPT4AllEmbeddings()
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
-
-    vector_db = Qdrant(client=qdrant_client, collection_name=cfg.qdrant.collection_name_gpt4all, embeddings=embedding)
+    if collection_name is None or "":
+        collection_name = cfg.qdrant.collection_name_aa
+    vector_db = Qdrant(client=qdrant_client, collection_name=collection_name, embeddings=embedding)
     logger.info("SUCCESS: Qdrant DB initialized.")
 
     return vector_db
@@ -58,7 +59,7 @@ def embedd_documents_gpt4all(dir: str) -> None:
     logger.info("SUCCESS: Texts embedded.")
 
 
-def embedd_text_gpt4all(text: str, file_name: str, seperator: str) -> None:
+def embedd_text_gpt4all(text: str, file_name: str, seperator: str, collection_name: Optional[str] = None) -> None:
     """embedd_documents embedds the documents in the given directory.
 
     :param cfg: Configuration from the file
@@ -136,7 +137,7 @@ def custom_completion_prompt_gpt4all(prompt: str, model: str = "orca-mini-3b.ggm
     return str(output)
 
 
-def search_documents_gpt4all(query: str, amount: int) -> List[Tuple[Document, float]]:
+def search_documents_gpt4all(query: str, amount: int, collection_name: Optional[str] = None) -> List[Tuple[Document, float]]:
     """Searches the documents in the Qdrant DB with a specific query.
 
     Args:
@@ -154,7 +155,7 @@ def search_documents_gpt4all(query: str, amount: int) -> List[Tuple[Document, fl
     return docs
 
 
-def qa_gpt4all(documents: list[tuple[Document, float]], query: str, summarization: bool = False, language: str = "de"):
+def qa_gpt4all(documents: list[tuple[Document, float]], query: str, summarization: bool = False, language: str = "de", collection_name: Optional[str] = None):
     """QA takes a list of documents and returns a list of answers.
 
     Args:

@@ -11,6 +11,7 @@ class QARequest(BaseModel):
     query: Optional[str] = Field(None, title="Query", description="The question to answer.")
     llm_backend: str = Field("aa", title="LLM Provider", description="The LLM provider to use for answering the question. Can be 'openai' or 'aleph-alpha'.")
     token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
+    collection_name: Optional[str] = Field(None, title="Name of the Collection", description="Name of the Qdrant Collection.")
     amount: int = Field(1, title="Amount", description="The number of answers to return.")
     language: str = Field("de", title="Language", description="The language to use for the answer.")
     history: int = Field(0, title="History", description="The number of previous questions to include in the context.")
@@ -31,6 +32,7 @@ class SearchRequest(BaseModel):
 
     query: str = Field(..., title="Query", description="The search query.")
     llm_backend: str = Field("aa", title="LLM Provider", description="The LLM provider to use for searching.")
+    collection_name: Optional[str] = Field(None, title="Name of the Collection", description="Name of the Qdrant Collection.")
     token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
     amount: int = Field(3, title="Amount", description="The number of search results to return.")
 
@@ -49,6 +51,7 @@ class ExplainRequest(BaseModel):
     """The request parameters for explaining the output."""
 
     prompt: str = Field(..., title="Prompt", description="The prompt used to generate the output.")
+    collection_name: Optional[str] = Field(None, title="Name of the Collection", description="Name of the Qdrant Collection.")
     output: str = Field(..., title="Output", description="The output to be explained.")
     token: Optional[str] = Field(None, title="API Token", description="The Aleph Alpha API token.")
     llm_backend: str = Field("aa", title="LLM Provider", description="The LLM provider to use for embedding.")

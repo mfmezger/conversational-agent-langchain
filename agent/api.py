@@ -292,7 +292,7 @@ def search(request: SearchRequest) -> List[SearchResponse]:
     if request.llm_backend is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
-    DOCS = search_database(query=request.query, llm_backend=request.llm_backend, token=token, amount=request.amount)
+    DOCS = search_database(query=request.query, llm_backend=request.llm_backend, token=token, amount=request.amount, collection_name=request.collection_name)
 
     if not DOCS:
         logger.info("No Documents found.")
@@ -470,7 +470,9 @@ async def process_document(files: List[UploadFile] = File(...), llm_backend: str
     process_documents_aleph_alpha(folder=tmp_dir, token=token, type=type)
 
 
-def search_database(query: str, llm_backend: str = "aa", token: Optional[str] = None, amount: int = 3) -> List[tuple[LangchainDocument, float]]:
+def search_database(
+    query: str, llm_backend: str = "aa", token: Optional[str] = None, amount: int = 3, collection_name: Optional[str] = None
+) -> List[tuple[LangchainDocument, float]]:
     """Searches the database for a query.
 
     Args:
@@ -490,13 +492,11 @@ def search_database(query: str, llm_backend: str = "aa", token: Optional[str] = 
 
     if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
-        documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query, amount=amount)
+        documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query, amount=amount, collection_name=collection_name)
     elif llm_backend == "openai":
-        documents = search_documents_openai(open_ai_token=token, query=query, amount=amount)
+        documents = search_documents_openai(open_ai_token=token, query=query, amount=amount, collection_name=collection_name)
     elif llm_backend == "gpt4all":
-        documents = search_documents_gpt4all(query=query, amount=amount)
-
-        # Embedd the documents with OpenAI#
+        documents = search_documents_gpt4all(query=query, amount=amount, collection_name=collection_name)
     else:
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 

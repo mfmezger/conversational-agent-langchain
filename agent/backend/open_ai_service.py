@@ -1,6 +1,6 @@
 """This script is used to initialize the Qdrant db backend with Azure OpenAI."""
 import os
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 import openai
 from dotenv import load_dotenv
@@ -31,13 +31,14 @@ def get_db_connection(open_ai_token: str, cfg: DictConfig) -> Qdrant:
     """
     embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)  # type: ignore
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
-
-    vector_db = Qdrant(client=qdrant_client, collection_name=cfg.qdrant.collection_name_openai, embeddings=embedding)
+    if collection_name is None or "":
+        collection_name = cfg.qdrant.collection_name_openai
+    vector_db = Qdrant(client=qdrant_client, collection_name=collection_name, embeddings=embedding)
     logger.info("SUCCESS: Qdrant DB Connection.")
     return vector_db
 
 
-def embedd_documents_openai(dir: str, open_ai_token: str) -> None:
+def embedd_documents_openai(dir: str, open_ai_token: str, collection_name: Optional[str] = None) -> None:
     """embedd_documents embedds the documents in the given directory.
 
     :param cfg: Configuration from the file
@@ -59,7 +60,7 @@ def embedd_documents_openai(dir: str, open_ai_token: str) -> None:
     logger.info("SUCCESS: Texts embedded.")
 
 
-def search_documents_openai(open_ai_token: str, query: str, amount: int) -> List[Tuple[Document, float]]:
+def search_documents_openai(open_ai_token: str, query: str, amount: int, collection_name: Optional[str] = None) -> List[Tuple[Document, float]]:
     """Searches the documents in the Qdrant DB with a specific query.
 
     Args:
@@ -168,7 +169,9 @@ def send_custom_completion_openai(
     return response.choices[0].text
 
 
-def qa_openai(token: str, documents: list[tuple[Document, float]], query: str, summarization: bool = False) -> tuple[Any, str, dict[Any, Any]]:
+def qa_openai(
+    token: str, documents: list[tuple[Document, float]], query: str, summarization: bool = False, collection_name: Optional[str] = None
+) -> tuple[Any, str, dict[Any, Any]]:
     """QA Function for OpenAI LLMs.
 
     Args:

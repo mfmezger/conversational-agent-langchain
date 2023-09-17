@@ -999,9 +999,9 @@ pygments==2.16.1 ; python_version >= "3.11" and python_version < "3.12" \
 pympler==1.0.1 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:993f1a3599ca3f4fcd7160c7545ad06310c9e12f70174ae7ae8d4e25f6c5d3fa \
     --hash=sha256:d260dda9ae781e1eab6ea15bacb84015849833ba5555f141d2d9b7b7473b307d
-pypdf==3.15.4 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:791f0a52ddf390709f1f1b0c05c4d8cde13829b4f7cb91b4003b9bdd352bc944 \
-    --hash=sha256:a2780ed01dc4da23ac1542209f58fd3d951d8dd37c3c0309d123cd2f2679fb03
+pypdf==3.16.0 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:71fd274f5e02c7122f688f5b2609407d5dd92ecb4140d498108fc94ea9573800 \
+    --hash=sha256:887bf97029d9317a1a48da71c3fae7d6fab905a8b2e82999004e9d1385616a6a
 python-dateutil==2.8.2 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86 \
     --hash=sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9
