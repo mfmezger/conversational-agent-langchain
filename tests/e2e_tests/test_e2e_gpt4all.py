@@ -22,7 +22,7 @@ def test_summarize_text_gpt4all():
 
 def test_completion_text_gpt4all():
     """Testing the completion."""
-    completion = completion_text_gpt4all(prompt="Das ist ein Test.")
+    completion = completion_text_gpt4all(prompt="What is AI?")
     # assert not empty
     assert len(completion) > 0
 
