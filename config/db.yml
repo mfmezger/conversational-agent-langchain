@@ -6,3 +6,7 @@ qdrant:
   collection_name_aa: aleph_alpha
   collection_name_gpt4all: gpt4all
   collection_name_openai: openai
+
+aleph_alpha_embeddings:
+  normalize: True
+  compress_to_size: 128

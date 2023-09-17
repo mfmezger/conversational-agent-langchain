@@ -39,7 +39,9 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
     Returns:
         Qdrant: The Qdrant DB connection.
     """
-    embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
+    embedding = AlephAlphaAsymmetricSemanticEmbedding(
+        aleph_alpha_api_key=aleph_alpha_token, normalize=cfg.aleph_alpha_embeddings.normalize, compress_to_size=cfg.aleph_alpha_embeddings.compress_to_size
+    )
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
     vector_db = Qdrant(client=qdrant_client, collection_name=cfg.qdrant.collection_name_aa, embeddings=embedding)
@@ -119,7 +121,7 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
     Returns:
         None
     """
-    vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
+    vector_db: Qdrant = get_db_connection(aleph_alpha_token=aleph_alpha_token)
 
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
     docs = loader.load()
@@ -142,7 +144,7 @@ def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, s
     Returns:
         None
     """
-    vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
+    vector_db: Qdrant = get_db_connection(aleph_alpha_token=aleph_alpha_token)
 
     # split the text at the seperator
     text_list: List = text.split(seperator)
@@ -172,7 +174,7 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator
     Returns:
         None
     """
-    vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
+    vector_db: Qdrant = get_db_connection(aleph_alpha_token=aleph_alpha_token)
 
     # iterate over the files in the folder
     for file in os.listdir(folder):
@@ -223,7 +225,7 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
         raise ValueError("Amount must be greater than 0.")
 
     try:
-        vector_db = get_db_connection(aleph_alpha_token=aleph_alpha_token)
+        vector_db: Qdrant = get_db_connection(aleph_alpha_token=aleph_alpha_token)
         docs = vector_db.similarity_search_with_score(query=query, k=amount)
         logger.info("SUCCESS: Documents found.")
         return docs
