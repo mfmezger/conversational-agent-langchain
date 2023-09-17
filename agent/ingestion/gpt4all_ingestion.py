@@ -17,7 +17,7 @@ data_folder = "resources/data"
 
 
 @load_config(location="config/db.yml")
-def main(cfg: DictConfig):
+def main(cfg: DictConfig) -> None:
     """Main function for the GPT4ALL ingestion service."""
     # Define the name of the collection you want to embedd the documents into.
 
@@ -44,7 +44,7 @@ def main(cfg: DictConfig):
     ingest_pdfs_with_text(dir=data_folder, vector_db=vector_db)
 
 
-def ingest_text_files(dir: str, vector_db: Qdrant, file_ending: str = "*.txt"):
+def ingest_text_files(dir: str, vector_db: Qdrant, file_ending: str = "*.txt") -> None:
     """Ingests text files from a directory."""
     loader = DirectoryLoader(dir, glob=file_ending, loader_cls=TextLoader)
     docs = loader.load()
@@ -56,13 +56,13 @@ def ingest_text_files(dir: str, vector_db: Qdrant, file_ending: str = "*.txt"):
     logger.info("SUCCESS: Texts embedded.")
 
 
-def ingest_custom_text(text: str, seperator: str = "###"):
+def ingest_custom_text(text: str, seperator: str = "###") -> None:
     """Ingests custom text."""
     pass
 
 
 # ingest pdfs
-def ingest_pdfs_with_text(dir: str, vector_db: Qdrant):
+def ingest_pdfs_with_text(dir: str, vector_db: Qdrant) -> None:
     """Ingests pdfs from a directory."""
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
     docs = loader.load()

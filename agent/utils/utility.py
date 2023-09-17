@@ -133,7 +133,7 @@ def validate_token(token: str | None, llm_backend: str, aleph_alpha_key: str | N
 
 
 @load_config("config/db.yml")
-def load_vec_db_conn(cfg: DictConfig):
+def load_vec_db_conn(cfg: DictConfig) -> QdrantClient:
     """Load the Vector Database Connection."""
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
     return qdrant_client

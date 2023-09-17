@@ -338,7 +338,7 @@ def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, 
     return explanation, score, text, answer, meta_data
 
 
-def explain_completion(prompt: str, output: str, token: str):
+def explain_completion(prompt: str, output: str, token: str) -> Dict[str, float]:
     """Returns an explanation of the given completion.
 
     Args:
@@ -373,7 +373,7 @@ def explain_completion(prompt: str, output: str, token: str):
     return result
 
 
-def process_documents_aleph_alpha(folder: str, token: str, type: str):
+def process_documents_aleph_alpha(folder: str, token: str, type: str) -> List[str]:
     """Process the documents in the given folder.
 
     Args:

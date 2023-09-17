@@ -55,6 +55,7 @@ from agent.utils.configuration import load_config
 from agent.utils.utility import (
     combine_text_from_list,
     create_tmp_folder,
+    load_vec_db_conn,
     validate_token,
 )
 
@@ -596,7 +597,7 @@ def delete(
 
 
 @load_config(location="config/db.yml")
-def initialize_aleph_alpha_vector_db(cfg: DictConfig):
+def initialize_aleph_alpha_vector_db(cfg: DictConfig) -> None:
     """Initializes the Aleph Alpha vector db.
 
     Args:
@@ -615,7 +616,7 @@ def initialize_aleph_alpha_vector_db(cfg: DictConfig):
 
 
 @load_config(location="config/db.yml")
-def initialize_open_ai_vector_db(cfg: DictConfig):
+def initialize_open_ai_vector_db(cfg: DictConfig) -> None:
     """Initializes the OpenAI vector db.
 
     Args:
@@ -634,7 +635,7 @@ def initialize_open_ai_vector_db(cfg: DictConfig):
 
 
 @load_config(location="config/db.yml")
-def initialize_gpt4all_vector_db(cfg: DictConfig):
+def initialize_gpt4all_vector_db(cfg: DictConfig) -> None:
     """Initializes the GPT4ALL vector db.
 
     Args:

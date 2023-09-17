@@ -4,6 +4,7 @@ from pathlib import Path
 import requests
 import streamlit as st
 from loguru import logger
+from requests.models import Response
 
 # Constants
 PDF_FILE_TYPE = "pdf"
