@@ -49,30 +49,31 @@ def initialize() -> None:
 
         with st.spinner("Waiting for response...."):
             qa = requests.post(url_qa, params=params, headers=headers).json()
-            st.write(f"Antwort des Chatbots: {qa['answer']}")
+            with st.chat_message(name="ai", avatar="🤖"):
+                st.write(qa["answer"])
 
-        # Search the documents
-        documents = requests.post(
-            url_search,
-            json={
-                "query": search_query,
-                "llm_backend": "aa",
-                "token": st.session_state.api_key,
-                "amount": 5,
-            },
-        ).json()
-        # make this one hidden
-        # iterate over the objects in the json documents
-        for d in documents:
-            with st.expander("Show Results", expanded=False):
-                st.write("_____")
-                col1, col2, col3 = st.columns(3)
-                col3.markdown(f"### Source: {d['source']}")
-                col1.markdown(f"### Page: {d['page']}")
-                col2.markdown(f"### Score: {d['score']}")
+                # Search the documents
+                documents = requests.post(
+                    url_search,
+                    json={
+                        "query": search_query,
+                        "llm_backend": "aa",
+                        "token": st.session_state.api_key,
+                        "amount": 5,
+                    },
+                ).json()
+                # make this one hidden
+                # iterate over the objects in the json documents
+                for d in documents:
+                    with st.expander("Show Results", expanded=False):
+                        st.write("_____")
+                        col1, col2, col3 = st.columns(3)
+                        col3.markdown(f"### Source: {d['source']}")
+                        col1.markdown(f"### Page: {d['page']}")
+                        col2.markdown(f"### Score: {d['score']}")
 
-                st.write(f"Text: {d['text']}")
-                st.write("_____")
+                        st.write(f"Text: {d['text']}")
+                        st.write("_____")
 
 
 # Start the GUI app
