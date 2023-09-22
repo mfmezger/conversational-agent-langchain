@@ -25,14 +25,14 @@ class QAResponse(BaseModel):
 
     answer: str = Field(..., title="Answer", description="The answer to the question.")
     prompt: str = Field(..., title="Prompt", description="The prompt used to generate the answer.")
-    meta_data: dict = Field(..., title="Meta Data", description="The meta data of the answer.")
+    meta_data: dict[str, str] = Field(..., title="Meta Data", description="The meta data of the answer.")
 
 
 class ExplainQAResponse(BaseModel):
     """The Response for the Explain QA endpoint."""
 
     answer: str = Field(..., title="Answer", description="The answer to the question.")
-    meta_data: dict = Field(..., title="Meta Data", description="The meta data of the answer.")
+    meta_data: dict[str, str] = Field(..., title="Meta Data", description="The meta data of the answer.")
     explanation: str = Field(..., title="Explanation", description="The explanation for the answer.")
     text: str = Field(..., title="Text", description="The text of the document.")
     score: float = Field(..., title="Score", description="The score of the document.")

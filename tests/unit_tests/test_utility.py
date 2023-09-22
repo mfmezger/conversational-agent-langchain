@@ -5,17 +5,17 @@ import pytest
 from agent.utils.utility import validate_token
 
 
-def test_generate_prompt():
+def test_generate_prompt() -> None:
     """Test that generate_prompt returns the correct prompt."""
     pass
 
 
-def test_combine_text_from_list():
+def test_combine_text_from_list() -> None:
     """Test that combine_text_from_list returns the correct text."""
     pass
 
 
-def test_validate_token():
+def test_validate_token() -> None:
     """Test that validate_token returns the correct token."""
     token = validate_token(token="example_token", llm_backend="openai", aleph_alpha_key="example_key_a", openai_key="example_key_o")
 

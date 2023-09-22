@@ -2,10 +2,10 @@
 
 import os
 import pathlib
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-from aleph_alpha_client import (  # type: ignore
+from aleph_alpha_client import (
     Client,
     CompletionRequest,
     Document,
@@ -29,7 +29,7 @@ load_dotenv()
 
 
 @load_config(location="config/db.yml")
-def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
+def get_db_connection(aleph_alpha_token: str, cfg: DictConfig, collection_name: Optional[str] = None) -> Qdrant:
     """Initializes a connection to the Qdrant DB.
 
     Args:
@@ -44,7 +44,10 @@ def get_db_connection(cfg: DictConfig, aleph_alpha_token: str) -> Qdrant:
     )
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
-    vector_db = Qdrant(client=qdrant_client, collection_name=cfg.qdrant.collection_name_aa, embeddings=embedding)
+    if collection_name is None or "":
+        collection_name = cfg.qdrant.collection_name_aa
+
+    vector_db = Qdrant(client=qdrant_client, collection_name=collection_name, embeddings=embedding)
     logger.info("SUCCESS: Qdrant DB initialized.")
 
     return vector_db
@@ -108,7 +111,7 @@ def send_completion_request(text: str, token: str, cfg: DictConfig) -> str:
     return str(response.completions[0].completion)
 
 
-def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
+def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str, collection_name: Optional[str] = None) -> None:
     """Embeds the documents in the given directory in the Aleph Alpha database.
 
     This method uses the Directory Loader for PDFs and the PyPDFLoader to load the documents.
@@ -121,7 +124,7 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
     Returns:
         None
     """
-    vector_db: Qdrant = get_db_connection(aleph_alpha_token=aleph_alpha_token)
+    vector_db: Qdrant = get_db_connection(collection_name=collection_name, aleph_alpha_token=aleph_alpha_token)
 
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
     docs = loader.load()
@@ -134,7 +137,7 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str) -> None:
     logger.info("SUCCESS: Texts embedded.")
 
 
-def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, seperator: str) -> None:
+def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, seperator: str, collection_name: Optional[str] = None) -> None:
     """Embeds the given text in the Aleph Alpha database.
 
     Args:
@@ -144,7 +147,7 @@ def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, s
     Returns:
         None
     """
-    vector_db: Qdrant = get_db_connection(aleph_alpha_token=aleph_alpha_token)
+    vector_db: Qdrant = get_db_connection(collection_name=collection_name, aleph_alpha_token=aleph_alpha_token)
 
     # split the text at the seperator
     text_list: List = text.split(seperator)
@@ -163,7 +166,7 @@ def embedd_text_aleph_alpha(text: str, file_name: str, aleph_alpha_token: str, s
     logger.info("SUCCESS: Text embedded.")
 
 
-def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator: str) -> None:
+def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator: str, collection_name: Optional[str] = None) -> None:
     """Embeds text files in the Aleph Alpha database.
 
     Args:
@@ -174,7 +177,7 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator
     Returns:
         None
     """
-    vector_db: Qdrant = get_db_connection(aleph_alpha_token=aleph_alpha_token)
+    vector_db: Qdrant = get_db_connection(collection_name=collection_name, aleph_alpha_token=aleph_alpha_token)
 
     # iterate over the files in the folder
     for file in os.listdir(folder):
@@ -206,7 +209,7 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator
     logger.info("SUCCESS: Text embedded.")
 
 
-def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int = 1) -> List[Tuple[LangchainDocument, float]]:
+def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int = 1, collection_name: Optional[str] = None) -> List[Tuple[LangchainDocument, float]]:
     """Searches the Aleph Alpha service for similar documents.
 
     Args:
@@ -225,7 +228,7 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
         raise ValueError("Amount must be greater than 0.")
 
     try:
-        vector_db: Qdrant = get_db_connection(aleph_alpha_token=aleph_alpha_token)
+        vector_db: Qdrant = get_db_connection(collection_name=collection_name, aleph_alpha_token=aleph_alpha_token)
         docs = vector_db.similarity_search_with_score(query=query, k=amount)
         logger.info("SUCCESS: Documents found.")
         return docs
@@ -235,7 +238,7 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
 
 
 def qa_aleph_alpha(
-    aleph_alpha_token: str, documents: list[tuple[LangchainDocument, float]], query: str, summarization: bool = False
+    aleph_alpha_token: str, documents: list[tuple[LangchainDocument, float]], query: str, summarization: bool = False, collection_name: Optional[str] = None
 ) -> Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]:
     """QA takes a list of documents and returns a list of answers.
 
@@ -290,7 +293,7 @@ def qa_aleph_alpha(
 
 
 @load_config(location="config/ai/aleph_alpha.yml")
-def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, cfg: DictConfig):
+def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, cfg: DictConfig, collection_name: Optional[str] = None):
     """Explian QA WIP."""
     text = document[0][0].page_content
     meta_data = document[0][0].metadata
@@ -335,7 +338,7 @@ def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, 
     return explanation, score, text, answer, meta_data
 
 
-def explain_completion(prompt: str, output: str, token: str):
+def explain_completion(prompt: str, output: str, token: str) -> Dict[str, float]:
     """Returns an explanation of the given completion.
 
     Args:
@@ -370,7 +373,7 @@ def explain_completion(prompt: str, output: str, token: str):
     return result
 
 
-def process_documents_aleph_alpha(folder: str, token: str, type: str):
+def process_documents_aleph_alpha(folder: str, token: str, type: str) -> List[str]:
     """Process the documents in the given folder.
 
     Args:

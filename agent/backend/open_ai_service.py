@@ -1,6 +1,6 @@
 """This script is used to initialize the Qdrant db backend with Azure OpenAI."""
 import os
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 import openai
 from dotenv import load_dotenv
@@ -19,7 +19,7 @@ load_dotenv()
 
 
 @load_config(location="config/db.yml")
-def get_db_connection(open_ai_token: str, cfg: DictConfig) -> Qdrant:
+def get_db_connection(open_ai_token: str, cfg: DictConfig, collection_name: str) -> Qdrant:
     """get_db_connection initializes the connection to the Qdrant db.
 
     :param cfg: OmegaConf configuration
@@ -31,13 +31,14 @@ def get_db_connection(open_ai_token: str, cfg: DictConfig) -> Qdrant:
     """
     embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)  # type: ignore
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
-
-    vector_db = Qdrant(client=qdrant_client, collection_name=cfg.qdrant.collection_name_openai, embeddings=embedding)
+    if collection_name is None or "":
+        collection_name = cfg.qdrant.collection_name_openai
+    vector_db = Qdrant(client=qdrant_client, collection_name=collection_name, embeddings=embedding)
     logger.info("SUCCESS: Qdrant DB Connection.")
     return vector_db
 
 
-def embedd_documents_openai(dir: str, open_ai_token: str) -> None:
+def embedd_documents_openai(dir: str, open_ai_token: str, collection_name: Optional[str] = None) -> None:
     """embedd_documents embedds the documents in the given directory.
 
     :param cfg: Configuration from the file
@@ -47,7 +48,7 @@ def embedd_documents_openai(dir: str, open_ai_token: str) -> None:
     :param open_ai_token: OpenAI API Token
     :type open_ai_token: str
     """
-    vector_db: Qdrant = get_db_connection(open_ai_token=open_ai_token)
+    vector_db: Qdrant = get_db_connection(open_ai_token=open_ai_token, collection_name=collection_name)
 
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
     docs = loader.load()
@@ -59,7 +60,7 @@ def embedd_documents_openai(dir: str, open_ai_token: str) -> None:
     logger.info("SUCCESS: Texts embedded.")
 
 
-def search_documents_openai(open_ai_token: str, query: str, amount: int) -> List[Tuple[Document, float]]:
+def search_documents_openai(open_ai_token: str, query: str, amount: int, collection_name: Optional[str] = None) -> List[Tuple[Document, float]]:
     """Searches the documents in the Qdrant DB with a specific query.
 
     Args:
@@ -70,7 +71,7 @@ def search_documents_openai(open_ai_token: str, query: str, amount: int) -> List
         List[Tuple[Document, float]]: A list of search results, where each result is a tuple
         containing a Document object and a float score.
     """
-    vector_db = get_db_connection(open_ai_token=open_ai_token)
+    vector_db = get_db_connection(open_ai_token=open_ai_token, collection_name=collection_name)
 
     docs = vector_db.similarity_search_with_score(query, k=amount)
     logger.info("SUCCESS: Documents found.")
@@ -172,13 +173,13 @@ def qa_openai(token: str, documents: list[tuple[Document, float]], query: str, s
     """QA Function for OpenAI LLMs.
 
     Args:
-        token (str): _description_
-        documents (list[tuple[Document, float]]): _description_
-        query (str): _description_
-        summarization (bool, optional): _description_. Defaults to False.
+        token (str): The token for the OpenAI API.
+        documents (list[tuple[Document, float]]): The documents to be searched.
+        query (str): The question for which the LLM should generate an answer.
+        summarization (bool, optional): If the Documents should be summarized. Defaults to False.
 
     Returns:
-        str: _description_
+        tuple: answer, prompt, meta_data
     """
     # if the list of documents contains only one document extract the text directly
     if len(documents) == 1:

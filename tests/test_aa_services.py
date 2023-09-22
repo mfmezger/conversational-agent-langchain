@@ -14,13 +14,13 @@ from agent.backend.aleph_alpha_service import (
 load_dotenv()
 
 
-def test_prompt_folder_not_empty():
+def test_prompt_folder_not_empty() -> None:
     """Test that the prompts folder is not empty."""
     prompt_files = os.listdir("prompts")
     assert len(prompt_files) > 0
 
 
-def test_generate_prompt():
+def test_generate_prompt() -> None:
     """Test that generate_prompt returns a non-empty string with the expected text and query."""
     text = "ASDF"
     query = "FDSA"
@@ -39,7 +39,7 @@ def test_generate_prompt():
         generate_prompt("invalid_template.j2", text=text, query=query)
 
 
-def test_send_completion_request_empty():
+def test_send_completion_request_empty() -> None:
     """Test with an empty prompt."""
     prompt = ""
     token = "example_token"
@@ -53,7 +53,7 @@ def test_send_completion_request_empty():
         send_completion_request(prompt, token)
 
 
-def test_search_documents_aleph_alpha_wrong_token():
+def test_search_documents_aleph_alpha_wrong_token() -> None:
     """Test that search_documents_aleph_alpha raises an error when the token is invalid."""
     # Test with an empty query
     aleph_alpha_token = "example_token"
@@ -68,7 +68,7 @@ def test_search_documents_aleph_alpha_wrong_token():
         search_documents_aleph_alpha(aleph_alpha_token, query)
 
 
-def test_search_documents_aleph_alpha_empty():
+def test_search_documents_aleph_alpha_empty() -> None:
     """Test with an empty query or token."""
     aleph_alpha_token = "example_token"
     query = ""
@@ -81,12 +81,12 @@ def test_search_documents_aleph_alpha_empty():
         search_documents_aleph_alpha(aleph_alpha_token, query)
 
 
-def test_explain_completion():  # todo: rework
+def test_explain_completion() -> None:  # todo: rework
     """Test that explain_completion does not raise an error."""
     explain_completion("This is a test", " ", str(os.getenv("ALEPH_ALPHA_API_KEY")))
 
 
-# def test_search_documents_aleph_alpha_empty():
+# def test_search_documents_aleph_alpha_empty() -> None:
 # """Test that search_documents_aleph_alpha returns a list of tuples."""
 # aleph_alpha_token = "example_token"
 # query = "example_query"

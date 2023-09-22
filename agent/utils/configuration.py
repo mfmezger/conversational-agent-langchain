@@ -1,8 +1,11 @@
 """Configuration Wrapper."""
+from functools import wraps
+from typing import Callable, Dict
+
 from omegaconf import OmegaConf
 
 
-def load_config(location):
+def load_config(location: str) -> Callable[[Callable], Callable]:
     """Loads the configuration file.
 
     Args:
@@ -12,10 +15,11 @@ def load_config(location):
         dict: A dictionary containing the configuration settings.
     """
 
-    def decorator(func):
+    def decorator(func: Callable) -> Callable:
         """Decorator to load the configuration file."""
 
-        def wrapper(*args, **kwargs):
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> Dict:
             """Wrapper to load the configuration file."""
             # Load the config file
             cfg = OmegaConf.load(location)

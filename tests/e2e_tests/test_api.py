@@ -5,21 +5,22 @@ import shutil
 import httpx
 import pytest
 from fastapi.testclient import TestClient
+from httpx._models import Response
 from loguru import logger
 
 from agent.api import app, create_tmp_folder
 
-client = TestClient(app)
+client: TestClient = TestClient(app)
 
 
-def test_read_root():
+def test_read_root() -> None:
     """Test the root method."""
-    response = client.get("/")
+    response: Response = client.get("/")
     assert response.status_code == 200
     assert response.json() == "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
-def test_create_tmp_folder():
+def test_create_tmp_folder() -> None:
     """Test the create folder method."""
     tmp_dir = create_tmp_folder()
     assert os.path.exists(tmp_dir)
@@ -27,8 +28,8 @@ def test_create_tmp_folder():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("provider", ["openai", "aleph-alpha"])
-async def test_upload_documents(provider):
+@pytest.mark.parametrize("provider", ["openai", "aleph-alpha", "gpt4all"])
+async def test_upload_documents(provider: str) -> None:
     """Testing the upload of multiple documents."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
         files = [
@@ -37,13 +38,17 @@ async def test_upload_documents(provider):
         ]
         if provider == "openai":
             logger.warning("Using OpenAI API")
-            response = await ac.post(
+            response: Response = await ac.post(
                 "/embeddings/documents", params={"llm_backend": "openai", "token": os.getenv("OPENAI_API_KEY")}, files=[("files", file) for file in files]
             )
-        else:
+        elif provider == "aleph-alpha":
             logger.warning("Using Aleph Alpha API")
-            response = await ac.post(
+            response: Response = await ac.post(
                 "/embeddings/documents", params={"llm_backend": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
+            )
+        elif provider == "gpt4all":
+            response: Response = await ac.post(
+                "/embeddings/documents", params={"llm_backend": "gpt4all", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
             )
 
     assert response.status_code == 200
@@ -59,11 +64,13 @@ async def test_upload_documents(provider):
 
 
 @pytest.mark.asyncio
-async def test_embedd_one_document():
+async def test_embedd_one_document() -> None:
     """Testing the upload of one document."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
         tmp_file = open("tests/resources/1706.03762v5.pdf", "rb")
-        response = await ac.post("/embeddings/document/", params={"llm_backend": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("file", tmp_file)])
+        response: Response = await ac.post(
+            "/embeddings/document/", params={"llm_backend": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("file", tmp_file)]
+        )
 
     assert response.status_code == 200
     assert response.json() == {
@@ -77,10 +84,10 @@ async def test_embedd_one_document():
             shutil.rmtree(entry.path)
 
 
-def test_search_route_invalid_provider():
+def test_search_route_invalid_provider() -> None:
     """Testing with wrong backend."""
     with pytest.raises(ValueError):
-        response = client.post(
+        response: Response = client.post(
             "/semantic/search",
             json={
                 "query": "example query",
@@ -93,9 +100,9 @@ def test_search_route_invalid_provider():
         assert "ValueError" in response.text
 
 
-def test_search_route():
+def test_search_route() -> None:
     """Testing with wrong backend."""
-    response = client.post(
+    response: Response = client.post(
         "/semantic/search",
         json={
             "query": "Was ist Vanilin?",
@@ -107,15 +114,15 @@ def test_search_route():
     assert response.json() is not None
 
 
-def test_explain_output():
+def test_explain_output() -> None:
     """Test the function with valid arguments."""
-    response = client.post(
+    response: Response = client.post(
         "/explaination/aleph_alpha_explain", json={"prompt": "What is the capital of France?", "output": "Paris", "token": os.getenv("ALEPH_ALPHA_API_KEY")}
     )
     assert response.status_code == 200
 
 
-def test_wrong_input_explain_output():
+def test_wrong_input_explain_output() -> None:
     """Test the function with wrong arguments."""
     with pytest.raises(ValueError):
         client.post("/explaination/aleph_alpha_explain", json={"prompt": "", "output": "", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
@@ -125,13 +132,13 @@ def test_wrong_input_explain_output():
         client.post("/explaination/aleph_alpha_explain", json={"prompt": "asdfasdf", "output": "", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
 
 
-def test_embedd_text():
+def test_embedd_text() -> None:
     """Test the embedd_text function."""
     # load text
     with open("tests/resources/file1.txt") as f:
         text = f.read()
 
-    response = client.post(
+    response: Response = client.post(
         "/embeddings/text/", json={"text": text, "llm_backend": "aa", "file_name": "file", "token": os.getenv("ALEPH_ALPHA_API_KEY"), "seperator": "###"}
     )
     logger.info(response)

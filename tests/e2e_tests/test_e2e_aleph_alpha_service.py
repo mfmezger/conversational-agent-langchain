@@ -12,7 +12,7 @@ from agent.backend.aleph_alpha_service import (
 )
 
 
-def test_embedd_documents_aleph_alpha():
+def test_embedd_documents_aleph_alpha() -> None:
     """Test that embedd_documents_aleph_alpha does not raise an error."""
     # assert that it does not raise an error
     token = os.getenv("ALEPH_ALPHA_API_KEY")
@@ -20,7 +20,7 @@ def test_embedd_documents_aleph_alpha():
     embedd_documents_aleph_alpha("tests/resources/", token)
 
 
-def test_search():
+def test_search() -> None:
     """Test that embedd_documents_aleph_alpha does not raise an error."""
     # assert that it does not raise an error
     token = os.getenv("ALEPH_ALPHA_API_KEY")
@@ -31,7 +31,7 @@ def test_search():
     assert len(docs) == 3
 
 
-def test_qa():
+def test_qa() -> None:
     """Test the QA functionality."""
     token = os.getenv("ALEPH_ALPHA_API_KEY")
     assert token is not None
@@ -44,7 +44,7 @@ def test_qa():
     assert len(prompt) > 0
 
 
-def test_process_documents_aleph_alpha():
+def test_process_documents_aleph_alpha() -> None:
     """Test the process_documents_aleph_alpha function."""
     token = os.getenv("ALEPH_ALPHA_API_KEY")
     assert token is not None
@@ -56,7 +56,7 @@ def test_process_documents_aleph_alpha():
     assert answers[1] is not None
 
 
-def test_explain_qa():
+def test_explain_qa() -> None:
     """Test Explain  QA."""
     token = os.getenv("ALEPH_ALPHA_API_KEY")
 

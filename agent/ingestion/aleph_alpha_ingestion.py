@@ -18,7 +18,7 @@ load_dotenv()
 
 
 @load_config(location="config/db.yml")
-def initialize_aleph_alpha_vector_db(cfg: DictConfig):
+def initialize_aleph_alpha_vector_db(cfg: DictConfig) -> None:
     """Initializes the Aleph Alpha vector db.
 
     Args:
@@ -38,7 +38,7 @@ def initialize_aleph_alpha_vector_db(cfg: DictConfig):
 
 
 @load_config(location="config/db.yml")
-def setup_connection_vector_db(cfg: DictConfig):
+def setup_connection_vector_db(cfg: DictConfig) -> Qdrant:
     """Sets up the connection to the vector db.
 
     Args:
@@ -56,7 +56,7 @@ def setup_connection_vector_db(cfg: DictConfig):
     return vector_db
 
 
-def parse_txts(text: str, file_name: str, seperator: str, vector_db: Qdrant):
+def parse_txts(text: str, file_name: str, seperator: str, vector_db: Qdrant) -> None:
     """Parse the texts and add them to the vector db.
 
     Text should be marked with a link then </LINK> and then the text.
@@ -88,7 +88,7 @@ def parse_txts(text: str, file_name: str, seperator: str, vector_db: Qdrant):
     vector_db.add_texts(texts=text_list, metadatas=metadata_list)
 
 
-def parse_pdf(dir: str, vector_db: Qdrant):
+def parse_pdf(dir: str, vector_db: Qdrant) -> None:
     """Parse the pdfs and add them to the vector db.
 
     Args:
