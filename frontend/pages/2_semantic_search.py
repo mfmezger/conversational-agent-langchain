@@ -32,7 +32,7 @@ def initialize() -> None:
     st.session_state.api_key = aleph_alpha_api_key
     logger.debug("API Key was entered")
 
-    col_ikey, col_number, query_or_abstract = st.columns(3)
+    col_ikey, col_number, query_or_abstract, col_llm_provider = st.columns(4)
     with col_ikey:
         aleph_alpha_api_key = st.text_input("Aleph Alpha Token", type="password")
     with col_number:
@@ -40,6 +40,8 @@ def initialize() -> None:
     with query_or_abstract:
         # enable the choice between query and abstract
         query_or_abstract = st.radio("Query or Abstract", ["Query", "Abstract"])
+    with col_llm_provider:
+        llm_provider = st.radio("LLM Provider", ["aa", "gpt4all"])
 
     # create a select box to choose  the number of answers from 1-10
     # Search the documents
@@ -52,7 +54,7 @@ def initialize() -> None:
                 url_search,
                 json={
                     "query": search_query,
-                    "llm_backend": "aa",
+                    "llm_backend": llm_provider,
                     "token": st.session_state.api_key,
                     "amount": amount,
                 },

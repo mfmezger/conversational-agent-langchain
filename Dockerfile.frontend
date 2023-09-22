@@ -13,4 +13,4 @@ COPY . .
 RUN poetry install --no-root --no-dev
 
 # CMD ["tail", "-f", "/dev/null"]
-CMD ["poetry", "run", "streamlit", "run", "frontend/pages/0_research_assistant.py", "--theme.base=dark"]
+CMD ["poetry", "run", "streamlit", "run", "frontend/pages/2_semantic_search.py", "--theme.base=dark"]
