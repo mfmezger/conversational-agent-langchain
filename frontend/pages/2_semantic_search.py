@@ -32,9 +32,10 @@ def initialize() -> None:
     st.session_state.api_key = aleph_alpha_api_key
     logger.debug("API Key was entered")
 
-    col_ikey, col_number, query_or_abstract, col_llm_provider = st.columns(4)
+    col_ikey, col_number, query_or_abstract, col_llm_provider, col_collection_name = st.columns(5)
     with col_ikey:
         aleph_alpha_api_key = st.text_input("Aleph Alpha Token", type="password")
+        st.session_state.api_key = aleph_alpha_api_key
     with col_number:
         amount = st.selectbox("Number of Documents", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], index=4)
     with query_or_abstract:
@@ -42,6 +43,8 @@ def initialize() -> None:
         query_or_abstract = st.radio("Query or Abstract", ["Query", "Abstract"])
     with col_llm_provider:
         llm_provider = st.radio("LLM Provider", ["aa", "gpt4all"])
+    with col_collection_name:
+        collection_name = st.text_input("Collection Name", value="")
 
     # create a select box to choose  the number of answers from 1-10
     # Search the documents
@@ -50,12 +53,15 @@ def initialize() -> None:
         logger.debug("Search was started")
 
         with st.spinner("Waiting for response...."):
+            if collection_name == "text":
+                collection_name = None
             documents = requests.post(
                 url_search,
                 json={
                     "query": search_query,
                     "llm_backend": llm_provider,
                     "token": st.session_state.api_key,
+                    "collection_name": collection_name,
                     "amount": amount,
                 },
             ).json()

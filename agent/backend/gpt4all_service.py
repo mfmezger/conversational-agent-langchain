@@ -31,7 +31,7 @@ def get_db_connection(cfg: DictConfig, collection_name: str) -> Qdrant:
     """
     embedding = GPT4AllEmbeddings()
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
-    if collection_name is None or "":
+    if collection_name is None or collection_name == "":
         collection_name = cfg.qdrant.collection_name_gpt4all
     vector_db = Qdrant(client=qdrant_client, collection_name=collection_name, embeddings=embedding)
     logger.info("SUCCESS: Qdrant DB initialized.")
