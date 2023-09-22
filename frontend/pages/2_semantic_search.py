@@ -78,5 +78,3 @@ def initialize() -> None:
 
 # Start the GUI app
 initialize()
-
-st.markdown("If you encounter any problems please contact us at: marc.mezger@adesso.de")

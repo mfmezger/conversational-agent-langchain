@@ -19,7 +19,7 @@ load_dotenv()
 
 
 @load_config(location="config/db.yml")
-def get_db_connection(open_ai_token: str, cfg: DictConfig) -> Qdrant:
+def get_db_connection(open_ai_token: str, cfg: DictConfig, collection_name: str) -> Qdrant:
     """get_db_connection initializes the connection to the Qdrant db.
 
     :param cfg: OmegaConf configuration
@@ -48,7 +48,7 @@ def embedd_documents_openai(dir: str, open_ai_token: str, collection_name: Optio
     :param open_ai_token: OpenAI API Token
     :type open_ai_token: str
     """
-    vector_db: Qdrant = get_db_connection(open_ai_token=open_ai_token)
+    vector_db: Qdrant = get_db_connection(open_ai_token=open_ai_token, collection_name=collection_name)
 
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
     docs = loader.load()
@@ -71,7 +71,7 @@ def search_documents_openai(open_ai_token: str, query: str, amount: int, collect
         List[Tuple[Document, float]]: A list of search results, where each result is a tuple
         containing a Document object and a float score.
     """
-    vector_db = get_db_connection(open_ai_token=open_ai_token)
+    vector_db = get_db_connection(open_ai_token=open_ai_token, collection_name=collection_name)
 
     docs = vector_db.similarity_search_with_score(query, k=amount)
     logger.info("SUCCESS: Documents found.")
@@ -169,19 +169,17 @@ def send_custom_completion_openai(
     return response.choices[0].text
 
 
-def qa_openai(
-    token: str, documents: list[tuple[Document, float]], query: str, summarization: bool = False, collection_name: Optional[str] = None
-) -> tuple[Any, str, dict[Any, Any]]:
+def qa_openai(token: str, documents: list[tuple[Document, float]], query: str, summarization: bool = False) -> tuple[Any, str, dict[Any, Any]]:
     """QA Function for OpenAI LLMs.
 
     Args:
-        token (str): _description_
-        documents (list[tuple[Document, float]]): _description_
-        query (str): _description_
-        summarization (bool, optional): _description_. Defaults to False.
+        token (str): The token for the OpenAI API.
+        documents (list[tuple[Document, float]]): The documents to be searched.
+        query (str): The question for which the LLM should generate an answer.
+        summarization (bool, optional): If the Documents should be summarized. Defaults to False.
 
     Returns:
-        str: _description_
+        tuple: answer, prompt, meta_data
     """
     # if the list of documents contains only one document extract the text directly
     if len(documents) == 1:

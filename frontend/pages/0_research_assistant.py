@@ -4,7 +4,6 @@ from pathlib import Path
 import requests
 import streamlit as st
 from loguru import logger
-from requests.models import Response
 
 # Constants
 PDF_FILE_TYPE = "pdf"
@@ -79,5 +78,3 @@ def initialize() -> None:
 
 # Start the GUI app
 initialize()
-
-st.markdown("If you encounter any problems please contact us at: marc.mezger@adesso.de")

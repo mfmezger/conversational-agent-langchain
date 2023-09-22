@@ -19,7 +19,7 @@ load_dotenv()
 
 
 @load_config(location="config/db.yml")
-def get_db_connection(cfg: DictConfig) -> Qdrant:
+def get_db_connection(cfg: DictConfig, collection_name: str) -> Qdrant:
     """Initializes a connection to the Qdrant DB.
 
     Args:
@@ -32,14 +32,14 @@ def get_db_connection(cfg: DictConfig) -> Qdrant:
     embedding = GPT4AllEmbeddings()
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
     if collection_name is None or "":
-        collection_name = cfg.qdrant.collection_name_aa
+        collection_name = cfg.qdrant.collection_name_gpt4all
     vector_db = Qdrant(client=qdrant_client, collection_name=collection_name, embeddings=embedding)
     logger.info("SUCCESS: Qdrant DB initialized.")
 
     return vector_db
 
 
-def embedd_documents_gpt4all(dir: str) -> None:
+def embedd_documents_gpt4all(dir: str, collection_name: Optional[str] = None) -> None:
     """embedd_documents embedds the documents in the given directory.
 
     :param cfg: Configuration from the file
@@ -47,7 +47,7 @@ def embedd_documents_gpt4all(dir: str) -> None:
     :param dir: PDF Directory
     :type dir: str
     """
-    vector_db: Qdrant = get_db_connection()
+    vector_db: Qdrant = get_db_connection(collection_name=collection_name)
 
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
     docs = loader.load()
@@ -67,7 +67,7 @@ def embedd_text_gpt4all(text: str, file_name: str, seperator: str, collection_na
     :param dir: PDF Directory
     :type dir: str
     """
-    vector_db: Qdrant = get_db_connection()
+    vector_db: Qdrant = get_db_connection(collection_name=collection_name)
 
     # split the text at the seperator
     text_list: List = text.split(seperator)
@@ -148,14 +148,14 @@ def search_documents_gpt4all(query: str, amount: int, collection_name: Optional[
         List[Tuple[Document, float]]: A list of search results, where each result is a tuple
         containing a Document object and a float score.
     """
-    vector_db = get_db_connection()
+    vector_db: Qdrant = get_db_connection(collection_name=collection_name)
 
-    docs = vector_db.similarity_search_with_score(query, k=amount)
+    docs = vector_db.similarity_search_with_score(query=query, k=amount)
     logger.info("SUCCESS: Documents found.")
     return docs
 
 
-def qa_gpt4all(documents: list[tuple[Document, float]], query: str, summarization: bool = False, language: str = "de", collection_name: Optional[str] = None):
+def qa_gpt4all(documents: list[tuple[Document, float]], query: str, summarization: bool = False, language: str = "de"):
     """QA takes a list of documents and returns a list of answers.
 
     Args:
