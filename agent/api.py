@@ -302,12 +302,19 @@ def search(request: SearchRequest) -> List[SearchResponse]:
     logger.info(f"Found {len(DOCS)} documents.")
 
     response = []
-    for d in DOCS:
-        score = d[1]
-        text = d[0].page_content
-        page = d[0].metadata["page"]
-        source = d[0].metadata["source"]
-        response.append(SearchResponse(text=text, page=page, source=source, score=score))
+    try:
+        for d in DOCS:
+            score = d[1]
+            text = d[0].page_content
+            page = d[0].metadata["page"]
+            source = d[0].metadata["source"]
+            response.append(SearchResponse(text=text, page=page, source=source, score=score))
+    except Exception as e:
+        for d in DOCS:
+            score = d[1]
+            text = d[0].page_content
+            source = d[0].metadata["source"]
+            response.append(SearchResponse(text=text, page=0, source=source, score=score))
 
     return response
 
