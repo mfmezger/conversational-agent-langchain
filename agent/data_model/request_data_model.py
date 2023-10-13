@@ -13,6 +13,7 @@ class QARequest(BaseModel):
     token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
     collection_name: Optional[str] = Field(None, title="Name of the Collection", description="Name of the Qdrant Collection.")
     amount: int = Field(1, title="Amount", description="The number of answers to return.")
+    threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
     language: str = Field("de", title="Language", description="The language to use for the answer.")
     history: int = Field(0, title="History", description="The number of previous questions to include in the context.")
     history_list: List[str] = Field(None, title="History List", description="A list of previous questions to include in the context.")
@@ -35,6 +36,7 @@ class SearchRequest(BaseModel):
     collection_name: Optional[str] = Field(None, title="Name of the Collection", description="Name of the Qdrant Collection.")
     token: Optional[str] = Field(None, title="API Token", description="The API token for the LLM provider.")
     amount: int = Field(3, title="Amount", description="The number of search results to return.")
+    threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
 
 
 class EmbeddTextRequest(BaseModel):

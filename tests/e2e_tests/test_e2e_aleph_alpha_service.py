@@ -25,7 +25,7 @@ def test_search() -> None:
     # assert that it does not raise an error
     token = os.getenv("ALEPH_ALPHA_API_KEY")
     assert token is not None
-    docs = search_documents_aleph_alpha(aleph_alpha_token=token, query="Was sind meine Vorteile?", amount=3)
+    docs = search_documents_aleph_alpha(aleph_alpha_token=token, query="Was sind meine Vorteile?", amount=3, threshold=0.1)
     assert docs is not None
     assert len(docs) > 0
     assert len(docs) == 3

@@ -60,7 +60,7 @@ def embedd_documents_openai(dir: str, open_ai_token: str, collection_name: Optio
     logger.info("SUCCESS: Texts embedded.")
 
 
-def search_documents_openai(open_ai_token: str, query: str, amount: int, collection_name: Optional[str] = None) -> List[Tuple[Document, float]]:
+def search_documents_openai(open_ai_token: str, query: str, amount: int, threshold: float = 0.0, collection_name: Optional[str] = None) -> List[Tuple[Document, float]]:
     """Searches the documents in the Qdrant DB with a specific query.
 
     Args:
@@ -73,7 +73,7 @@ def search_documents_openai(open_ai_token: str, query: str, amount: int, collect
     """
     vector_db = get_db_connection(open_ai_token=open_ai_token, collection_name=collection_name)
 
-    docs = vector_db.similarity_search_with_score(query, k=amount)
+    docs = vector_db.similarity_search_with_score(query, k=amount, score_threshold=threshold)
     logger.info("SUCCESS: Documents found.")
     return docs
 

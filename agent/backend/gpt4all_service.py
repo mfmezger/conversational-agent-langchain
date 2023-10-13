@@ -137,7 +137,7 @@ def custom_completion_prompt_gpt4all(prompt: str, model: str = "orca-mini-3b.ggm
     return str(output)
 
 
-def search_documents_gpt4all(query: str, amount: int, collection_name: Optional[str] = None) -> List[Tuple[Document, float]]:
+def search_documents_gpt4all(query: str, amount: int, threshold: float = 0.0, collection_name: Optional[str] = None) -> List[Tuple[Document, float]]:
     """Searches the documents in the Qdrant DB with a specific query.
 
     Args:
@@ -150,7 +150,7 @@ def search_documents_gpt4all(query: str, amount: int, collection_name: Optional[
     """
     vector_db: Qdrant = get_db_connection(collection_name=collection_name)
 
-    docs = vector_db.similarity_search_with_score(query=query, k=amount)
+    docs = vector_db.similarity_search_with_score(query=query, k=amount, score_threshold=threshold)
     logger.info("SUCCESS: Documents found.")
     return docs
 

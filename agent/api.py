@@ -365,7 +365,9 @@ def question_answer(request: QARequest) -> QAResponse:
         else:
             raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
-    documents = search_database(query=request.query, llm_backend=request.llm_backend, token=token, amount=request.amount)
+    documents = search_database(
+        query=request.query, llm_backend=request.llm_backend, token=token, amount=request.amount, threshold=request.threshold, collection_name=request.collection_name
+    )
 
     # call the qa function
     if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
@@ -382,7 +384,9 @@ def question_answer(request: QARequest) -> QAResponse:
 
 
 @app.post("/explanation/explain-qa")
-def explain_question_answer(query: Optional[str] = None, llm_backend: str = "aa", token: Optional[str] = None, amount: int = 1) -> ExplainQAResponse:
+def explain_question_answer(
+    query: Optional[str] = None, llm_backend: str = "aa", token: Optional[str] = None, amount: int = 1, threshold: float = 0.0
+) -> ExplainQAResponse:
     """Answer a question & explains it based on the documents in the database. This only works with Aleph Alpha.
 
     This uses the normal qa but combines it with the explain function.
@@ -405,7 +409,7 @@ def explain_question_answer(query: Optional[str] = None, llm_backend: str = "aa"
 
     token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
-    documents = search_database(query=query, llm_backend=llm_backend, token=token, amount=amount)
+    documents = search_database(query=query, llm_backend=llm_backend, token=token, amount=amount, threshold=threshold)
 
     # call the qa function
     explanation, score, text, answer, meta_data = explain_qa(query=query, document=documents, aleph_alpha_token=token)
@@ -479,7 +483,7 @@ async def process_document(files: List[UploadFile] = File(...), llm_backend: str
 
 
 def search_database(
-    query: str, llm_backend: str = "aa", token: Optional[str] = None, amount: int = 3, collection_name: Optional[str] = None
+    query: str, llm_backend: str = "aa", token: Optional[str] = None, amount: int = 3, threshold: float = 0.0, collection_name: Optional[str] = None
 ) -> List[tuple[LangchainDocument, float]]:
     """Searches the database for a query.
 
@@ -500,11 +504,11 @@ def search_database(
 
     if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
-        documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query, amount=amount, collection_name=collection_name)
+        documents = search_documents_aleph_alpha(aleph_alpha_token=token, query=query, amount=amount, threshold=threshold, collection_name=collection_name)
     elif llm_backend == "openai":
-        documents = search_documents_openai(open_ai_token=token, query=query, amount=amount, collection_name=collection_name)
+        documents = search_documents_openai(open_ai_token=token, query=query, amount=amount, threshold=threshold, collection_name=collection_name)
     elif llm_backend == "gpt4all":
-        documents = search_documents_gpt4all(query=query, amount=amount, collection_name=collection_name)
+        documents = search_documents_gpt4all(query=query, amount=amount, threshold=threshold, collection_name=collection_name)
     else:
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 

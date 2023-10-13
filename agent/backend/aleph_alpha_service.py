@@ -211,7 +211,9 @@ def embedd_text_files_aleph_alpha(folder: str, aleph_alpha_token: str, seperator
     logger.info("SUCCESS: Text embedded.")
 
 
-def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int = 1, collection_name: Optional[str] = None) -> List[Tuple[LangchainDocument, float]]:
+def search_documents_aleph_alpha(
+    aleph_alpha_token: str, query: str, amount: int = 1, threshold: float = 0.0, collection_name: Optional[str] = None
+) -> List[Tuple[LangchainDocument, float]]:
     """Searches the Aleph Alpha service for similar documents.
 
     Args:
@@ -231,7 +233,7 @@ def search_documents_aleph_alpha(aleph_alpha_token: str, query: str, amount: int
 
     try:
         vector_db: Qdrant = get_db_connection(collection_name=collection_name, aleph_alpha_token=aleph_alpha_token)
-        docs = vector_db.similarity_search_with_score(query=query, k=amount)
+        docs = vector_db.similarity_search_with_score(query=query, k=amount, score_threshold=threshold)
         logger.info("SUCCESS: Documents found.")
         return docs
     except Exception as e:

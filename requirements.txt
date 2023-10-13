@@ -563,9 +563,9 @@ jsonschema-specifications==2023.7.1 ; python_version >= "3.11" and python_versio
 jsonschema==4.19.0 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:043dc26a3845ff09d20e4420d6012a9c91c9aa8999fa184e7efcfeccb41e32cb \
     --hash=sha256:6e1e7569ac13be8139b2dd2c21a55d350066ee3f80df06c608b398cdc6f30e8f
-langchain==0.0.312 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:2c7ea6e80195b8747c25ca4b905bd4814f26f47719a27edcb369cb6cd2186df3 \
-    --hash=sha256:4629233c158f23dcfb0cbc249b27d7d8bde1e71ce1d8972d53ae54c7504fc78a
+langchain==0.0.313 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:12d6797797e4b91e715a449da7eab2a094157180112680fdfaed0ae7c1614481 \
+    --hash=sha256:6ad3e366f8cc2ef97a63aecc86e265cc261f04e2bc5e0d3ef79fc99a8cd81248
 langsmith==0.0.43 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:27854bebdae6a35c88e1c1172e6abba27592287b70511aca2a953a59fade0e87 \
     --hash=sha256:f7705f13eb8ce3b8eb16c4d2b2760c62cfb9a3b3ab6aa0728afa84d26b2a6e55
