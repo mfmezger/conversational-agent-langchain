@@ -28,7 +28,7 @@ def test_create_tmp_folder() -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("provider", ["openai", "aleph-alpha", "gpt4all"])
+@pytest.mark.parametrize("provider", ["aleph-alpha", "gpt4all"])  # TODO: if i get access again maybe also "openai",
 async def test_upload_documents(provider: str) -> None:
     """Testing the upload of multiple documents."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:

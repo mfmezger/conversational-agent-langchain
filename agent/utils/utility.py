@@ -2,7 +2,7 @@
 import os
 import uuid
 
-from jinja2 import Template
+from langchain.prompts import PromptTemplate
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
@@ -63,16 +63,14 @@ def generate_prompt(prompt_name: str, text: str, query: str = "", language: str 
             case _:
                 raise ValueError("Language not supported.")
         with open(os.path.join("prompts", lang, prompt_name)) as f:
-            prompt = Template(f.read())
+            prompt = PromptTemplate.from_template(f.read(), template_format="jinja2")
     except FileNotFoundError:
         raise FileNotFoundError(f"Prompt file '{prompt_name}' not found.")
 
-    # replace the value text with jinja
-    # Render the template with your variable
     if query:
-        prompt_text = prompt.render(text=text, query=query)
+        prompt_text = prompt.format(text=text, query=query)
     else:
-        prompt_text = prompt.render(text=text)
+        prompt_text = prompt.format(text=text)
 
     return prompt_text
 

@@ -7,11 +7,11 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
-langchain = "^0.0.313"
+langchain = "^0.0.320"
 streamlit = "^1.27.2"
 loguru = "^0.7.2"
 omegaconf = "^2.3.0"
-aleph-alpha-client = "^3.5.1"
+aleph-alpha-client = "^4.0.0"
 pypdf = "^3.16.4"
 tiktoken = "^0.5.1"
 python-dotenv = "^1.0.0"
@@ -19,12 +19,11 @@ httpx = "^0.25.0"
 python-multipart = "^0.0.6"
 fastapi = "^0.103.1"
 openai = "^0.28.0"
-jinja2 = "^3.1.2"
 grpcio = "^1.59.0"
 grpcio-tools = "^1.59.0" # for qdrant
-qdrant-client = "^1.6.0" # for qdrant
+qdrant-client = "^1.6.3" # for qdrant
 uvicorn = "^0.23.2"
-gpt4all = "^1.0.12"
+gpt4all = "^2.0.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -60,7 +59,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.settings]
-known_third_party = ["aleph_alpha_client", "dotenv", "fastapi", "gpt4all", "httpx", "jinja2", "langchain", "loguru", "numpy", "omegaconf", "openai", "pydantic", "pytest", "qdrant_client", "requests", "starlette", "streamlit"]
+known_third_party = ["aleph_alpha_client", "dotenv", "fastapi", "gpt4all", "httpx", "langchain", "loguru", "numpy", "omegaconf", "openai", "pydantic", "pytest", "qdrant_client", "requests", "starlette", "streamlit"]
 
 [tool.mypy]
 # Disallow dynamic typing

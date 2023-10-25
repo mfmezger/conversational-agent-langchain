@@ -233,7 +233,7 @@ def search_documents_aleph_alpha(
 
     try:
         vector_db: Qdrant = get_db_connection(collection_name=collection_name, aleph_alpha_token=aleph_alpha_token)
-        docs = vector_db.similarity_search_with_score(query=query, k=amount, score_threshold=threshold)
+        docs = vector_db.similarity_search_with_score(query=query, k=amount, score_threshold=threshold, collection_name=collection_name)
         logger.info("SUCCESS: Documents found.")
         return docs
     except Exception as e:
@@ -311,11 +311,11 @@ def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, 
     client = Client(token=aleph_alpha_token)
 
     response_explain = client.explain(exp_req, model=cfg.aleph_alpha_completion.model)
-    explanations = response_explain[1][0].items[0][0]
+    explanations = response_explain.explanations[0].items[0].scores
 
     # if all of the scores are belo 0.7 raise an error
     if all(item.score < 0.7 for item in explanations):
-        raise ValueError("All scores are below 0.9.")
+        raise ValueError("All scores are below 0.7.")
 
     # remove element if the text contains Response: or Instructions:
     for exp in explanations:
