@@ -242,7 +242,7 @@ def search_documents_aleph_alpha(
 
 
 def qa_aleph_alpha(
-    aleph_alpha_token: str, documents: list[tuple[LangchainDocument, float]], query: str, summarization: bool = False, collection_name: Optional[str] = None
+    aleph_alpha_token: str, documents: list[tuple[LangchainDocument, float]], query: str, summarization: bool = False
 ) -> Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]:
     """QA takes a list of documents and returns a list of answers.
 
@@ -456,6 +456,22 @@ def custom_completion_prompt_aleph_alpha(
         raise ValueError("Completion is empty.")
 
     return str(response.completions[0].completion)
+
+
+def qa_chain(query: str, token: str, collection_name: str):
+    """QA Chain Impl."""
+    # TODO:
+    vector_db: Qdrant = get_db_connection(collection_name=collection_name, aleph_alpha_token=token)
+
+    retriever = vector_db.as_retriever()
+
+    retrieved_docs = retriever.invoke(query)
+
+
+def self_question_qa():
+    """Self question QA."""
+    # TODO
+    pass
 
 
 if __name__ == "__main__":
