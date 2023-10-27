@@ -233,7 +233,7 @@ def search_documents_aleph_alpha(
 
     try:
         vector_db: Qdrant = get_db_connection(collection_name=collection_name, aleph_alpha_token=aleph_alpha_token)
-        docs = vector_db.similarity_search_with_score(query=query, k=amount, score_threshold=threshold, collection_name=collection_name)
+        docs = vector_db.similarity_search_with_score(query=query, k=amount, score_threshold=threshold)
         logger.info("SUCCESS: Documents found.")
         return docs
     except Exception as e:
@@ -359,7 +359,7 @@ def explain_completion(prompt: str, output: str, token: str) -> Dict[str, float]
     exp_req = ExplanationRequest(Prompt.from_text(prompt), output, control_factor=0.1, prompt_granularity="sentence")
     client = Client(token=token)
     response_explain = client.explain(exp_req, model="luminous-extended-control")
-    explanations = response_explain[1][0].items[0][0]
+    explanations = response_explain.explanations[0].items[0]
 
     # sort the explanations by score
     # explanations = sorted(explanations, key=lambda x: x.score, reverse=True)
