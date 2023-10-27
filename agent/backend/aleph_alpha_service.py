@@ -242,7 +242,7 @@ def search_documents_aleph_alpha(
 
 
 def qa_aleph_alpha(
-    aleph_alpha_token: str, documents: list[tuple[LangchainDocument, float]], query: str, summarization: bool = False, collection_name: Optional[str] = None
+    aleph_alpha_token: str, documents: list[tuple[LangchainDocument, float]], query: str, summarization: bool = False
 ) -> Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]:
     """QA takes a list of documents and returns a list of answers.
 
@@ -311,11 +311,11 @@ def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, 
     client = Client(token=aleph_alpha_token)
 
     response_explain = client.explain(exp_req, model=cfg.aleph_alpha_completion.model)
-    explanations = response_explain[1][0].items[0][0]
+    explanations = response_explain.explanations[0].items[0].scores
 
     # if all of the scores are belo 0.7 raise an error
     if all(item.score < 0.7 for item in explanations):
-        raise ValueError("All scores are below 0.9.")
+        raise ValueError("All scores are below 0.7.")
 
     # remove element if the text contains Response: or Instructions:
     for exp in explanations:
@@ -359,7 +359,7 @@ def explain_completion(prompt: str, output: str, token: str) -> Dict[str, float]
     exp_req = ExplanationRequest(Prompt.from_text(prompt), output, control_factor=0.1, prompt_granularity="sentence")
     client = Client(token=token)
     response_explain = client.explain(exp_req, model="luminous-extended-control")
-    explanations = response_explain[1][0].items[0][0]
+    explanations = response_explain.explanations[0].items[0]
 
     # sort the explanations by score
     # explanations = sorted(explanations, key=lambda x: x.score, reverse=True)
@@ -456,6 +456,22 @@ def custom_completion_prompt_aleph_alpha(
         raise ValueError("Completion is empty.")
 
     return str(response.completions[0].completion)
+
+
+def qa_chain(query: str, token: str, collection_name: str):
+    """QA Chain Impl."""
+    # TODO:
+    vector_db: Qdrant = get_db_connection(collection_name=collection_name, aleph_alpha_token=token)
+
+    retriever = vector_db.as_retriever()
+
+    retrieved_docs = retriever.invoke(query)
+
+
+def self_question_qa():
+    """Self question QA."""
+    # TODO
+    pass
 
 
 if __name__ == "__main__":

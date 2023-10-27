@@ -1,13 +1,19 @@
 """Tests for the utility functions."""
-
 import pytest
 
-from agent.utils.utility import validate_token
+from agent.utils.utility import generate_prompt, validate_token
 
 
 def test_generate_prompt() -> None:
     """Test that generate_prompt returns the correct prompt."""
-    pass
+    text = "blubby"
+    query = "blubby2"
+
+    prompt = generate_prompt(prompt_name="qa.j2", text=text, query=query, language="de")
+    print(f"Prompt: {prompt}")
+    # assert prompt contains text and query
+    assert text in prompt
+    assert query in prompt
 
 
 def test_combine_text_from_list() -> None:
