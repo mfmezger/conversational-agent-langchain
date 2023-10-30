@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
-langchain = "^0.0.320"
+langchain = "^0.0.325"
 streamlit = "^1.27.2"
 loguru = "^0.7.2"
 omegaconf = "^2.3.0"
