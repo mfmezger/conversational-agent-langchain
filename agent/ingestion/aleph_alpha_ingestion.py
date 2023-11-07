@@ -114,6 +114,81 @@ def parse_pdf(dir: str, vector_db: Qdrant) -> None:
     logger.info("SUCCESS: Texts added to Qdrant DB.")
 
 
+def parse_json(dir: str, vector_db: Qdrant) -> None:
+    """Parse the json and add them to the vector db.
+
+    Args:
+        dir (str): The directory to parse
+        vector_db (Qdrant): The vector db
+    """
+    # open json file
+    with open(dir) as file:
+        json_file = json.load(file)
+
+    token_list = []
+    text_result_list = []
+    metadata_list = []
+    enriched_text_list = []
+    for b in tqdm(json_file):
+
+        metadata = json_file[b]["metadata"]
+        identifier = b
+
+        clean_text = json_file[b]["text"]
+
+        # replace all linebreaks from teh text
+
+        clean_text = re.sub(r"\s\s+", " ", clean_text)
+
+        split_lenght = count_tokens(clean_text)
+        # print(split_lenght)
+        if split_lenght > 400:  # 400
+            splits = split_text(clean_text)
+            for s in tqdm(splits):
+                # print(f"Number of tokens: {count_tokens(s)}")
+                token_list.append(count_tokens(s))
+                s = re.sub(r"\n", " ", s)
+                # add to embedding list
+                text_result_list.append(s)
+                enriched_text_list.append(f"Author: {metadata['author']}, Title: {metadata['title']}, Chapter: {metadata['chapter']} Text: {s}")
+                metadata_list.append(
+                    {
+                        "identifier": identifier,
+                    }
+                )
+
+        else:
+            clean_text = re.sub(r"\n", " ", clean_text)
+            token_list.append(count_tokens(clean_text))
+            # add to embedding list
+            text_result_list.append(clean_text)
+            enriched_text_list.append(f"Author: {metadata['author']}, Title: {metadata['title']}, Chapter: {metadata['chapter']} Text: {clean_text}")
+            metadata_list.append(
+                {
+                    "identifier": identifier,
+                }
+            )
+
+    # create a json object out of the lists
+    # combine for one line in the json file the i element of the text result list the metadataa_lsit and the token_list
+    final_split = {}
+    for i in range(len(text_result_list)):
+        final_split[i] = {"text": text_result_list[i], "metadata": metadata_list[i], "token": token_list[i], "clean_text": enriched_text_list[i]}
+
+    # save the dict to a json file but as utf8
+    with open("splits_nltk.json", "w", encoding="utf8") as outfile:
+        json.dump(final_split, outfile, ensure_ascii=False)
+
+        # start the embedding
+    logger.info("Start the embedding!")
+    vector_db.add_texts(texts=text_result_list, metadatas=metadata_list)
+    logger.info("SUCCESS: Texts added to Qdrant DB.")
+
+    print(f"Number of tokens: {sum(token_list)}")
+
+    print(f"Price: {sum(token_list)/1000*0.008}")
+
+
 if __name__ == "__main__":
     initialize_aleph_alpha_vector_db()
     vector_db = setup_connection_vector_db()

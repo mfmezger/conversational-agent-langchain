@@ -7,23 +7,23 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
-langchain = "^0.0.320"
-streamlit = "^1.27.2"
+langchain = "^0.0.331"
+streamlit = "^1.28.1"
 loguru = "^0.7.2"
 omegaconf = "^2.3.0"
 aleph-alpha-client = "^4.0.0"
-pypdf = "^3.16.4"
+pypdf = "^3.17.0"
 tiktoken = "^0.5.1"
 python-dotenv = "^1.0.0"
-httpx = "^0.25.0"
+httpx = "^0.25.1"
 python-multipart = "^0.0.6"
 fastapi = "^0.103.1"
 openai = "^0.28.0"
-grpcio = "^1.59.0"
-grpcio-tools = "^1.59.0" # for qdrant
-qdrant-client = "^1.6.3" # for qdrant
-uvicorn = "^0.23.2"
-gpt4all = "^2.0.0"
+grpcio = "^1.59.2"
+grpcio-tools = "^1.59.2" # for qdrant
+qdrant-client = "^1.6.4" # for qdrant
+uvicorn = "^0.24.0.post1"
+gpt4all = "^2.0.2"
 
 
 [tool.poetry.group.dev.dependencies]
