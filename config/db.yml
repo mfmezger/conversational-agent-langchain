@@ -9,4 +9,6 @@ qdrant:
 
 aleph_alpha_embeddings:
   normalize: True
-  compress_to_size: 128
+  size: 5120
+  compress_to_size: null
+  model_name: "luminous-base-control"

@@ -15,8 +15,8 @@ class QARequest(BaseModel):
     amount: int = Field(1, title="Amount", description="The number of answers to return.")
     threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
     language: str = Field("de", title="Language", description="The language to use for the answer.")
-    history: int = Field(0, title="History", description="The number of previous questions to include in the context.")
-    history_list: List[str] = Field(None, title="History List", description="A list of previous questions to include in the context.")
+    history: Optional[int] = Field(0, title="History", description="The number of previous questions to include in the context.")
+    history_list: Optional[List[str]] = Field(None, title="History List", description="A list of previous questions to include in the context.")
 
 
 class EmbeddTextFilesRequest(BaseModel):

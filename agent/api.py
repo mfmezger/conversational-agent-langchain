@@ -340,7 +340,7 @@ def question_answer(request: QARequest) -> QAResponse:
     token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     # if the history flag is activated and the history is not provided, raise an error
-    if request.history and request.history is None:
+    if request.history and request.history_list is None:
         raise ValueError("Please provide a HistoryList.")
 
     # summarize the history
@@ -348,7 +348,6 @@ def question_answer(request: QARequest) -> QAResponse:
         # combine the texts
         text = combine_text_from_list(request.history_list)
         if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
-
             # summarize the text
             summary = summarize_text_aleph_alpha(text=text, token=token)
             # combine the history and the query
@@ -621,7 +620,7 @@ def initialize_aleph_alpha_vector_db(cfg: DictConfig) -> None:
     except Exception:
         qdrant_client.recreate_collection(
             collection_name=cfg.qdrant.collection_name_aa,
-            vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
+            vectors_config=models.VectorParams(size=cfg.aleph_alpha_embeddings.size, distance=models.Distance.COSINE),
         )
         logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_aa} created.")
 
