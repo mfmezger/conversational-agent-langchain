@@ -3,10 +3,11 @@ import os
 import uuid
 
 from langchain.prompts import PromptTemplate
+from langchain.text_splitter import NLTKTextSplitter
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
-from langchain.text_splitter import NLTKTextSplitter
+
 from agent.utils.configuration import load_config
 
 

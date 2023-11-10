@@ -1,9 +1,10 @@
 """The script to initialize the chroma db backend with aleph alpha."""
+import json
 import os
 import re
-import json
 from typing import List
 
+from aleph_alpha_client import Client
 from dotenv import load_dotenv
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
@@ -13,7 +14,6 @@ from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
-from aleph_alpha_client import Client
 from tqdm import tqdm
 
 from agent.utils.configuration import load_config
@@ -24,8 +24,23 @@ load_dotenv()
 collection_name = "aleph_alpha"
 aleph_alpha_token = os.getenv("ALEPH_ALPHA_API_KEY")
 
-client = Client(token=aleph_alpha_token)
-tokenizer = client.tokenizer("luminous-base-control")
+
+@load_config(location="config/db.yml")
+def setup_tokenizer_client(cfg: DictConfig):
+    """Set up the tokenizer and the aleph alpha client.
+
+    Args:
+        cfg (DictConfig): The config data for the embeddings.
+
+    Returns:
+        client, tokenizer: the aleph alpha client and the tokenizer
+    """
+    client = Client(token=aleph_alpha_token)
+    tokenizer = client.tokenizer(cfg.aleph_alpha_embeddings.model_name)
+    return client, tokenizer
+
+
+client, tokenizer = setup_tokenizer_client()
 
 
 def split_text(text: str):
@@ -90,7 +105,7 @@ def setup_connection_vector_db(cfg: DictConfig) -> Qdrant:
         Qdrant: The vector db
     """
     embedding = AlephAlphaAsymmetricSemanticEmbedding(
-        model="luminous-base-control", aleph_alpha_api_key=aleph_alpha_token, normalize=cfg.aleph_alpha_embeddings.normalize, compress_to_size=None
+        model=cfg.aleph_alpha_embeddings.model_name, aleph_alpha_api_key=aleph_alpha_token, normalize=cfg.aleph_alpha_embeddings.normalize, compress_to_size=None
     )
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 

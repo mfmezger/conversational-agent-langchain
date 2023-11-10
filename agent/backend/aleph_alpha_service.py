@@ -16,8 +16,8 @@ from aleph_alpha_client import (
 from dotenv import load_dotenv
 from langchain.docstore.document import Document as LangchainDocument
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
-from langchain.text_splitter import NLTKTextSplitter
 from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
+from langchain.text_splitter import NLTKTextSplitter
 from langchain.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
@@ -33,6 +33,7 @@ aleph_alpha_token = os.getenv("ALEPH_ALPHA_API_KEY")
 client = Client(token=aleph_alpha_token)
 tokenizer = client.tokenizer("luminous-base-control")
 
+
 # Settings for the text splitter
 def count_tokens(text: str):
     """Count the number of tokens in the text.
@@ -46,7 +47,9 @@ def count_tokens(text: str):
     tokens = tokenizer.encode(text)
     return len(tokens)
 
+
 splitter = NLTKTextSplitter(length_function=count_tokens, chunk_size=300, chunk_overlap=50)
+
 
 @load_config(location="config/db.yml")
 def get_db_connection(aleph_alpha_token: str, cfg: DictConfig, collection_name: Optional[str] = None) -> Qdrant:
@@ -59,8 +62,11 @@ def get_db_connection(aleph_alpha_token: str, cfg: DictConfig, collection_name: 
     Returns:
         Qdrant: The Qdrant DB connection.
     """
-    embedding = AlephAlphaAsymmetricSemanticEmbedding(model="luminous-base-control",
-        aleph_alpha_api_key=aleph_alpha_token, normalize=cfg.aleph_alpha_embeddings.normalize, compress_to_size=cfg.aleph_alpha_embeddings.compress_to_size
+    embedding = AlephAlphaAsymmetricSemanticEmbedding(
+        model=cfg.aleph_alpha_embeddings.model_name,
+        aleph_alpha_api_key=aleph_alpha_token,
+        normalize=cfg.aleph_alpha_embeddings.normalize,
+        compress_to_size=cfg.aleph_alpha_embeddings.compress_to_size,
     )
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
@@ -147,11 +153,6 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str, collection_na
         None
     """
     vector_db: Qdrant = get_db_connection(collection_name=collection_name, aleph_alpha_token=aleph_alpha_token)
-
-    client = Client(token=aleph_alpha_token)
-    tokenizer = client.tokenizer("luminous-base")
-
-
 
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
     docs = loader.load()
@@ -301,7 +302,6 @@ def qa_aleph_alpha(
     prompt = generate_prompt("qa.j2", text=text, query=query)
 
     try:
-
         # call the luminous api
         answer = send_completion_request(prompt, aleph_alpha_token)
 
@@ -386,7 +386,7 @@ def explain_completion(prompt: str, output: str, token: str) -> Dict[str, float]
     exp_req = ExplanationRequest(Prompt.from_text(prompt), output, control_factor=0.1, prompt_granularity="sentence")
     client = Client(token=token)
     response_explain = client.explain(exp_req, model="luminous-extended-control")
-    explanations = response_explain.explanations[0].items[0]
+    explanations = response_explain.explanations[0]
 
     # sort the explanations by score
     # explanations = sorted(explanations, key=lambda x: x.score, reverse=True)
@@ -502,7 +502,6 @@ def self_question_qa():
 
 
 if __name__ == "__main__":
-
     token = os.getenv("ALEPH_ALPHA_API_KEY")
 
     if not token:

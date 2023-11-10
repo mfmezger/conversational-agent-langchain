@@ -348,7 +348,6 @@ def question_answer(request: QARequest) -> QAResponse:
         # combine the texts
         text = combine_text_from_list(request.history_list)
         if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
-
             # summarize the text
             summary = summarize_text_aleph_alpha(text=text, token=token)
             # combine the history and the query
@@ -621,7 +620,7 @@ def initialize_aleph_alpha_vector_db(cfg: DictConfig) -> None:
     except Exception:
         qdrant_client.recreate_collection(
             collection_name=cfg.qdrant.collection_name_aa,
-            vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
+            vectors_config=models.VectorParams(size=cfg.aleph_alpha_embeddings.size, distance=models.Distance.COSINE),
         )
         logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_aa} created.")
 
