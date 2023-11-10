@@ -24,6 +24,7 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
 
 ## Recent Updates
 - GPT4ALL Uses Mistral now! If you want to enable it go to config/ai/gpt4all.yaml and change the string. Then you need to restart.
+- Switching for Aleph Alpha to Embeddings with luminous base control.
 - Added GPT4All as a LLM Backend. It does not work if you build a docker image on a mac m1/m2 device.
 ![Frontend](resources/research.png)
 

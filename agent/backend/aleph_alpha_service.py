@@ -370,6 +370,7 @@ def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, 
 
 
 def explain_completion(prompt: str, output: str, token: str) -> Dict[str, float]:
+    # TODO: repair
     """Returns an explanation of the given completion.
 
     Args:
