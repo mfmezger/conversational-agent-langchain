@@ -1,20 +1,62 @@
 """The script to initialize the chroma db backend with aleph alpha."""
 import os
+import re
+import json
 from typing import List
 
 from dotenv import load_dotenv
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import NLTKTextSplitter
 from langchain.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
+from aleph_alpha_client import Client
+from tqdm import tqdm
 
 from agent.utils.configuration import load_config
 
 load_dotenv()
+
+# Settings for The Embedding
+collection_name = "aleph_alpha"
+aleph_alpha_token = os.getenv("ALEPH_ALPHA_API_KEY")
+
+client = Client(token=aleph_alpha_token)
+tokenizer = client.tokenizer("luminous-base-control")
+
+
+def split_text(text: str):
+    """Split the text into chunks.
+
+    Args:
+        text (str): input text.
+
+    Returns:
+        List: List of splits.
+    """
+    # define the metadata for the document
+    splits = splitter.split_text(text)
+    return splits
+
+
+def count_tokens(text: str):
+    """Count the number of tokens in the text.
+
+    Args:
+        text (str): The text to count the tokens for.
+
+    Returns:
+        int: Number of tokens.
+    """
+    tokens = tokenizer.encode(text)
+    return len(tokens)
+
+
+# Settings for the text splitter
+splitter = NLTKTextSplitter(length_function=count_tokens, chunk_size=300, chunk_overlap=50)
 
 
 @load_config(location="config/db.yml")
@@ -25,14 +67,14 @@ def initialize_aleph_alpha_vector_db(cfg: DictConfig) -> None:
         cfg (DictConfig): Configuration from the file
     """
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
-    collection_name = "Aleph_Alpha"
+
     try:
-        qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_aa)
+        qdrant_client.get_collection(collection_name=collection_name)
         logger.info(f"SUCCESS: Collection {collection_name} already exists.")
     except Exception:
         qdrant_client.recreate_collection(
-            collection_name=cfg.qdrant.collection_name_aa,
-            vectors_config=models.VectorParams(size=128, distance=models.Distance.COSINE),
+            collection_name=collection_name,
+            vectors_config=models.VectorParams(size=5120, distance=models.Distance.COSINE),
         )
         logger.info(f"SUCCESS: Collection {collection_name} created.")
 
@@ -47,10 +89,12 @@ def setup_connection_vector_db(cfg: DictConfig) -> Qdrant:
     Returns:
         Qdrant: The vector db
     """
-    embedding = AlephAlphaAsymmetricSemanticEmbedding(aleph_alpha_api_key=aleph_alpha_token)  # type: ignore
+    embedding = AlephAlphaAsymmetricSemanticEmbedding(
+        model="luminous-base-control", aleph_alpha_api_key=aleph_alpha_token, normalize=cfg.aleph_alpha_embeddings.normalize, compress_to_size=None
+    )
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
-    vector_db = Qdrant(client=qdrant_client, collection_name=cfg.qdrant.collection_name_aa, embeddings=embedding)
+    vector_db = Qdrant(client=qdrant_client, collection_name=collection_name, embeddings=embedding)
     logger.info("SUCCESS: Qdrant DB initialized.")
 
     return vector_db
@@ -96,13 +140,7 @@ def parse_pdf(dir: str, vector_db: Qdrant) -> None:
         vector_db (Qdrant): The vector db
     """
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
-    length_function = len
-    splitter = RecursiveCharacterTextSplitter(
-        separators=["\n\n", "\n", " ", ""],
-        chunk_size=2000,
-        chunk_overlap=400,
-        length_function=length_function,
-    )
+
     docs = loader.load_and_split(splitter)
 
     logger.info(f"Loaded {len(docs)} documents.")
@@ -130,7 +168,6 @@ def parse_json(dir: str, vector_db: Qdrant) -> None:
     metadata_list = []
     enriched_text_list = []
     for b in tqdm(json_file):
-
         metadata = json_file[b]["metadata"]
         identifier = b
 

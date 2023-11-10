@@ -16,6 +16,7 @@ from aleph_alpha_client import (
 from dotenv import load_dotenv
 from langchain.docstore.document import Document as LangchainDocument
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
+from langchain.text_splitter import NLTKTextSplitter
 from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
 from langchain.vectorstores import Qdrant
 from loguru import logger
@@ -27,6 +28,25 @@ from agent.utils.utility import generate_prompt
 
 load_dotenv()
 
+aleph_alpha_token = os.getenv("ALEPH_ALPHA_API_KEY")
+
+client = Client(token=aleph_alpha_token)
+tokenizer = client.tokenizer("luminous-base-control")
+
+# Settings for the text splitter
+def count_tokens(text: str):
+    """Count the number of tokens in the text.
+
+    Args:
+        text (str): The text to count the tokens for.
+
+    Returns:
+        int: Number of tokens.
+    """
+    tokens = tokenizer.encode(text)
+    return len(tokens)
+
+splitter = NLTKTextSplitter(length_function=count_tokens, chunk_size=300, chunk_overlap=50)
 
 @load_config(location="config/db.yml")
 def get_db_connection(aleph_alpha_token: str, cfg: DictConfig, collection_name: Optional[str] = None) -> Qdrant:
@@ -39,7 +59,7 @@ def get_db_connection(aleph_alpha_token: str, cfg: DictConfig, collection_name: 
     Returns:
         Qdrant: The Qdrant DB connection.
     """
-    embedding = AlephAlphaAsymmetricSemanticEmbedding(
+    embedding = AlephAlphaAsymmetricSemanticEmbedding(model="luminous-base-control",
         aleph_alpha_api_key=aleph_alpha_token, normalize=cfg.aleph_alpha_embeddings.normalize, compress_to_size=cfg.aleph_alpha_embeddings.compress_to_size
     )
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
@@ -128,8 +148,15 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str, collection_na
     """
     vector_db: Qdrant = get_db_connection(collection_name=collection_name, aleph_alpha_token=aleph_alpha_token)
 
+    client = Client(token=aleph_alpha_token)
+    tokenizer = client.tokenizer("luminous-base")
+
+
+
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
     docs = loader.load()
+
+    docs = loader.load_and_split(splitter)
 
     logger.info(f"Loaded {len(docs)} documents.")
     text_list = [doc.page_content for doc in docs]

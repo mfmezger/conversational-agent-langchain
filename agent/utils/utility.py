@@ -6,7 +6,7 @@ from langchain.prompts import PromptTemplate
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
-
+from langchain.text_splitter import NLTKTextSplitter
 from agent.utils.configuration import load_config
 
 
@@ -135,6 +135,33 @@ def load_vec_db_conn(cfg: DictConfig) -> QdrantClient:
     """Load the Vector Database Connection."""
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
     return qdrant_client
+
+
+def split_text(text: str, splitter: NLTKTextSplitter):
+    """Split the text into chunks.
+
+    Args:
+        text (str): input text.
+
+    Returns:
+        List: List of splits.
+    """
+    # define the metadata for the document
+    splits = splitter.split_text(text)
+    return splits
+
+
+def count_tokens(text: str, tokenizer):
+    """Count the number of tokens in the text.
+
+    Args:
+        text (str): The text to count the tokens for.
+
+    Returns:
+        int: Number of tokens.
+    """
+    tokens = tokenizer.encode(text)
+    return len(tokens)
 
 
 if __name__ == "__main__":

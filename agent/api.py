@@ -340,7 +340,7 @@ def question_answer(request: QARequest) -> QAResponse:
     token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     # if the history flag is activated and the history is not provided, raise an error
-    if request.history and request.history is None:
+    if request.history and request.history_list is None:
         raise ValueError("Please provide a HistoryList.")
 
     # summarize the history
