@@ -1,4 +1,4 @@
-"""The script to initialize the chroma db backend with aleph alpha."""
+"""The script to initialize a vector db in the qdrant database server and ingested custom data with aleph alpha embeddings."""
 import json
 import os
 import re

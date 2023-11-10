@@ -5,6 +5,10 @@ SHELL = /bin/bash
 style:
 	pre-commit run --all-files
 
+restart:
+	docker compose down --remove-orphans
+	docker compose up --build -d
+
 .PHONY: clean
 clean: style
 	find . -type f -name "*.DS_Store" -ls -delete
@@ -17,16 +21,16 @@ start_backend:
 	poetry run uvicorn app.main:app --reload --port 8001
 
 start_vectordb:
-	docker-compose up --build -d qdrant
+	docker compose up --build -d qdrant
 
 setup:
 	poetry install
 
 start_docker:
-	docker-compose up --build -d
+	docker compose up --build -d
 
 down:
-	docker-compose down --remove-orphans
+	docker compose down --remove-orphans
 
 start_frontend:
 	poetry run streamlit run asdf.py --theme.base="dark"
