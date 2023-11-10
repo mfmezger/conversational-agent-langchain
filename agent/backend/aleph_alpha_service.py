@@ -15,7 +15,7 @@ from aleph_alpha_client import (
 )
 from dotenv import load_dotenv
 from langchain.docstore.document import Document as LangchainDocument
-from langchain.document_loaders import DirectoryLoader, PyPDFLoader
+from langchain.document_loaders import DirectoryLoader, PyPDFium2Loader
 from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
 from langchain.text_splitter import NLTKTextSplitter
 from langchain.vectorstores import Qdrant
@@ -142,7 +142,7 @@ def send_completion_request(text: str, token: str, cfg: DictConfig) -> str:
 def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str, collection_name: Optional[str] = None) -> None:
     """Embeds the documents in the given directory in the Aleph Alpha database.
 
-    This method uses the Directory Loader for PDFs and the PyPDFLoader to load the documents.
+    This method uses the Directory Loader for PDFs and the PyPDFium2Loader to load the documents.
     The documents are then added to the Qdrant DB which embeds them without deleting the old collection.
 
     Args:
@@ -154,8 +154,7 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str, collection_na
     """
     vector_db: Qdrant = get_db_connection(collection_name=collection_name, aleph_alpha_token=aleph_alpha_token)
 
-    loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
-    docs = loader.load()
+    loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFium2Loader)
 
     docs = loader.load_and_split(splitter)
 

@@ -7,6 +7,7 @@ from gpt4all import GPT4All
 from langchain.docstore.document import Document
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings import GPT4AllEmbeddings
+from langchain.text_splitter import NLTKTextSplitter
 from langchain.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
@@ -50,7 +51,8 @@ def embedd_documents_gpt4all(dir: str, collection_name: Optional[str] = None) ->
     vector_db: Qdrant = get_db_connection(collection_name=collection_name)
 
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
-    docs = loader.load()
+    splitter = NLTKTextSplitter(chunk_size=500, chunk_overlap=100)
+    docs = loader.load_and_split(splitter)
 
     logger.info(f"Loaded {len(docs)} documents.")
     texts = [doc.page_content for doc in docs]

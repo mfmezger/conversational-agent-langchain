@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from langchain.docstore.document import Document
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.text_splitter import NLTKTextSplitter
 from langchain.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
@@ -20,14 +21,15 @@ load_dotenv()
 
 @load_config(location="config/db.yml")
 def get_db_connection(open_ai_token: str, cfg: DictConfig, collection_name: str) -> Qdrant:
-    """get_db_connection initializes the connection to the Qdrant db.
+    """Initializes a connection to the Qdrant DB.
 
-    :param cfg: OmegaConf configuration
-    :type cfg: DictConfig
-    :param open_ai_token: OpenAI API Token
-    :type open_ai_token: str
-    :return: Qdrant DB connection
-    :rtype: Qdrant
+    Args:
+        open_ai_token (str): The openai token.
+        cfg (DictConfig): the config file.
+        collection_name (str): The name of the vector database collection.
+
+    Returns:
+        Qdrant: An Langchain Instance of the Qdrant DB.
     """
     embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)  # type: ignore
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
@@ -50,8 +52,10 @@ def embedd_documents_openai(dir: str, open_ai_token: str, collection_name: Optio
     """
     vector_db: Qdrant = get_db_connection(open_ai_token=open_ai_token, collection_name=collection_name)
 
+    splitter = NLTKTextSplitter(chunk_size=500, chunk_overlap=100)
+
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
-    docs = loader.load()
+    docs = loader.load_and_split(splitter)
 
     logger.info(f"Loaded {len(docs)} documents.")
     texts = [doc.page_content for doc in docs]
