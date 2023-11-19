@@ -8,7 +8,6 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
 - [Conversational Agent](#conversational-agent)
   - [Recent Updates](#recent-updates)
   - [Quickstart](#quickstart)
-  - [Redoc API Documentation](#redoc-api-documentation)
   - [Project Description](#project-description)
   - [Semantic Search](#semantic-search)
   - [Architecture](#architecture)
@@ -50,10 +49,8 @@ Then start the system with
 
 Then go to http://127.0.0.1:8001/docs or http://127.0.0.1:8001/redoc to see the API documentation.
 
-
-## Redoc API Documentation
-<!-- # TODO: -->
-
+Frontend: localhost:8501
+Qdrant Dashboard: localhost:6333/dashboard
 
 
 ## Project Description
