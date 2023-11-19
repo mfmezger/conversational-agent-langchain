@@ -1083,6 +1083,20 @@ pygments==2.16.1 ; python_version >= "3.11" and python_version < "3.12" \
 pypdf==3.17.0 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:67f6bb7acd8fdbcf7e7a7d5319d12b8de100f5f94538d6e5647aaec3eb7c7dde \
     --hash=sha256:9fab275fea57c9e5b2416035d13d867a459ebe36294a4c39a3d0bb45a7404bad
+pypdfium2==4.24.0 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:025553c8b3633b32e2ef0e9ec9ee07be4a4fda76519889607ad3283090eef7f1 \
+    --hash=sha256:147d101686af8828fbaeb3ac3fd82114f0900d58a24e80eff96496fd89fd9d2d \
+    --hash=sha256:39a1e1cc02bc39233f742b8cdf60a81e5b4868bfee28ec79457e37e3d41304e6 \
+    --hash=sha256:3b26ad59ebef92edfcb44400838edce2e299a9709fe472742a4800251b30e5c9 \
+    --hash=sha256:4034e6b4bde7cb6d281898c43ccb9a5522e25edb1e24689bf89fc7eb2a0c9a15 \
+    --hash=sha256:60c7d9c442aff40d30dbf044ffb67cdc5eb56acca59ac640bc3adad77fc4d781 \
+    --hash=sha256:62706c06bc5be39aa7a2531af802420429b6c4c47498eebd2521af7e988d0848 \
+    --hash=sha256:7556801f2b42c91590e3f862034ab61e30e732b09e1487b0cf1a3c5250cb29d4 \
+    --hash=sha256:9333304e289fa727fbeae6dab793a9bacb68375184e14ad3d38a65d9a7490be1 \
+    --hash=sha256:94b722c4dddbd858d62fe4df3192651f9376f1c99e7c2bc74d7d8c8d06362bf3 \
+    --hash=sha256:a1776dde55b55d81e18026cf746274c1e2959bc8ed2f502a997401e1f0e7c3c1 \
+    --hash=sha256:c2891aa6059acf9bdabccb7aa193f111ebf96fabae3fb968f04ec925d710ec95 \
+    --hash=sha256:fa65834fbc6540114ceaebc5e9ca90c5455b0ebedaaaf6c2c8351c851ada366b
 python-dateutil==2.8.2 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86 \
     --hash=sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9
