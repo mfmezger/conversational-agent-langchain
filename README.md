@@ -13,12 +13,12 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
   - [Architecture](#architecture)
   - [Components](#components)
   - [Available LLM Backends](#available-llm-backends)
-  - [Deployment](#deployment)
   - [Secret Management](#secret-management)
   - [Installation \& Development Backend](#installation--development-backend)
   - [Development Frontend](#development-frontend)
   - [Vector Database](#vector-database)
   - [Qdrant API Key](#qdrant-api-key)
+  - [Star History](#star-history)
 
 
 ## Recent Updates
@@ -30,9 +30,6 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
 
 
 ## Quickstart
-
-
-
 To run the complete system with docker use this command:
 
 ```bash
@@ -80,15 +77,6 @@ Langchain is a library for natural language processing and machine learning. Fas
 - [GPT4All](https://gpt4all.io/index.html)
 - (Azure) OpenAI
 
-## Deployment
-
-If you want to use a default token for the LLM Provider you need to create a .env file. Do this by copying the .env-template file and add the necessary api keys.
-
-If you want to build the image on your local machine you can use this command:
-
-```bash
-docker compose up
-```
 
 ## Secret Management
 
@@ -117,9 +105,6 @@ To run the Qdrant Database local just run:
 ```bash
 docker compose up qdrant
 ```
-
-
-
 
 
 To run the Backend use this command in the root directory:
@@ -155,7 +140,7 @@ And you need to change it in the qdrant.yaml file in the config folder.
 
 
 
-<!-- ## Star History
+## Star History
 
 <a href="https://star-history.com/#mfmezger/conversational-agent-langchain&Date">
   <picture>
@@ -163,4 +148,4 @@ And you need to change it in the qdrant.yaml file in the config folder.
     <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=mfmezger/conversational-agent-langchain&type=Date" />
     <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=mfmezger/conversational-agent-langchain&type=Date" />
   </picture>
-</a> -->
+</a>
