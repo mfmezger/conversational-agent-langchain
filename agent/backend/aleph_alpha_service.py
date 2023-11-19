@@ -4,6 +4,7 @@ import os
 import pathlib
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+import nltk
 import numpy as np
 from aleph_alpha_client import (
     Client,
@@ -26,6 +27,7 @@ from qdrant_client import QdrantClient
 from agent.utils.configuration import load_config
 from agent.utils.utility import generate_prompt
 
+nltk.download("punkt")  # This needs to be installed for the tokenizer to work.
 load_dotenv()
 
 aleph_alpha_token = os.getenv("ALEPH_ALPHA_API_KEY")

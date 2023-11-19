@@ -102,7 +102,7 @@ def read_root() -> str:
     return "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
-def embedd_documents_wrapper(folder_name: str, llm_backend: str = "aa", token: Optional[str] = None) -> None:
+def embedd_documents_wrapper(folder_name: str, llm_backend: str = "aa", token: Optional[str] = None, collection_name: Optional[str] = None) -> None:
     """Call the right embedding function for the chosen backend.
 
     Args:
@@ -118,7 +118,7 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "aa", token: O
     if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
         logger.debug("Embedding Documents with Aleph Alpha.")
-        embedd_documents_aleph_alpha(dir=folder_name, aleph_alpha_token=token)
+        embedd_documents_aleph_alpha(dir=folder_name, aleph_alpha_token=token, collection_name=collection_name)
     elif llm_backend == "openai":
         # Embedd the documents with OpenAI
         logger.debug("Embedding Documents with OpenAI.")
@@ -130,8 +130,30 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "aa", token: O
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
 
+# generate a rest service to create a new collection
+@app.post("/collection/create/{llm_provider}/{collection_name}")
+def create_collection(llm_provider: str, collection_name: str) -> None:
+    """Create a new collection in the vector database.
+
+    Args:
+        llm_provider (str): Name of the LLM Provider
+        collection_name (str): Name of the Collection
+    """
+    qdrant_client, _ = initialize_qdrant_client_config()
+
+    if llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
+        generate_collection_aleph_alpha(qdrant_client=qdrant_client, collection_name=collection_name, embeddings_size=5120)
+    elif llm_provider == "OpenAI":
+        generate_collection_openai(qdrant_client=qdrant_client, collection_name=collection_name)
+
+    elif llm_provider == "gpt4all":
+        generate_collection_gpt4all(qdrant_client=qdrant_client, collection_name=collection_name)
+
+
 @app.post("/embeddings/documents")
-async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend: str = "aa", token: Optional[str] = None) -> EmbeddingResponse:
+async def post_embedd_documents(
+    files: List[UploadFile] = File(...), llm_backend: str = "aa", token: Optional[str] = None, collection_name: Optional[str] = None
+) -> EmbeddingResponse:
     """Uploads multiple documents to the backend.
 
     Args:
@@ -160,13 +182,13 @@ async def post_embedd_documents(files: List[UploadFile] = File(...), llm_backend
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
 
-    embedd_documents_wrapper(folder_name=tmp_dir, llm_backend=llm_backend, token=token)
+    embedd_documents_wrapper(folder_name=tmp_dir, llm_backend=llm_backend, token=token, collection_name=collection_name)
 
     return EmbeddingResponse(status="success", files=file_names)
 
 
 @app.post("/embeddings/document/")
-async def post_embedd_document(file: UploadFile, llm_backend: str = "aa", token: Optional[str] = None) -> EmbeddingResponse:
+async def post_embedd_document(file: UploadFile, llm_backend: str = "aa", token: Optional[str] = None, collection_name: Optional[str] = None) -> EmbeddingResponse:
     """Uploads one document to the backend and embeds it in the database.
 
     Args:
@@ -193,7 +215,7 @@ async def post_embedd_document(file: UploadFile, llm_backend: str = "aa", token:
     with open(tmp_file_path, "wb") as f:
         f.write(await file.read())
 
-    embedd_documents_wrapper(folder_name=tmp_dir, llm_backend=llm_backend, token=token)
+    embedd_documents_wrapper(folder_name=tmp_dir, llm_backend=llm_backend, token=token, collection_name=collection_name)
     return EmbeddingResponse(status="success", files=[file.filename])
 
 
@@ -607,60 +629,104 @@ def delete(
 
 
 @load_config(location="config/db.yml")
-def initialize_aleph_alpha_vector_db(cfg: DictConfig) -> None:
+def initialize_qdrant_client_config(cfg: DictConfig):
+    """Initialize the Qdrant Client.
+
+    Args:
+        cfg (DictConfig): Configuration from the file
+
+    Returns:
+        _type_: Qdrant Client and Configuration.
+    """
+    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
+    return qdrant_client, cfg
+
+
+def initialize_aleph_alpha_vector_db() -> None:
     """Initializes the Aleph Alpha vector db.
 
     Args:
         cfg (DictConfig): Configuration from the file
     """
-    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
+    qdrant_client, cfg = initialize_qdrant_client_config()
     try:
         qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_aa)
         logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_aa} already exists.")
     except Exception:
-        qdrant_client.recreate_collection(
-            collection_name=cfg.qdrant.collection_name_aa,
-            vectors_config=models.VectorParams(size=cfg.aleph_alpha_embeddings.size, distance=models.Distance.COSINE),
-        )
-        logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_aa} created.")
+        generate_collection_aleph_alpha(qdrant_client, collection_name=cfg.qdrant.collection_name_aa, embeddings_size=cfg.aleph_alpha_embeddings.size)
 
 
-@load_config(location="config/db.yml")
-def initialize_open_ai_vector_db(cfg: DictConfig) -> None:
+def generate_collection_aleph_alpha(qdrant_client, collection_name, embeddings_size):
+    """Generate a collection for the Aleph Alpha Backend.
+
+    Args:
+        qdrant_client (_type_): _description_
+        collection_name (_type_): _description_
+        embeddings_size (_type_): _description_
+    """
+    qdrant_client.recreate_collection(
+        collection_name=collection_name,
+        vectors_config=models.VectorParams(size=embeddings_size, distance=models.Distance.COSINE),
+    )
+    logger.info(f"SUCCESS: Collection {collection_name} created.")
+
+
+def initialize_open_ai_vector_db() -> None:
     """Initializes the OpenAI vector db.
 
     Args:
         cfg (DictConfig): Configuration from the file
     """
-    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
+    qdrant_client, cfg = initialize_qdrant_client_config()
+
     try:
         qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_openai)
         logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_openai} already exists.")
     except Exception:
-        qdrant_client.recreate_collection(
-            collection_name=cfg.qdrant.collection_name_openai,
-            vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
-        )
-        logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_openai} created.")
+        generate_collection_openai(qdrant_client, collection_name=cfg.qdrant.collection_name_openai)
 
 
-@load_config(location="config/db.yml")
-def initialize_gpt4all_vector_db(cfg: DictConfig) -> None:
+def generate_collection_openai(qdrant_client, collection_name):
+    """Generate a collection for the OpenAI Backend.
+
+    Args:
+        qdrant_client (_type_): Qdrant Client Langchain.
+        collection_name (_type_): Name of the Collection
+    """
+    qdrant_client.recreate_collection(
+        collection_name=collection_name,
+        vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
+    )
+    logger.info(f"SUCCESS: Collection {collection_name} created.")
+
+
+def initialize_gpt4all_vector_db() -> None:
     """Initializes the GPT4ALL vector db.
 
     Args:
         cfg (DictConfig): Configuration from the file
     """
-    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
+    qdrant_client, cfg = initialize_qdrant_client_config()
+
     try:
         qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_gpt4all)
         logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_gpt4all} already exists.")
     except Exception:
-        qdrant_client.recreate_collection(
-            collection_name=cfg.qdrant.collection_name_gpt4all,
-            vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
-        )
-        logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_gpt4all} created.")
+        generate_collection_gpt4all(qdrant_client, collection_name=cfg.qdrant.collection_name_gpt4all)
+
+
+def generate_collection_gpt4all(qdrant_client, collection_name):
+    """Generate a collection for the GPT4ALL Backend.
+
+    Args:
+        qdrant_client (Qdrant): Qdrant Client
+        collection_name (str): Name of the Collection
+    """
+    qdrant_client.recreate_collection(
+        collection_name=collection_name,
+        vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
+    )
+    logger.info(f"SUCCESS: Collection {collection_name} created.")
 
 
 # initialize the databases
