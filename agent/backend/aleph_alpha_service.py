@@ -31,9 +31,14 @@ nltk.download("punkt")  # This needs to be installed for the tokenizer to work.
 load_dotenv()
 
 aleph_alpha_token = os.getenv("ALEPH_ALPHA_API_KEY")
+tokenizer = None
 
-client = Client(token=aleph_alpha_token)
-tokenizer = client.tokenizer("luminous-base-control")
+
+def get_tokenizer():
+    """Initialize the tokenizer."""
+    global tokenizer
+    client = Client(token=aleph_alpha_token)
+    tokenizer = client.tokenizer("luminous-base-control")
 
 
 # Settings for the text splitter
@@ -48,9 +53,6 @@ def count_tokens(text: str):
     """
     tokens = tokenizer.encode(text)
     return len(tokens)
-
-
-splitter = NLTKTextSplitter(length_function=count_tokens, chunk_size=300, chunk_overlap=50)
 
 
 @load_config(location="config/db.yml")
@@ -157,7 +159,9 @@ def embedd_documents_aleph_alpha(dir: str, aleph_alpha_token: str, collection_na
     vector_db: Qdrant = get_db_connection(collection_name=collection_name, aleph_alpha_token=aleph_alpha_token)
 
     loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFium2Loader)
+    get_tokenizer()
 
+    splitter = NLTKTextSplitter(length_function=count_tokens, chunk_size=300, chunk_overlap=50)
     docs = loader.load_and_split(splitter)
 
     logger.info(f"Loaded {len(docs)} documents.")
