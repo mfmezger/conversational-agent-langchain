@@ -733,3 +733,9 @@ def generate_collection_gpt4all(qdrant_client, collection_name):
 initialize_open_ai_vector_db()
 initialize_aleph_alpha_vector_db()
 initialize_gpt4all_vector_db()
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8001)

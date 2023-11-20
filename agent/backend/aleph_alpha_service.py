@@ -41,7 +41,6 @@ def get_tokenizer():
     tokenizer = client.tokenizer("luminous-base-control")
 
 
-# Settings for the text splitter
 def count_tokens(text: str):
     """Count the number of tokens in the text.
 
