@@ -421,7 +421,7 @@ def process_documents_aleph_alpha(folder: str, token: str, type: str) -> List[st
         ValueError: If the type is not one of 'qa', 'summarization', or 'invoice'.
     """
     # load the documents
-    loader = DirectoryLoader(folder, glob="*.pdf", loader_cls=PyPDFLoader)
+    loader = DirectoryLoader(folder, glob="*.pdf", loader_cls=PyPDFium2Loader)
 
     # load the documents
     docs = loader.load()
