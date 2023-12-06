@@ -262,7 +262,7 @@ def search_documents_aleph_alpha(
         raise ValueError("Query cannot be None or empty.")
     if amount < 1:
         raise ValueError("Amount must be greater than 0.")
-
+    # TODO: FILTER
     try:
         vector_db: Qdrant = get_db_connection(collection_name=collection_name, aleph_alpha_token=aleph_alpha_token)
         docs = vector_db.similarity_search_with_score(query=query, k=amount, score_threshold=threshold)
