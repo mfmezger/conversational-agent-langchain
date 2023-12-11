@@ -46,7 +46,7 @@ def embedd_documents_ollama(dir: str, collection_name: Optional[str] = None) -> 
     :param cfg: Configuration from the file
     :type cfg: DictConfig
     :param dir: PDF Directory
-    :type dir: str3
+    :type dir: str
     """
     vector_db: Qdrant = get_db_connection(collection_name=collection_name)
 
