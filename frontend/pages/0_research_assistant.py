@@ -1,4 +1,5 @@
 """The main gui."""
+import json
 from pathlib import Path
 
 import requests
@@ -11,7 +12,7 @@ META_DATA_HEIGHT = 500
 EXPLANATION_HEIGHT = 300
 
 url_search = "http://agent:8001/semantic/search"
-url_qa = "http://agent:8001/explanation/explain-qa"
+url_qa = "http://agent:8001/qa"
 
 
 logger.info("Starting Application.")
@@ -44,11 +45,15 @@ def initialize() -> None:
     if st.button("Start Search", key="start_search") and search_query:
         logger.debug("Search was started")
 
-        params = {"query": search_query, "llm_backend": "aa", "token": st.session_state.api_key, "amount": "1"}
+        data = {"query": search_query, "llm_backend": "aa", "amount": 1, "threshold": 0, "language": "de", "history": 0, "history_list": ["string"]}
+        params = {"query": search_query, "llm_backend": "ollama", "token": st.session_state.api_key, "amount": 1}
         headers = {"accept": "application/json"}
 
         with st.spinner("Waiting for response...."):
-            qa = requests.post(url_qa, params=params, headers=headers).json()
+            # qa = requests.post(url_qa, params=params, headers=headers).json()
+            # qa = requests.post(url_qa, params=params, headers=headers).json()
+            qa = requests.post(url_qa, headers=headers, data=json.dumps(data)).json()
+
             with st.chat_message(name="ai", avatar="🤖"):
                 st.write(qa["answer"])
 

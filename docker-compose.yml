@@ -5,10 +5,15 @@ services:
     volumes:
       - ./data:/data
       - ./logs:/logs
+      # - ./config:/config
+      # - ./agent:/agent
+      # - ./prompts:/prompts
     depends_on:
       - qdrant
     ports:
       - "8001:8001"
+    environment:
+      - "HOST_MACHINE_ADDRESS=host.docker.internal"
 
   streamlit_app:
     build:
