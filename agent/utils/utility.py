@@ -174,4 +174,4 @@ def count_tokens(text: str, tokenizer):
 
 if __name__ == "__main__":
     # test the function
-    generate_prompt("qa.j2", "This is a test text.", "What is the meaning of life?")
+    generate_prompt("aleph_alpha_qa.j2", "This is a test text.", "What is the meaning of life?")

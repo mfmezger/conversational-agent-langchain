@@ -9,7 +9,7 @@ def test_generate_prompt() -> None:
     text = "blubby"
     query = "blubby2"
 
-    prompt = generate_prompt(prompt_name="qa.j2", text=text, query=query, language="de")
+    prompt = generate_prompt(prompt_name="aleph_alpha_qa.j2", text=text, query=query, language="de")
     print(f"Prompt: {prompt}")
     # assert prompt contains text and query
     assert text in prompt
