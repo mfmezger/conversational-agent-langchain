@@ -30,11 +30,11 @@ def get_db_connection(cfg: DictConfig, collection_name: str) -> Qdrant:
     Returns:
         Qdrant: The Qdrant DB connection.
     """
-    embedding = OllamaEmbeddings(base_url="http://host.docker.internal:11434", model="zephyr")  #
+    embedding = OllamaEmbeddings(base_url=cfg.ollama_embeddings.url, model=cfg.ollama_embeddings.model)  #
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
     if collection_name is None or collection_name == "":
-        collection_name = "ollama"
-    vector_db = Qdrant(client=qdrant_client, collection_name="ollama", embeddings=embedding)
+        collection_name = cfg.qdrant.collection_name_ollama
+    vector_db = Qdrant(client=qdrant_client, collection_name=collection_name, embeddings=embedding)
     logger.info("SUCCESS: Qdrant DB initialized.")
 
     return vector_db
@@ -88,7 +88,8 @@ def embedd_text_ollama(text: str, file_name: str, seperator: str, collection_nam
     logger.info("SUCCESS: Text embedded.")
 
 
-def summarize_text_ollama(text: str) -> str:
+@load_config(location="config/ai/ollama.yml")
+def summarize_text_ollama(text: str, cfg: DictConfig) -> str:
     """Summarize text with ollama.
 
     Args:
@@ -99,12 +100,13 @@ def summarize_text_ollama(text: str) -> str:
     """
     prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, language="de")
 
-    model = Ollama(base_url="http://host.docker.internal:11434", model="zephyr")
+    model = Ollama(base_url=cfg.ollama.url, model=cfg.ollama.model)
 
     return model(prompt)
 
 
-def completion_text_ollama(prompt: str) -> str:
+@load_config(location="config/ai/ollama.yml")
+def completion_text_ollama(prompt: str, cfg: DictConfig) -> str:
     """Complete text with ollama.
 
     Args:
@@ -114,8 +116,7 @@ def completion_text_ollama(prompt: str) -> str:
     Returns:
         str: The completed text.
     """
-    model = Ollama(base_url="http://host.docker.internal:11434", model="zephyr")
-
+    model = Ollama(base_url=cfg.ollama.url, model=cfg.ollama.model)
     return model(prompt)
 
 
