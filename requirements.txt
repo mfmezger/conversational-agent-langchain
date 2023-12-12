@@ -585,6 +585,9 @@ jsonschema==4.19.1 ; python_version >= "3.11" and python_version < "3.12" \
 langchain==0.0.339 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:34eb4d7987d979663e361da435479c6f0648a170dae3eb1e9f0f7417f033a2c1 \
     --hash=sha256:fec250074a6fbb3711a51423d830006d69f34aedb67604df39c642be80852cbb
+langdetect==1.0.9 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:7cbc0746252f19e76f77c0b1690aadf01963be835ef0cd4b56dddf2a8f1dfc2a \
+    --hash=sha256:cbc1fef89f8d062739774bd51eda3da3274006b3661d199c2655f6b3f6d605a0
 langsmith==0.0.63 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:43a521dd10d8405ac21a0b959e3de33e2270e4abe6c73cc4036232a6990a0793 \
     --hash=sha256:ddb2dfadfad3e05151ed8ba1643d1c516024b80fbd0c6263024400ced06a3768

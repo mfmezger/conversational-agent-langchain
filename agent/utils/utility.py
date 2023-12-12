@@ -4,6 +4,7 @@ import uuid
 
 from langchain.prompts import PromptTemplate
 from langchain.text_splitter import NLTKTextSplitter
+from langdetect import detect
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
@@ -61,9 +62,15 @@ def generate_prompt(prompt_name: str, text: str, query: str = "", language: str 
                 lang = "en"
             case "de":
                 lang = "de"
+            case "detect":
+                lang = detect(query)
+                logger.info(f"Detected language: {lang}")
+                if lang not in {"en", "de"}:
+                    logger.info(f"Detected Language is not supported. Using English. Detected language was {lang}.")
+                    lang = "en"
             case _:
                 raise ValueError("Language not supported.")
-        with open(os.path.join("prompts", lang, prompt_name)) as f:
+        with open(os.path.join("prompts", lang, prompt_name), encoding="utf-8") as f:
             prompt = PromptTemplate.from_template(f.read(), template_format="jinja2")
     except FileNotFoundError:
         raise FileNotFoundError(f"Prompt file '{prompt_name}' not found.")
