@@ -32,6 +32,11 @@ from agent.backend.gpt4all_service import (
     search_documents_gpt4all,
     summarize_text_gpt4all,
 )
+from agent.backend.ollama_service import (
+    embedd_documents_ollama,
+    qa_ollama,
+    search_documents_ollama,
+)
 from agent.backend.open_ai_service import (
     embedd_documents_openai,
     search_documents_openai,
@@ -126,6 +131,8 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "aa", token: O
 
     elif llm_backend == "gpt4all":
         embedd_documents_gpt4all(dir=folder_name)
+    elif llm_backend == "ollama":
+        embedd_documents_ollama(dir=folder_name)
     else:
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
@@ -398,6 +405,8 @@ def question_answer(request: QARequest) -> QAResponse:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
     elif request.llm_backend == "gpt4all":
         answer, prompt, meta_data = qa_gpt4all(documents=documents, query=request.query, summarization=request.summarization, language=request.language)
+    elif request.llm_backend == "ollama":
+        answer, prompt, meta_data = qa_ollama(documents=documents, query=request.query, language=request.language)
     else:
         raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
 
@@ -530,6 +539,8 @@ def search_database(
         documents = search_documents_openai(open_ai_token=token, query=query, amount=amount, threshold=threshold, collection_name=collection_name)
     elif llm_backend == "gpt4all":
         documents = search_documents_gpt4all(query=query, amount=amount, threshold=threshold, collection_name=collection_name)
+    elif llm_backend == "ollama":
+        documents = search_documents_ollama(query=query, amount=amount, threshold=threshold, collection_name=collection_name)
     else:
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
@@ -729,10 +740,40 @@ def generate_collection_gpt4all(qdrant_client, collection_name):
     logger.info(f"SUCCESS: Collection {collection_name} created.")
 
 
+def initialize_ollama_vector_db() -> None:
+    """Initializes the GPT4ALL vector db.
+
+    Args:
+        cfg (DictConfig): Configuration from the file
+    """
+    qdrant_client, cfg = initialize_qdrant_client_config()
+
+    try:
+        qdrant_client.get_collection(collection_name="ollama")
+        logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_gpt4all} already exists.")
+    except Exception:
+        generate_collection_ollama(qdrant_client, collection_name="ollama")
+
+
+def generate_collection_ollama(qdrant_client, collection_name):
+    """Generate a collection for the GPT4ALL Backend.
+
+    Args:
+        qdrant_client (Qdrant): Qdrant Client
+        collection_name (str): Name of the Collection
+    """
+    qdrant_client.recreate_collection(
+        collection_name=collection_name,
+        vectors_config=models.VectorParams(size=4096, distance=models.Distance.COSINE),
+    )
+    logger.info(f"SUCCESS: Collection {collection_name} created.")
+
+
 # initialize the databases
-initialize_open_ai_vector_db()
-initialize_aleph_alpha_vector_db()
-initialize_gpt4all_vector_db()
+# initialize_open_ai_vector_db()
+# initialize_aleph_alpha_vector_db()
+# initialize_gpt4all_vector_db()
+# initialize_ollama_vector_db()
 
 
 if __name__ == "__main__":

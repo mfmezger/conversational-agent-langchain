@@ -1,5 +1,5 @@
 """Script that contains the Pydantic Models for the Rest Response."""
-from typing import List
+from typing import Any, List
 
 from pydantic import BaseModel, Field
 
@@ -25,7 +25,7 @@ class QAResponse(BaseModel):
 
     answer: str = Field(..., title="Answer", description="The answer to the question.")
     prompt: str = Field(..., title="Prompt", description="The prompt used to generate the answer.")
-    meta_data: dict[str, str] = Field(..., title="Meta Data", description="The meta data of the answer.")
+    meta_data: dict[str, Any] = Field(..., title="Meta Data", description="The meta data of the answer.")
 
 
 class ExplainQAResponse(BaseModel):

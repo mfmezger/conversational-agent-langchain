@@ -8,9 +8,14 @@ RUN curl -sSL https://install.python-poetry.org/ | POETRY_HOME=/opt/poetry pytho
     poetry config virtualenvs.create false
 
 # Copy using poetry.lock* in case it doesn't exist yet
-COPY . .
+COPY ./pyproject.toml ./poetry.lock* ./
+
+# COPY ./fronten
 
 RUN poetry install --no-root --no-dev
 
+COPY . .
+
 # CMD ["tail", "-f", "/dev/null"]
-CMD ["poetry", "run", "streamlit", "run", "frontend/pages/2_semantic_search.py", "--theme.base=dark"]
+# CMD ["poetry", "run", "streamlit", "run", "frontend/pages/2_semantic_search.py", "--theme.base=dark"]
+CMD ["poetry", "run", "streamlit", "run", "frontend/pages/0_research_assistant.py", "--theme.base=dark"]

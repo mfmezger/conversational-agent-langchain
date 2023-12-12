@@ -124,7 +124,7 @@ def validate_token(token: str | None, llm_backend: str, aleph_alpha_key: str | N
     Returns:
         str: Token
     """
-    if llm_backend != "gpt4all":
+    if llm_backend != "gpt4all" and llm_backend != "ollama":
         token = get_token(token, llm_backend, aleph_alpha_key, openai_key)
     else:
         token = "gpt4all"
