@@ -7,6 +7,7 @@ services:
       - ./logs:/logs
     depends_on:
       - qdrant
+      - streamlit_app
     ports:
       - "8001:8001"
 
@@ -15,8 +16,8 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     platform: linux/amd64
-    depends_on:
-      - agent
+    # depends_on:
+      # - agent
     ports:
       - "8501:8501"
 

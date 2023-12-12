@@ -4,12 +4,16 @@ import uuid
 
 from langchain.prompts import PromptTemplate
 from langchain.text_splitter import NLTKTextSplitter
-from langdetect import detect
+from lingua import Language, LanguageDetectorBuilder
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
 
 from agent.utils.configuration import load_config
+
+# add new languages to detect here
+languages = [Language.ENGLISH, Language.GERMAN]
+detector = LanguageDetectorBuilder.from_languages(*languages).with_minimum_relative_distance(0.7).build()
 
 
 def combine_text_from_list(input_list: list) -> str:
@@ -63,8 +67,13 @@ def generate_prompt(prompt_name: str, text: str, query: str = "", language: str 
             case "de":
                 lang = "de"
             case "detect":
-                lang = detect(query)
-                logger.info(f"Detected language: {lang}")
+                lang = detector.detect_language_of(query)
+
+                if lang == "Language.ENGLISH":
+                    lang = "en"
+                elif lang == "Language.GERMAN":
+                    lang = "de"
+
                 if lang not in {"en", "de"}:
                     logger.info(f"Detected Language is not supported. Using English. Detected language was {lang}.")
                     lang = "en"

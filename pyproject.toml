@@ -26,7 +26,7 @@ uvicorn = "^0.24.0.post1"
 gpt4all = "^2.0.2"
 nltk = "^3.8.1"
 pypdfium2 = "^4.24.0"
-langdetect = "^1.0.9"
+lingua-language-detector = "^2.0.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -62,7 +62,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.settings]
-known_third_party = ["aleph_alpha_client", "dotenv", "fastapi", "gpt4all", "httpx", "langchain", "langdetect", "loguru", "nltk", "numpy", "omegaconf", "openai", "pydantic", "pytest", "qdrant_client", "requests", "starlette", "streamlit", "tqdm"]
+known_third_party = ["aleph_alpha_client", "dotenv", "fastapi", "gpt4all", "httpx", "langchain", "lingua", "loguru", "nltk", "numpy", "omegaconf", "openai", "pydantic", "pytest", "qdrant_client", "requests", "starlette", "streamlit", "tqdm"]
 
 [tool.mypy]
 # Disallow dynamic typing
