@@ -26,7 +26,7 @@ uvicorn = "^0.24.0.post1"
 gpt4all = "^2.0.2"
 nltk = "^3.8.1"
 pypdfium2 = "^4.24.0"
-lingua-language-detector = "^2.0.1"
+lingua-language-detector = "^2.0.2"
 
 
 [tool.poetry.group.dev.dependencies]

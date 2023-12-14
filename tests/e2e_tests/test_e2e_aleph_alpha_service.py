@@ -25,7 +25,7 @@ def test_search() -> None:
     # assert that it does not raise an error
     token = os.getenv("ALEPH_ALPHA_API_KEY")
     assert token is not None
-    docs = search_documents_aleph_alpha(aleph_alpha_token=token, query="Was sind meine Vorteile?", amount=3, threshold=0.1)
+    docs = search_documents_aleph_alpha(aleph_alpha_token=token, query="What is Attention?", amount=3, threshold=0.1)
     assert docs is not None
     assert len(docs) > 0
     assert len(docs) == 3
@@ -35,7 +35,7 @@ def test_qa() -> None:
     """Test the QA functionality."""
     token = os.getenv("ALEPH_ALPHA_API_KEY")
     assert token is not None
-    docs = search_documents_aleph_alpha(aleph_alpha_token=token, query="Was sind meine Vorteile?", amount=1)
+    docs = search_documents_aleph_alpha(aleph_alpha_token=token, query="What ist Attention?", amount=1)
     answer, prompt, meta_data = qa_aleph_alpha(aleph_alpha_token=token, documents=docs, query="What are Attentions?")
     assert answer is not None
     assert prompt is not None

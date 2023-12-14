@@ -16,6 +16,26 @@ def test_generate_prompt() -> None:
     assert query in prompt
 
 
+def test_generate_prompt_detect_language() -> None:
+    """Test that generate_prompt returns the correct prompt."""
+    text = "Das ist ein Stein der da am Wegrand steht."
+
+    prompt = generate_prompt(prompt_name="aleph_alpha_qa.j2", text=text, language="detect")
+    print(f"Prompt: {prompt}")
+
+    assert text in prompt
+
+
+def test_generate_prompt_detect_language_default_parameter() -> None:
+    """Test that generate_prompt returns the correct prompt."""
+    text = "What is the capital of capital?"
+
+    prompt = generate_prompt(prompt_name="aleph_alpha_qa.j2", text=text)
+    print(f"Prompt: {prompt}")
+
+    assert text in prompt
+
+
 def test_combine_text_from_list() -> None:
     """Test that combine_text_from_list returns the correct text."""
     pass
