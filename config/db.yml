@@ -11,4 +11,4 @@ aleph_alpha_embeddings:
   normalize: True
   size: 5120
   compress_to_size: null
-  model_name: "luminous-base-control"
+  model_name: "luminous-base"

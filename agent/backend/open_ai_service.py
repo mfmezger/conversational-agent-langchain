@@ -205,7 +205,7 @@ def qa_openai(token: str, documents: list[tuple[Document, float]], query: str, s
         meta_data = [doc[0].metadata for doc in documents]
 
     # load the prompt
-    prompt = generate_prompt("qa.j2", text=text, query=query)
+    prompt = generate_prompt("aleph_alpha_qa.j2", text=text, query=query)
 
     try:
 

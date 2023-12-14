@@ -4,11 +4,16 @@ import uuid
 
 from langchain.prompts import PromptTemplate
 from langchain.text_splitter import NLTKTextSplitter
+from lingua import Language, LanguageDetectorBuilder
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
 
 from agent.utils.configuration import load_config
+
+# add new languages to detect here
+languages = [Language.ENGLISH, Language.GERMAN]
+detector = LanguageDetectorBuilder.from_languages(*languages).with_minimum_relative_distance(0.7).build()
 
 
 def combine_text_from_list(input_list: list) -> str:
@@ -40,14 +45,14 @@ def combine_text_from_list(input_list: list) -> str:
     return combined_text
 
 
-def generate_prompt(prompt_name: str, text: str, query: str = "", language: str = "de") -> str:
+def generate_prompt(prompt_name: str, text: str, query: str = "", language: str = "detect") -> str:
     """Generates a prompt for the Luminous API using a Jinja template.
 
     Args:
         prompt_name (str): The name of the file containing the Jinja template.
         text (str): The text to be inserted into the template.
         query (str): The query to be inserted into the template.
-        language (str): The language the query should output.
+        language (str): The language the query should output. Or it can be detected
 
     Returns:
         str: The generated prompt.
@@ -61,9 +66,20 @@ def generate_prompt(prompt_name: str, text: str, query: str = "", language: str 
                 lang = "en"
             case "de":
                 lang = "de"
+            case "detect":
+                lang = detector.detect_language_of(query)
+
+                if lang == "Language.ENGLISH":
+                    lang = "en"
+                elif lang == "Language.GERMAN":
+                    lang = "de"
+
+                if lang not in {"en", "de"}:
+                    logger.info(f"Detected Language is not supported. Using English. Detected language was {lang}.")
+                    lang = "en"
             case _:
                 raise ValueError("Language not supported.")
-        with open(os.path.join("prompts", lang, prompt_name)) as f:
+        with open(os.path.join("prompts", lang, prompt_name), encoding="utf-8") as f:
             prompt = PromptTemplate.from_template(f.read(), template_format="jinja2")
     except FileNotFoundError:
         raise FileNotFoundError(f"Prompt file '{prompt_name}' not found.")
@@ -167,4 +183,4 @@ def count_tokens(text: str, tokenizer):
 
 if __name__ == "__main__":
     # test the function
-    generate_prompt("qa.j2", "This is a test text.", "What is the meaning of life?")
+    generate_prompt("aleph_alpha_qa.j2", "This is a test text.", "What is the meaning of life?")

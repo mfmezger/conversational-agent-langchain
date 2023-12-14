@@ -303,7 +303,7 @@ def qa_aleph_alpha(
         meta_data = [doc[0].metadata for doc in documents]
 
     # load the prompt
-    prompt = generate_prompt("qa.j2", text=text, query=query)
+    prompt = generate_prompt("aleph_alpha_qa.j2", text=text, query=query)
 
     try:
         # call the luminous api
@@ -318,7 +318,7 @@ def qa_aleph_alpha(
             short_text = summarize_text_aleph_alpha(text, aleph_alpha_token)
 
             # generate the prompt
-            prompt = generate_prompt("qa.j2", text=short_text, query=query)
+            prompt = generate_prompt("aleph_alpha_qa.j2", text=short_text, query=query)
 
             # call the luminous api
             answer = send_completion_request(prompt, aleph_alpha_token)
@@ -334,7 +334,7 @@ def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, 
     meta_data = document[0][0].metadata
 
     # load the prompt
-    prompt = generate_prompt("qa.j2", text=text, query=query)
+    prompt = generate_prompt("aleph_alpha_qa.j2", text=text, query=query)
 
     answer = send_completion_request(prompt, aleph_alpha_token)
 
@@ -396,7 +396,7 @@ def explain_completion(prompt: str, output: str, token: str) -> Dict[str, float]
     # sort the explanations by score
     # explanations = sorted(explanations, key=lambda x: x.score, reverse=True)
 
-    template = generate_prompt(prompt_name="qa.j2", text="", language="de")
+    template = generate_prompt(prompt_name="aleph_alpha_qa.j2", text="", language="de")
 
     result = {}
     # remove the prompt from the explanations
