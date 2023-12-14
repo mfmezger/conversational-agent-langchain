@@ -1,9 +1,9 @@
 """This is the utility module."""
 import os
 import uuid
+from pathlib import Path
 
 from langchain.prompts import PromptTemplate
-from langchain.text_splitter import NLTKTextSplitter
 from lingua import Language, LanguageDetectorBuilder
 from loguru import logger
 from omegaconf import DictConfig
@@ -61,35 +61,25 @@ def generate_prompt(prompt_name: str, text: str, query: str = "", language: str 
         FileNotFoundError: If the specified prompt file cannot be found.
     """
     try:
-        match language:
-            case "en":
-                lang = "en"
-            case "de":
-                lang = "de"
-            case "detect":
-                lang = detector.detect_language_of(query)
+        if language == "detect":
+            detected_lang = detector.detect_language_of(query)
+            if detected_lang == "Language.ENGLISH":
+                language = "en"
+            elif detected_lang == "Language.GERMAN":
+                language = "de"
+            else:
+                logger.info(f"Detected Language is not supported. Using English. Detected language was {detected_lang}.")
+                language = "en"
 
-                if lang == "Language.ENGLISH":
-                    lang = "en"
-                elif lang == "Language.GERMAN":
-                    lang = "de"
+        if language not in {"en", "de"}:
+            raise ValueError("Language not supported.")
 
-                if lang not in {"en", "de"}:
-                    logger.info(f"Detected Language is not supported. Using English. Detected language was {lang}.")
-                    lang = "en"
-            case _:
-                raise ValueError("Language not supported.")
-        with open(os.path.join("prompts", lang, prompt_name), encoding="utf-8") as f:
+        with open(os.path.join("prompts", language, prompt_name), encoding="utf-8") as f:
             prompt = PromptTemplate.from_template(f.read(), template_format="jinja2")
     except FileNotFoundError:
         raise FileNotFoundError(f"Prompt file '{prompt_name}' not found.")
 
-    if query:
-        prompt_text = prompt.format(text=text, query=query)
-    else:
-        prompt_text = prompt.format(text=text)
-
-    return prompt_text
+    return prompt.format(text=text, query=query) if query else prompt.format(text=text)
 
 
 def create_tmp_folder() -> str:
@@ -99,10 +89,14 @@ def create_tmp_folder() -> str:
         str: The directory name.
     """
     # Create a temporary folder to save the files
-    tmp_dir = f"tmp_{str(uuid.uuid4())}"
-    os.makedirs(tmp_dir)
-    logger.info(f"Created new folder {tmp_dir}.")
-    return tmp_dir
+    tmp_dir = Path.cwd() / f"tmp_{uuid.uuid4()}"
+    try:
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Created new folder {tmp_dir}.")
+    except Exception as e:
+        logger.error(f"Failed to create directory {tmp_dir}. Error: {e}")
+        raise
+    return str(tmp_dir)
 
 
 def get_token(token: str | None, llm_backend: str | None, aleph_alpha_key: str | None, openai_key: str | None) -> str:
@@ -120,7 +114,7 @@ def get_token(token: str | None, llm_backend: str | None, aleph_alpha_key: str |
     """
     env_token = aleph_alpha_key if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"} else openai_key
     if not env_token and not token:
-        raise ValueError("No token provided.")  #
+        raise ValueError("No token provided.")
 
     return token or env_token  # type: ignore
 
@@ -152,33 +146,6 @@ def load_vec_db_conn(cfg: DictConfig) -> QdrantClient:
     """Load the Vector Database Connection."""
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
     return qdrant_client
-
-
-def split_text(text: str, splitter: NLTKTextSplitter):
-    """Split the text into chunks.
-
-    Args:
-        text (str): input text.
-
-    Returns:
-        List: List of splits.
-    """
-    # define the metadata for the document
-    splits = splitter.split_text(text)
-    return splits
-
-
-def count_tokens(text: str, tokenizer):
-    """Count the number of tokens in the text.
-
-    Args:
-        text (str): The text to count the tokens for.
-
-    Returns:
-        int: Number of tokens.
-    """
-    tokens = tokenizer.encode(text)
-    return len(tokens)
 
 
 if __name__ == "__main__":

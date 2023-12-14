@@ -16,8 +16,6 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     platform: linux/amd64
-    # depends_on:
-      # - agent
     ports:
       - "8501:8501"
 
