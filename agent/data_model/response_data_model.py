@@ -1,7 +1,15 @@
 """Script that contains the Pydantic Models for the Rest Response."""
-from typing import List
+from enum import Enum
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
+
+
+class Status(str, Enum):
+    """Status."""
+
+    SUCCESS = "success"
+    FAILURE = "failure"
 
 
 class SearchResponse(BaseModel):
@@ -16,8 +24,8 @@ class SearchResponse(BaseModel):
 class EmbeddingResponse(BaseModel):
     """The Response for the Embedding endpoint."""
 
-    status: str = Field(..., title="Status", description="The status of the request.")
-    files: List[str] = Field(..., title="Files", description="The list of files that were embedded.")
+    status: Status = Field(Status.SUCCESS, title="Status", description="The status of the request.")
+    files: List[str] = Field([], title="Files", description="The list of files that were embedded.")
 
 
 class QAResponse(BaseModel):
@@ -25,14 +33,14 @@ class QAResponse(BaseModel):
 
     answer: str = Field(..., title="Answer", description="The answer to the question.")
     prompt: str = Field(..., title="Prompt", description="The prompt used to generate the answer.")
-    meta_data: dict[str, str] = Field(..., title="Meta Data", description="The meta data of the answer.")
+    meta_data: Optional[dict[str, str]] = Field(None, title="Meta Data", description="The meta data of the answer.")
 
 
 class ExplainQAResponse(BaseModel):
     """The Response for the Explain QA endpoint."""
 
     answer: str = Field(..., title="Answer", description="The answer to the question.")
-    meta_data: dict[str, str] = Field(..., title="Meta Data", description="The meta data of the answer.")
+    meta_data: Optional[dict[str, str]] = Field(None, title="Meta Data", description="The meta data of the answer.")
     explanation: str = Field(..., title="Explanation", description="The explanation for the answer.")
     text: str = Field(..., title="Text", description="The text of the document.")
     score: float = Field(..., title="Score", description="The score of the document.")

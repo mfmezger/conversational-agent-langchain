@@ -13,7 +13,6 @@ aleph_alpha_embeddings:
   compress_to_size: null
   model_name: "luminous-base"
 
-
 openai:
   azure: True
   deployment: embedding-ada

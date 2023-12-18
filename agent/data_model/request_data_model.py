@@ -1,14 +1,36 @@
 """Script that contains the Pydantic Models for the Rest Request."""
+from enum import Enum
 from typing import List, Optional
 
 from fastapi import UploadFile
 from pydantic import BaseModel, Field
 
 
+class LLMProvider(str, Enum):
+    """The LLM Provider Enum.
+
+    Args:
+        str (_type_): _description_
+        Enum (_type_): _description_
+    """
+
+    ALEPH_ALPHA = "aa"
+    OPENAI = "openai"
+    GPT4ALL = "gpt4all"
+
+
+class Language(str, Enum):
+    """The Language Enum."""
+
+    DETECT = "detect"
+    GERMAN = "de"
+    ENGLISH = "en"
+
+
 class LLMBackend(BaseModel):
     """The LLM Backend Model."""
 
-    llm_provider: str = Field("aa", description="The LLM provider to use for embedding.")
+    llm_provider: LLMProvider = Field(LLMProvider.ALEPH_ALPHA, description="The LLM provider to use for embedding.")
     token: Optional[str] = Field(None, description="The API token for the LLM provider.")
 
 
@@ -17,7 +39,7 @@ class Filtering(BaseModel):
 
     threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
     collection_name: Optional[str] = Field(None, title="Name of the Collection", description="Name of the Qdrant Collection.")
-    filter: dict = Field(None, title="Filter", description="Filter for the database search with metadata.")
+    filter: Optional[dict] = Field(None, title="Filter", description="Filter for the database search with metadata.")
 
 
 class EmbeddTextFilesRequest(BaseModel):
@@ -35,7 +57,7 @@ class SearchRequest(BaseModel):
     llm_backend: LLMBackend
     filtering: Filtering
     collection_name: Optional[str] = Field(None, title="Name of the Collection", description="Name of the Qdrant Collection.")
-    filter: dict = Field(None, title="Filter", description="Filter for the database search with metadata.")
+    filter: Optional[dict] = Field(None, title="Filter", description="Filter for the database search with metadata.")
     amount: int = Field(3, title="Amount", description="The number of search results to return.")
     threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
 
@@ -68,7 +90,7 @@ class CustomPromptCompletion(BaseModel):
     model: str = Field(..., title="Model", description="The model to use for the completion.")
     max_tokens: int = Field(256, title="Max Tokens", description="The maximum number of tokens to generate.")
     temperature: float = Field(..., title="Temperature", description="The temperature to use for the completion.")
-    stop_sequences: List[str] = Field(..., title="Stop Sequences", description="The stop sequences to use for the completion.")
+    stop_sequences: List[str] = Field([], title="Stop Sequences", description="The stop sequences to use for the completion.")
 
 
 class QARequest(BaseModel):
@@ -79,8 +101,8 @@ class QARequest(BaseModel):
     collection_name: Optional[str] = Field(None, title="Name of the Collection", description="Name of the Qdrant Collection.")
     amount: int = Field(1, title="Amount", description="The number of answers to return.")
     threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
-    filter: dict = Field(None, title="Filter", description="Filter for the database search with metadata.")
-    language: str = Field("de", title="Language", description="The language to use for the answer.")
+    filter: Optional[dict] = Field(None, title="Filter", description="Filter for the database search with metadata.")
+    language: Language = Field(Language.GERMAN, title="Language", description="The language to use for the answer.")
     history: Optional[int] = Field(0, title="History", description="The number of previous questions to include in the context.")
-    history_list: Optional[List[str]] = Field(None, title="History List", description="A list of previous questions to include in the context.")
+    history_list: List[str] = Field([], title="History List", description="A list of previous questions to include in the context.")
     search: SearchRequest

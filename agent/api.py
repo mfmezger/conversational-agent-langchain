@@ -130,24 +130,27 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "aa", token: O
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
 
 
-# generate a rest service to create a new collection
+from fastapi import HTTPException
+
+
 @app.post("/collection/create/{llm_provider}/{collection_name}")
-def create_collection(llm_provider: str, collection_name: str) -> None:
+def create_collection(llm_provider: LLMProvider, collection_name: str) -> None:
     """Create a new collection in the vector database.
 
     Args:
-        llm_provider (str): Name of the LLM Provider
+        llm_provider (LLMProvider): Name of the LLM Provider
         collection_name (str): Name of the Collection
     """
     qdrant_client, _ = initialize_qdrant_client_config()
 
-    if llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
+    if llm_provider == LLMProvider.ALEPH_ALPHA:
         generate_collection_aleph_alpha(qdrant_client=qdrant_client, collection_name=collection_name, embeddings_size=5120)
-    elif llm_provider == "OpenAI":
+    elif llm_provider == LLMProvider.OPENAI:
         generate_collection_openai(qdrant_client=qdrant_client, collection_name=collection_name)
-
-    elif llm_provider == "gpt4all":
+    elif llm_provider == LLMProvider.GPT4ALL:
         generate_collection_gpt4all(qdrant_client=qdrant_client, collection_name=collection_name)
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported LLM provider: {llm_provider}")
 
 
 @app.post("/embeddings/documents")
