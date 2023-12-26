@@ -13,6 +13,19 @@ class LLMProvider(str, Enum):
     OPENAI = "openai"
     GPT4ALL = "gpt4all"
 
+    @classmethod
+    def normalize(cls, value: str) -> "LLMProvider":
+        """Normalize the LLM provider."""
+        normalized_value = value.lower().replace("-", "").replace("_", "")
+        if normalized_value in {"aa", "alephalpha"}:
+            return cls.ALEPH_ALPHA
+        elif normalized_value == "openai":
+            return cls.OPENAI
+        elif normalized_value == "gpt4all":
+            return cls.GPT4ALL
+        else:
+            raise ValueError(f"Unsupported LLM provider: {value}")
+
 
 class Language(str, Enum):
     """The Language Enum."""

@@ -311,7 +311,7 @@ def search(request: SearchRequest) -> List[SearchResponse]:
         List[str]: A list of matching documents.
     """
     logger.info("Searching for Documents")
-    request.token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    request.token = validate_token(token=request.llm_backend.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     if request.llm_backend is None:
         raise ValueError("Please provide a LLM Provider of choice.")
