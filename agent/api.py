@@ -734,7 +734,7 @@ initialize_open_ai_vector_db()
 initialize_aleph_alpha_vector_db()
 initialize_gpt4all_vector_db()
 
-
+# for debugging useful.
 if __name__ == "__main__":
     import uvicorn
 
