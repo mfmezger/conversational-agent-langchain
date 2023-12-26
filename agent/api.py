@@ -3,7 +3,7 @@ import os
 from typing import List, Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.openapi.utils import get_openapi
 from langchain.docstore.document import Document as LangchainDocument
 from loguru import logger
@@ -42,6 +42,7 @@ from agent.data_model.request_data_model import (
     EmbeddTextFilesRequest,
     EmbeddTextRequest,
     ExplainRequest,
+    LLMProvider,
     QARequest,
     SearchRequest,
 )
@@ -128,9 +129,6 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "aa", token: O
         embedd_documents_gpt4all(dir=folder_name)
     else:
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
-
-
-from fastapi import HTTPException
 
 
 @app.post("/collection/create/{llm_provider}/{collection_name}")
@@ -372,37 +370,37 @@ def question_answer(request: QARequest) -> QAResponse:
     if request.history:
         # combine the texts
         text = combine_text_from_list(request.history_list)
-        if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
+        if request.llm_backend == LLMProvider.ALEPH_ALPHA:
             # summarize the text
             summary = summarize_text_aleph_alpha(text=text, token=token)
             # combine the history and the query
             request.query = f"{summary}\n{request.query}"
 
-        elif request.llm_backend == "openai":
+        elif request.llm_backend == LLMProvider.OPENAI:
             pass
 
-        elif request.llm_backend == "gpt4all":
+        elif request.llm_backend == LLMProvider.GPT4ALL:
             # summarize the text
             summary = summarize_text_gpt4all(text=text)
             # combine the history and the query
             request.query = f"{summary}\n{request.query}"
         else:
-            raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
+            raise ValueError(f"Unsupported LLM provider: {request.llm_backend}")
 
     documents = search_database(
         query=request.query, llm_backend=request.llm_backend, token=token, amount=request.amount, threshold=request.threshold, collection_name=request.collection_name
     )
 
     # call the qa function
-    if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
+    if request.llm_backend == LLMProvider.ALEPH_ALPHA:
         answer, prompt, meta_data = qa_aleph_alpha(query=request.query, documents=documents, aleph_alpha_token=token)
-    elif request.llm_backend == "openai":
+    elif request.llm_backend == LLMProvider.OPENAI:
         # todo:
-        raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
-    elif request.llm_backend == "gpt4all":
+        raise ValueError(f"Unsupported LLM provider: {request.llm_backend}")
+    elif request.llm_backend == LLMProvider.GPT4ALL:
         answer, prompt, meta_data = qa_gpt4all(documents=documents, query=request.query, summarization=request.summarization, language=request.language)
     else:
-        raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
+        raise ValueError(f"Unsupported LLM provider: {request.llm_backend}")
 
     return QAResponse(answer=answer, prompt=prompt, meta_data=meta_data)
 
@@ -510,10 +508,7 @@ def search_database(request: SearchRequest) -> List[tuple[LangchainDocument, flo
     """Searches the database for a query.
 
     Args:
-        query (str): The search query.
-        llm_backend (str, optional): The LLM provider. Defaults to "openai".
-        token (str, optional): The API token. Defaults to None.
-        amount (int, optional): The amount of search results. Defaults to 3.
+        request (SearchRequest): The request parameters.
 
     Raises:
         ValueError: If the LLM provider is not implemented yet.
@@ -522,21 +517,21 @@ def search_database(request: SearchRequest) -> List[tuple[LangchainDocument, flo
         JSON List of Documents consisting of the text, page, source and score.
     """
     logger.info("Searching for Documents")
-    token = validate_token(token=token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
-    if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
+    if request.llm_backend == LLMProvider.ALEPH_ALPHA:
         # Embedd the documents with Aleph Alpha
         documents = search_documents_aleph_alpha(
             aleph_alpha_token=token, query=request.query, amount=request.amount, threshold=request.threshold, collection_name=request.collection_name
         )
-    elif request.llm_backend == "openai":
+    elif request.llm_backend == LLMProvider.OPENAI:
         documents = search_documents_openai(
             open_ai_token=token, query=request.query, amount=request.amount, threshold=request.threshold, collection_name=request.collection_name
         )
-    elif request.llm_backend == "gpt4all":
+    elif request.llm_backend == LLMProvider.GPT4ALL:
         documents = search_documents_gpt4all(query=request.query, amount=request.amount, threshold=request.threshold, collection_name=request.collection_name)
     else:
-        raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
+        raise ValueError(f"Unsupported LLM provider: {request.llm_backend}")
 
     logger.info(f"Found {len(documents)} documents.")
     return documents
@@ -553,7 +548,7 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
         ValueError: If the LLM provider is not implemented yet.
     """
     logger.info("Sending Custom Completion Request")
-    if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
+    if request.llm_backend == LLMProvider.ALEPH_ALPHA:
         # sent a completion
         answer = custom_completion_prompt_aleph_alpha(
             prompt=request.prompt,
@@ -563,7 +558,7 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
             temperature=request.temperature,
             max_tokens=request.max_tokens,
         )
-    elif request.llm_backend == "OpenAI":
+    elif request.llm_backend == LLMProvider.OPENAI:
         answer = send_custom_completion_openai(
             prompt=request.prompt,
             token=request.token,
@@ -572,7 +567,7 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
             temperature=request.temperature,
             max_tokens=request.max_tokens,
         )
-    elif request.llm_backend == "gpt4all":
+    elif request.llm_backend == LLMProvider.GPT4ALL:
         answer = custom_completion_prompt_gpt4all(
             prompt=request.prompt,
             model=request.model,
@@ -581,7 +576,7 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
         )
 
     else:
-        raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
+        raise ValueError(f"Unsupported LLM provider: {request.llm_backend}")
 
     return answer
 
@@ -590,27 +585,27 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
 def delete(
     page: int,
     source: str,
-    llm_provider: str = "openai",
+    llm_provider: LLMProvider = LLMProvider.OPENAI,
 ) -> UpdateResult:
     """Delete a Vector from the database based on the page and source.
 
     Args:
         page (int): The page of the Document
         source (str): The name of the Document
-        llm_provider (str, optional): The LLM Provider. Defaults to "openai".
+        llm_provider (LLMProvider, optional): The LLM Provider. Defaults to LLMProvider.OPENAI.
 
     Returns:
         UpdateResult: The result of the Deletion Operation from the Vector Database.
     """
     logger.info("Deleting Vector from Database")
-    if llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
+    if llm_provider == LLMProvider.ALEPH_ALPHA:
         collection = "aleph-alpha"
-    elif llm_provider == "OpenAI":
+    elif llm_provider == LLMProvider.OPENAI:
         collection = "openai"
-    elif llm_provider == "GPT4ALL":
+    elif llm_provider == LLMProvider.GPT4ALL:
         collection = "gpt4all"
     else:
-        raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
+        raise ValueError(f"Unsupported LLM provider: {llm_provider}")
 
     qdrant_client = load_vec_db_conn()
 

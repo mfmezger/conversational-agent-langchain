@@ -7,12 +7,7 @@ from pydantic import BaseModel, Field
 
 
 class LLMProvider(str, Enum):
-    """The LLM Provider Enum.
-
-    Args:
-        str (_type_): _description_
-        Enum (_type_): _description_
-    """
+    """The LLM Provider Enum."""
 
     ALEPH_ALPHA = "aa"
     OPENAI = "openai"
