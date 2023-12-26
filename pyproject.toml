@@ -28,6 +28,7 @@ nltk = "^3.8.1"
 pypdfium2 = "^4.25.0"
 lingua-language-detector = "^2.0.2"
 pyarrow = "^14.0.2" # security issue with < 14.0.1
+aiohttp = "^3.9.1" # security issue
 
 
 [tool.poetry.group.dev.dependencies]
