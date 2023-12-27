@@ -65,7 +65,6 @@ class SearchRequest(BaseModel):
     llm_backend: LLMBackend
     filtering: Filtering
     amount: int = Field(3, title="Amount", description="The number of search results to return.")
-    threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
 
 
 class EmbeddTextRequest(BaseModel):
