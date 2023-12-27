@@ -2,6 +2,7 @@
 import json
 import os
 import re
+from pathlib import Path
 from typing import List
 
 from aleph_alpha_client import Client
@@ -19,10 +20,6 @@ from tqdm import tqdm
 from agent.utils.configuration import load_config
 
 load_dotenv()
-
-# Settings for The Embedding
-collection_name = "aleph_alpha"
-aleph_alpha_token = os.getenv("ALEPH_ALPHA_API_KEY")
 
 
 @load_config(location="config/db.yml")
@@ -241,13 +238,22 @@ def parse_json(dir: str, vector_db: Qdrant) -> None:
     print(f"Price: {sum(token_list)/1000*0.008}")
 
 
-if __name__ == "__main__":
+def main():
+    """Main function to run the script."""
+    load_dotenv()
+    aleph_alpha_token = os.getenv("ALEPH_ALPHA_API_KEY")
+    client, tokenizer = setup_tokenizer_client(aleph_alpha_token)
+    splitter = NLTKTextSplitter(length_function=count_tokens, chunk_size=300, chunk_overlap=50)
     initialize_aleph_alpha_vector_db()
     vector_db = setup_connection_vector_db()
 
-    parse_pdf(dir="data/", vector_db=vector_db)
-    # iterate over everything in the data/txt folder
-    for file_name in os.listdir("data/txt"):
-        with open(f"data/txt/{file_name}") as f:
+    parse_pdf(dir=Path("data/"), vector_db=vector_db)
+    txt_dir = Path("data/txt")
+    for file_name in txt_dir.iterdir():
+        with file_name.open() as f:
             text = f.read()
-            parse_txts(text=text, file_name=file_name, seperator="###", vector_db=vector_db)
+            parse_txts(text=text, file_name=file_name.name, seperator="###", vector_db=vector_db)
+
+
+if __name__ == "__main__":
+    main()

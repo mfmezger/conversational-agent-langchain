@@ -6,7 +6,7 @@ import openai
 from dotenv import load_dotenv
 from langchain.docstore.document import Document
 from langchain.document_loaders import DirectoryLoader, PyPDFLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
 from langchain.text_splitter import NLTKTextSplitter
 from langchain.vectorstores import Qdrant
 from loguru import logger
@@ -31,7 +31,11 @@ def get_db_connection(open_ai_token: str, cfg: DictConfig, collection_name: str)
     Returns:
         Qdrant: An Langchain Instance of the Qdrant DB.
     """
-    embedding = OpenAIEmbeddings(chunk_size=1, openai_api_key=open_ai_token)  # type: ignore
+    if cfg.openai.azure:
+        embedding = AzureOpenAIEmbeddings(deployment=cfg.openai.deployment, openai_api_version="2023-05-15", openai_api_key=open_ai_token)  # type: ignore
+    else:
+        embedding = OpenAIEmbeddings(model=cfg.openai.deployment, openai_api_key=open_ai_token)
+
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
     if collection_name is None or collection_name == "":
         collection_name = cfg.qdrant.collection_name_openai

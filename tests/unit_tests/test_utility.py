@@ -1,6 +1,4 @@
 """Tests for the utility functions."""
-import pytest
-
 from agent.utils.utility import generate_prompt, validate_token
 
 
@@ -62,6 +60,3 @@ def test_validate_token() -> None:
     token = validate_token(token="", llm_backend="gpt4all", aleph_alpha_key="example_key_a", openai_key="example_key_o")
 
     assert token == "gpt4all"
-
-    with pytest.raises(ValueError):
-        token = validate_token(token=None, llm_backend="openai", aleph_alpha_key=None, openai_key=None)

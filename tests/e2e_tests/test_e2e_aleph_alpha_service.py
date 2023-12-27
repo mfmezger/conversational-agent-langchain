@@ -64,7 +64,7 @@ def test_explain_qa() -> None:
 
     docs = search_documents_aleph_alpha(aleph_alpha_token=token, query="Was sind meine Vorteile?", amount=1)
 
-    explanation, score, text, answer, meta_data = explain_qa(aleph_alpha_token=token, document=docs, query="Was sind meine Vorteile?")
+    explanation, score, text, answer, meta_data = explain_qa(aleph_alpha_token=token, document=docs, explain_threshold=0.7, query="Was sind meine Vorteile?")
 
     logger.info(f"ANSWER: {answer}")
     logger.info(f"EXPLANATION: {explanation}")

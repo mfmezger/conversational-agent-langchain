@@ -6,7 +6,7 @@ RUN curl -sSL https://install.python-poetry.org/ | POETRY_HOME=/opt/poetry pytho
     cd /usr/local/bin && \
     ln -s /opt/poetry/bin/poetry && \
     poetry config virtualenvs.create false
-
+RUN poetry config installer.max-workers 10
 # Copy using poetry.lock* in case it doesn't exist yet
 COPY ./pyproject.toml ./poetry.lock* ./
 

@@ -18,6 +18,7 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
   - [Development Frontend](#development-frontend)
   - [Vector Database](#vector-database)
   - [Qdrant API Key](#qdrant-api-key)
+  - [Bulk Ingestion](#bulk-ingestion)
   - [Star History](#star-history)
 
 
@@ -136,6 +137,10 @@ Qdrant Dashboard is available at http://127.0.0.1:6333/dashboard. There you need
 To use the Qdrant API you need to set the correct parameters in the .env file.
 QDRANT_API_KEY is the API key for the Qdrant API.
 And you need to change it in the qdrant.yaml file in the config folder.
+
+## Bulk Ingestion
+
+If you want to ingest large amount of data i would recommend you use the scripts located in agent/ingestion.
 
 
 

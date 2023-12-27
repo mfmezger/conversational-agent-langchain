@@ -38,7 +38,7 @@ def get_tokenizer():
     """Initialize the tokenizer."""
     global tokenizer
     client = Client(token=aleph_alpha_token)
-    tokenizer = client.tokenizer("luminous-base-control")
+    tokenizer = client.tokenizer("luminous-base")
 
 
 def count_tokens(text: str):
@@ -262,7 +262,7 @@ def search_documents_aleph_alpha(
         raise ValueError("Query cannot be None or empty.")
     if amount < 1:
         raise ValueError("Amount must be greater than 0.")
-
+    # TODO: FILTER
     try:
         vector_db: Qdrant = get_db_connection(collection_name=collection_name, aleph_alpha_token=aleph_alpha_token)
         docs = vector_db.similarity_search_with_score(query=query, k=amount, score_threshold=threshold)
@@ -328,7 +328,7 @@ def qa_aleph_alpha(
 
 
 @load_config(location="config/ai/aleph_alpha.yml")
-def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, cfg: DictConfig, collection_name: Optional[str] = None):
+def explain_qa(aleph_alpha_token: str, document: LangchainDocument, explain_threshold: float, query: str, cfg: DictConfig, collection_name: Optional[str] = None):
     """Explian QA WIP."""
     text = document[0][0].page_content
     meta_data = document[0][0].metadata
@@ -345,8 +345,8 @@ def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, 
     explanations = response_explain.explanations[0].items[0].scores
 
     # if all of the scores are belo 0.7 raise an error
-    if all(item.score < 0.7 for item in explanations):
-        raise ValueError("All scores are below 0.7.")
+    if all(item.score < explain_threshold for item in explanations):
+        raise ValueError("All scores are below explain_threshold.")
 
     # remove element if the text contains Response: or Instructions:
     for exp in explanations:
@@ -391,7 +391,7 @@ def explain_completion(prompt: str, output: str, token: str) -> Dict[str, float]
     exp_req = ExplanationRequest(Prompt.from_text(prompt), output, control_factor=0.1, prompt_granularity="sentence")
     client = Client(token=token)
     response_explain = client.explain(exp_req, model="luminous-extended-control")
-    explanations = response_explain.explanations[0]
+    explanations = response_explain.explanations[0].items[0]
 
     # sort the explanations by score
     # explanations = sorted(explanations, key=lambda x: x.score, reverse=True)

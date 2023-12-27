@@ -81,7 +81,7 @@ def test_search_documents_aleph_alpha_empty() -> None:
         search_documents_aleph_alpha(aleph_alpha_token, query)
 
 
-def test_explain_completion() -> None:  # todo: rework
+def test_explain_completion() -> None:
     """Test that explain_completion does not raise an error."""
     explain_completion("This is a test", " ", str(os.getenv("ALEPH_ALPHA_API_KEY")))
 

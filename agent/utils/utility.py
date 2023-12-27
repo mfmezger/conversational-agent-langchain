@@ -2,6 +2,7 @@
 import os
 import uuid
 from pathlib import Path
+from typing import Union
 
 from langchain.prompts import PromptTemplate
 from lingua import Language, LanguageDetectorBuilder
@@ -9,6 +10,7 @@ from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
 
+from agent.data_model.request_data_model import LLMProvider
 from agent.utils.configuration import load_config
 
 # add new languages to detect here
@@ -99,12 +101,12 @@ def create_tmp_folder() -> str:
     return str(tmp_dir)
 
 
-def get_token(token: str | None, llm_backend: str | None, aleph_alpha_key: str | None, openai_key: str | None) -> str:
+def get_token(token: str | None, llm_backend: Union[str, LLMProvider] | None, aleph_alpha_key: str | None, openai_key: str | None) -> str:
     """Get the token from the environment variables or the parameter.
 
     Args:
         token (str, optional): Token from the REST service.
-        llm_backend (str): LLM provider. Defaults to "openai".
+        llm_backend (Union[str, LLMProvider], optional): LLM provider. Defaults to "openai".
 
     Returns:
         str: Token for the LLM Provider of choice.
@@ -112,14 +114,20 @@ def get_token(token: str | None, llm_backend: str | None, aleph_alpha_key: str |
     Raises:
         ValueError: If no token is provided.
     """
-    env_token = aleph_alpha_key if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"} else openai_key
+    if isinstance(llm_backend, str):
+        llm_backend = LLMProvider.normalize(llm_backend)
+
+    if token and token != "string":
+        return token
+
+    env_token = aleph_alpha_key if llm_backend.llm_provider == LLMProvider.ALEPH_ALPHA else openai_key
     if not env_token and not token:
         raise ValueError("No token provided.")
 
-    return token or env_token  # type: ignore
+    return env_token  # type: ignore
 
 
-def validate_token(token: str | None, llm_backend: str, aleph_alpha_key: str | None, openai_key: str | None) -> str:
+def validate_token(token: str | None, llm_backend: Union[str, LLMProvider], aleph_alpha_key: str | None, openai_key: str | None) -> str:
     """Test if a token is available, and raise an error if it is missing when needed.
 
     Args:
