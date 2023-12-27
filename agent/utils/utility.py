@@ -117,7 +117,10 @@ def get_token(token: str | None, llm_backend: Union[str, LLMProvider] | None, al
     if isinstance(llm_backend, str):
         llm_backend = LLMProvider.normalize(llm_backend)
 
-    if token and token != "string":
+    if token == "string":
+        token = None
+
+    if token:
         return token
 
     env_token = aleph_alpha_key if llm_backend.llm_provider == LLMProvider.ALEPH_ALPHA else openai_key
