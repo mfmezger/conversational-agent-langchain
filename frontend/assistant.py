@@ -11,7 +11,7 @@ META_DATA_HEIGHT = 500
 EXPLANATION_HEIGHT = 300
 
 url_search = "http://agent:8001/semantic/search"
-url_qa = "http://agent:8001/explanation/explain-qa"
+url_qa = "http://agent:8001/qa"
 
 
 logger.info("Starting Application.")
@@ -30,9 +30,6 @@ def create_folder_structure(folder_path: str) -> None:
 
 def initialize() -> None:
     """Initialize the GUI."""
-    answer = ""
-    prompt = ""
-
     # The user needs to enter the aleph alpha api key
     aleph_alpha_api_key = st.text_input("Aleph Alpha Token", type="password")
 
@@ -56,10 +53,18 @@ def initialize() -> None:
                 documents = requests.post(
                     url_search,
                     json={
-                        "query": search_query,
-                        "llm_backend": "aa",
-                        "token": st.session_state.api_key,
-                        "amount": 5,
+                        "search": {
+                            "query": search_query,
+                            "llm_backend": {
+                                "llm_provider": "aa",
+                                "token": st.session_state.api_key,
+                            },
+                            "filtering": {"threshold": 0, "collection_name": "aleph-alpha", "filter": {}},
+                            "amount": 5,
+                        },
+                        "language": "detect",
+                        "history": 0,
+                        "history_list": [],
                     },
                 ).json()
                 # make this one hidden

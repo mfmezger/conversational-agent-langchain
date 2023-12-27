@@ -204,19 +204,21 @@ async def embedd_text(request: EmbeddTextRequest) -> EmbeddingResponse:
         JSONResponse: A response indicating that the text was received and saved, along with the name of the file it was saved to.
     """
     logger.info("Embedding Text")
-    token = validate_token(token=request.llm_backend.token, llm_backend=request.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    token = validate_token(
+        token=request.search.llm_backend.token, llm_backend=request.search.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
+    )
 
-    logger.info(f"Requested Backend is: {request.llm_backend}")
-    if request.llm_backend.llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
+    logger.info(f"Requested Backend is: {request.search.llm_backend}")
+    if request.search.llm_backend.llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
         embedd_text_aleph_alpha(text=request.text, file_name=request.file_name, aleph_alpha_token=token, seperator=request.seperator)
         # return a success notificaton
         return JSONResponse(content={"message": "Text received and saved.", "filenames": request.file_name})
-    elif request.llm_backend.llm_provider == "openai":
+    elif request.search.llm_backend.llm_provider == "openai":
         # Embedd the documents with OpenAI
         # TODO: Implement
         raise ValueError("Not implemented yet.")
-    elif request.llm_backend.llm_provider == "gpt4all":
+    elif request.search.llm_backend.llm_provider == "gpt4all":
         embedd_text_gpt4all(text=request.text, file_name=request.file_name, seperator=request.seperator)
 
     else:
@@ -257,9 +259,9 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> EmbeddingRespons
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
 
-    token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    token = validate_token(token=request.token, llm_backend=request.search.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
-    if request.llm_backend is None:
+    if request.search.llm_backend is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
     embedd_text_files_aleph_alpha(folder=tmp_dir, aleph_alpha_token=token, seperator=request.seperator)
@@ -281,11 +283,11 @@ def search(request: SearchRequest) -> List[SearchResponse]:
         List[str]: A list of matching documents.
     """
     logger.info("Searching for Documents")
-    request.llm_backend.token = validate_token(
-        token=request.llm_backend.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
+    request.search.llm_backend.token = validate_token(
+        token=request.search.llm_backend.token, llm_backend=request.search.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
     )
 
-    if request.llm_backend.llm_provider is None:
+    if request.search.llm_backend.llm_provider is None:
         raise ValueError("Please provide a LLM Provider of choice.")
 
     DOCS = search_database(request)
@@ -329,10 +331,12 @@ def question_answer(request: QARequest) -> QAResponse:
     """
     logger.info("Answering Question")
     # if the query is not provided, raise an error
-    if request.query is None:
+    if request.search.query is None:
         raise ValueError("Please provide a Question.")
 
-    token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    request.search.llm_backend.token = validate_token(
+        token=request.search.llm_backend.token, llm_backend=request.search.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
+    )
 
     # if the history flag is activated and the history is not provided, raise an error
     if request.history and request.history_list is None:
@@ -342,37 +346,35 @@ def question_answer(request: QARequest) -> QAResponse:
     if request.history:
         # combine the texts
         text = combine_text_from_list(request.history_list)
-        if request.llm_backend == LLMProvider.ALEPH_ALPHA:
+        if request.search.llm_backend == LLMProvider.ALEPH_ALPHA:
             # summarize the text
             summary = summarize_text_aleph_alpha(text=text, token=token)
             # combine the history and the query
-            request.query = f"{summary}\n{request.query}"
+            request.search.query = f"{summary}\n{request.search.query}"
 
-        elif request.llm_backend == LLMProvider.OPENAI:
+        elif request.search.llm_backend == LLMProvider.OPENAI:
             pass
 
-        elif request.llm_backend == LLMProvider.GPT4ALL:
+        elif request.search.llm_backend == LLMProvider.GPT4ALL:
             # summarize the text
             summary = summarize_text_gpt4all(text=text)
             # combine the history and the query
-            request.query = f"{summary}\n{request.query}"
+            request.search.query = f"{summary}\n{request.search.query}"
         else:
-            raise ValueError(f"Unsupported LLM provider: {request.llm_backend}")
+            raise ValueError(f"Unsupported LLM provider: {request.search.llm_backend}")
 
-    documents = search_database(
-        query=request.query, llm_backend=request.llm_backend, token=token, amount=request.amount, threshold=request.threshold, collection_name=request.collection_name
-    )
+    documents = search_database(request.search)
 
     # call the qa function
-    if request.llm_backend == LLMProvider.ALEPH_ALPHA:
-        answer, prompt, meta_data = qa_aleph_alpha(query=request.query, documents=documents, aleph_alpha_token=token)
-    elif request.llm_backend == LLMProvider.OPENAI:
+    if request.search.llm_backend.llm_provider == LLMProvider.ALEPH_ALPHA:
+        answer, prompt, meta_data = qa_aleph_alpha(query=request.search.query, documents=documents, aleph_alpha_token=request.search.llm_backend.token)
+    elif request.search.llm_backend.llm_provider == LLMProvider.OPENAI:
         # todo:
-        raise ValueError(f"Unsupported LLM provider: {request.llm_backend}")
-    elif request.llm_backend == LLMProvider.GPT4ALL:
-        answer, prompt, meta_data = qa_gpt4all(documents=documents, query=request.query, summarization=request.summarization, language=request.language)
+        raise ValueError(f"Unsupported LLM provider: {request.search.llm_backend.llm_provider}")
+    elif request.search.llm_backend.llm_provider == LLMProvider.GPT4ALL:
+        answer, prompt, meta_data = qa_gpt4all(documents=documents, query=request.search.query, summarization=request.summarization, language=request.language)
     else:
-        raise ValueError(f"Unsupported LLM provider: {request.llm_backend}")
+        raise ValueError(f"Unsupported LLM provider: {request.search.llm_backend.llm_provider}")
 
     return QAResponse(answer=answer, prompt=prompt, meta_data=meta_data)
 
@@ -397,12 +399,12 @@ def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQARespo
     """
     logger.info("Answering Question and Explaining it.")
     # if the query is not provided, raise an error
-    if explain_request.search.query is None:
+    if explain_request.qa_request.search.query is None:
         raise ValueError("Please provide a Question.")
 
-    explain_request.qa_request.llm_provider.token = validate_token(
-        token=explain_request.qa_request.llm_provider.token,
-        llm_backend=explain_request.qa_request.llm_provider.llm_backend,
+    explain_request.qa_request.search.llm_backend.token = validate_token(
+        token=explain_request.qa_request.search.llm_backend.token,
+        llm_backend=explain_request.qa_request.search.llm_backend,
         aleph_alpha_key=ALEPH_ALPHA_API_KEY,
         openai_key=OPENAI_API_KEY,
     )
@@ -414,7 +416,7 @@ def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQARespo
         query=explain_request.qa_request.search.query,
         explain_threshold=explain_request.explain_threshold,
         document=documents,
-        aleph_alpha_token=explain_request.qa_request.llm_provider.token,
+        aleph_alpha_token=explain_request.qa_request.search.llm_backend.token,
     )
 
     return ExplainQAResponse(explanation=explanation, score=score, text=text, answer=answer, meta_data=meta_data)
@@ -514,7 +516,7 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
         ValueError: If the LLM provider is not implemented yet.
     """
     logger.info("Sending Custom Completion Request")
-    if request.llm_backend == LLMProvider.ALEPH_ALPHA:
+    if request.search.llm_backend == LLMProvider.ALEPH_ALPHA:
         # sent a completion
         answer = custom_completion_prompt_aleph_alpha(
             prompt=request.prompt,
@@ -524,7 +526,7 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
             temperature=request.temperature,
             max_tokens=request.max_tokens,
         )
-    elif request.llm_backend == LLMProvider.OPENAI:
+    elif request.search.llm_backend == LLMProvider.OPENAI:
         answer = send_custom_completion_openai(
             prompt=request.prompt,
             token=request.token,
@@ -533,7 +535,7 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
             temperature=request.temperature,
             max_tokens=request.max_tokens,
         )
-    elif request.llm_backend == LLMProvider.GPT4ALL:
+    elif request.search.llm_backend == LLMProvider.GPT4ALL:
         answer = custom_completion_prompt_gpt4all(
             prompt=request.prompt,
             model=request.model,
@@ -542,7 +544,7 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
         )
 
     else:
-        raise ValueError(f"Unsupported LLM provider: {request.llm_backend}")
+        raise ValueError(f"Unsupported LLM provider: {request.search.llm_backend}")
 
     return answer
 
