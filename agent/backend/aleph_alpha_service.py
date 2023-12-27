@@ -391,7 +391,7 @@ def explain_completion(prompt: str, output: str, token: str) -> Dict[str, float]
     exp_req = ExplanationRequest(Prompt.from_text(prompt), output, control_factor=0.1, prompt_granularity="sentence")
     client = Client(token=token)
     response_explain = client.explain(exp_req, model="luminous-extended-control")
-    explanations = response_explain.explanations[0]
+    explanations = response_explain.explanations[0].items[0]
 
     # sort the explanations by score
     # explanations = sorted(explanations, key=lambda x: x.score, reverse=True)

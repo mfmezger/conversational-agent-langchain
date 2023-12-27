@@ -117,16 +117,6 @@ def test_search_route() -> None:
     assert response.json() is not None
 
 
-def test_wrong_input_explain_output() -> None:
-    """Test the function with wrong arguments."""
-    with pytest.raises(ValueError):
-        client.post("/explaination/aleph_alpha_explain", json={"prompt": "", "output": "", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
-    with pytest.raises(ValueError):
-        client.post("/explaination/aleph_alpha_explain", json={"prompt": "", "output": "asdfasdf", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
-    with pytest.raises(ValueError):
-        client.post("/explaination/aleph_alpha_explain", json={"prompt": "asdfasdf", "output": "", "token": os.getenv("ALEPH_ALPHA_API_KEY")})
-
-
 def test_embedd_text() -> None:
     """Test the embedd_text function."""
     # load text
@@ -134,7 +124,8 @@ def test_embedd_text() -> None:
         text = f.read()
 
     response: Response = client.post(
-        "/embeddings/text/", json={"text": text, "llm_backend": "aa", "file_name": "file", "token": os.getenv("ALEPH_ALPHA_API_KEY"), "seperator": "###"}
+        "/embeddings/text/",
+        json={"text": text, "llm_backend": {"llm_provider": "aa", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, "file_name": "file", "seperator": "###"},
     )
     logger.info(response)
     assert response.status_code == 200

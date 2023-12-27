@@ -204,19 +204,19 @@ async def embedd_text(request: EmbeddTextRequest) -> EmbeddingResponse:
         JSONResponse: A response indicating that the text was received and saved, along with the name of the file it was saved to.
     """
     logger.info("Embedding Text")
-    token = validate_token(token=request.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    token = validate_token(token=request.llm_backend.token, llm_backend=request.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     logger.info(f"Requested Backend is: {request.llm_backend}")
-    if request.llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
+    if request.llm_backend.llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
         # Embedd the documents with Aleph Alpha
         embedd_text_aleph_alpha(text=request.text, file_name=request.file_name, aleph_alpha_token=token, seperator=request.seperator)
         # return a success notificaton
         return JSONResponse(content={"message": "Text received and saved.", "filenames": request.file_name})
-    elif request.llm_backend == "openai":
+    elif request.llm_backend.llm_provider == "openai":
         # Embedd the documents with OpenAI
         # TODO: Implement
         raise ValueError("Not implemented yet.")
-    elif request.llm_backend == "gpt4all":
+    elif request.llm_backend.llm_provider == "gpt4all":
         embedd_text_gpt4all(text=request.text, file_name=request.file_name, seperator=request.seperator)
 
     else:

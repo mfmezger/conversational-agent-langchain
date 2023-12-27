@@ -127,7 +127,7 @@ def get_token(token: str | None, llm_backend: Union[str, LLMProvider] | None, al
     return env_token  # type: ignore
 
 
-def validate_token(token: str | None, llm_backend: str, aleph_alpha_key: str | None, openai_key: str | None) -> str:
+def validate_token(token: str | None, llm_backend: Union[str, LLMProvider], aleph_alpha_key: str | None, openai_key: str | None) -> str:
     """Test if a token is available, and raise an error if it is missing when needed.
 
     Args:
