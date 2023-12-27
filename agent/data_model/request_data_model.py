@@ -46,7 +46,7 @@ class Filtering(BaseModel):
     """The Filtering Model."""
 
     threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
-    collection_name: Optional[str] = Field(None, title="Name of the Collection", description="Name of the Qdrant Collection.")
+    collection_name: Optional[str] = Field("aleph-alpha", title="Name of the Collection", description="Name of the Qdrant Collection.")
     filter: Optional[dict] = Field(None, title="Filter", description="Filter for the database search with metadata.")
 
 
@@ -64,8 +64,6 @@ class SearchRequest(BaseModel):
     query: str = Field(..., title="Query", description="The search query.")
     llm_backend: LLMBackend
     filtering: Filtering
-    collection_name: Optional[str] = Field(None, title="Name of the Collection", description="Name of the Qdrant Collection.")
-    filter: Optional[dict] = Field(None, title="Filter", description="Filter for the database search with metadata.")
     amount: int = Field(3, title="Amount", description="The number of search results to return.")
     threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
 
@@ -77,16 +75,6 @@ class EmbeddTextRequest(BaseModel):
     file_name: str = Field(..., title="File Name", description="The name of the file to save the embedded text to.")
     llm_backend: LLMBackend
     seperator: str = Field("###", title="seperator", description="The seperator to use between embedded texts.")
-
-
-class ExplainRequest(BaseModel):
-    """The request parameters for explaining the output."""
-
-    prompt: str = Field(..., title="Prompt", description="The prompt used to generate the output.")
-    collection_name: Optional[str] = Field(None, title="Name of the Collection", description="Name of the Qdrant Collection.")
-    output: str = Field(..., title="Output", description="The output to be explained.")
-    token: Optional[str] = Field(None, title="API Token", description="The Aleph Alpha API token.")
-    llm_backend: LLMBackend
 
 
 class CustomPromptCompletion(BaseModel):
@@ -104,13 +92,16 @@ class CustomPromptCompletion(BaseModel):
 class QARequest(BaseModel):
     """Request for the QA endpoint."""
 
-    query: Optional[str] = Field(None, title="Query", description="The question to answer.")
-    llm_backend: LLMBackend
-    collection_name: Optional[str] = Field(None, title="Name of the Collection", description="Name of the Qdrant Collection.")
-    amount: int = Field(1, title="Amount", description="The number of answers to return.")
-    threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
-    filter: Optional[dict] = Field(None, title="Filter", description="Filter for the database search with metadata.")
-    language: Language = Field(Language.GERMAN, title="Language", description="The language to use for the answer.")
-    history: Optional[int] = Field(0, title="History", description="The number of previous questions to include in the context.")
-    history_list: List[str] = Field([], title="History List", description="A list of previous questions to include in the context.")
     search: SearchRequest
+    language: Optional[Language] = Field(Language.DETECT, title="Language", description="The language to use for the answer.")
+    history: Optional[int] = Field(0, title="History", description="The number of previous questions to include in the context.")
+    history_list: Optional[List[str]] = Field([], title="History List", description="A list of previous questions to include in the context.")
+
+
+class ExplainQARequest(BaseModel):
+    """Request for the QA endpoint."""
+
+    search: SearchRequest
+    language: Optional[Language] = Field(Language.DETECT, title="Language", description="The language to use for the answer.")
+    history: Optional[int] = Field(0, title="History", description="The number of previous questions to include in the context.")
+    history_list: Optional[List[str]] = Field([], title="History List", description="A list of previous questions to include in the context.")

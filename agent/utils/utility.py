@@ -117,11 +117,14 @@ def get_token(token: str | None, llm_backend: Union[str, LLMProvider] | None, al
     if isinstance(llm_backend, str):
         llm_backend = LLMProvider.normalize(llm_backend)
 
-    env_token = aleph_alpha_key if llm_backend == LLMProvider.ALEPH_ALPHA else openai_key
+    if token:
+        return token
+
+    env_token = aleph_alpha_key if llm_backend.llm_provider == LLMProvider.ALEPH_ALPHA else openai_key
     if not env_token and not token:
         raise ValueError("No token provided.")
 
-    return token or env_token  # type: ignore
+    return env_token  # type: ignore
 
 
 def validate_token(token: str | None, llm_backend: str, aleph_alpha_key: str | None, openai_key: str | None) -> str:

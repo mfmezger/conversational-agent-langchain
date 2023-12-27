@@ -28,7 +28,7 @@ def test_create_tmp_folder() -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("provider", ["aleph-alpha", "gpt4all"])  # TODO: if i get access again maybe also "openai",
+@pytest.mark.parametrize("provider", ["aa", "gpt4all"])  # TODO: if i get access again maybe also "openai",
 async def test_upload_documents(provider: str) -> None:
     """Testing the upload of multiple documents."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
@@ -41,10 +41,10 @@ async def test_upload_documents(provider: str) -> None:
             response: Response = await ac.post(
                 "/embeddings/documents", params={"llm_backend": "openai", "token": os.getenv("OPENAI_API_KEY")}, files=[("files", file) for file in files]
             )
-        elif provider == "aleph-alpha":
+        elif provider == "aa":
             logger.warning("Using Aleph Alpha API")
             response: Response = await ac.post(
-                "/embeddings/documents", params={"llm_backend": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
+                "/embeddings/documents", params={"llm_backend": "aa", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
             )
         elif provider == "gpt4all":
             response: Response = await ac.post(
@@ -64,14 +64,25 @@ async def test_upload_documents(provider: str) -> None:
 
 
 @pytest.mark.asyncio
-async def test_embedd_one_document() -> None:
+@pytest.mark.parametrize("provider", ["aa", "gpt4all"])
+async def test_embedd_one_document(provider: str) -> None:
     """Testing the upload of one document."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
         tmp_file = open("tests/resources/1706.03762v5.pdf", "rb")
-        response: Response = await ac.post(
-            "/embeddings/document/", params={"llm_backend": "aleph-alpha", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("file", tmp_file)]
-        )
 
+        if provider == "aa":
+            logger.warning("Using Aleph Alpha API")
+            response: Response = await ac.post(
+                "/embeddings/documents",
+                params={"llm_backend": "aa", "token": os.getenv("ALEPH_ALPHA_API_KEY")},
+                files=[("files", tmp_file)],
+            )
+        elif provider == "gpt4all":
+            response: Response = await ac.post(
+                "/embeddings/documents",
+                params={"llm_backend": "gpt4all", "token": os.getenv("ALEPH_ALPHA_API_KEY")},
+                files=[("files", tmp_file)],
+            )
     assert response.status_code == 200
     assert response.json() == {
         "status": "success",
@@ -90,10 +101,17 @@ def test_search_route_invalid_provider() -> None:
         response: Response = client.post(
             "/semantic/search",
             json={
-                "query": "example query",
-                "llm_backend": "invalid_provider",
-                "token": "example_token",
+                "query": "string",
+                "llm_backend": {"llm_provider": "asdfadsfasdf", "token": ""},
+                "filtering": {
+                    "threshold": 0,
+                    "collection_name": "aleph-alpha",
+                    "filter": {},
+                },
+                "collection_name": "string",
+                "filter": {},
                 "amount": 3,
+                "threshold": 0,
             },
         )
         assert response.status_code == 400
@@ -105,21 +123,21 @@ def test_search_route() -> None:
     response: Response = client.post(
         "/semantic/search",
         json={
-            "query": "Was ist Vanilin?",
-            "llm_backend": "aa",
+            "query": "Was ist Vanilin",
+            "llm_backend": {"llm_provider": "aa", "token": ""},
+            "filtering": {
+                "threshold": 0,
+                "collection_name": "aleph-alpha",
+                "filter": {},
+            },
+            "collection_name": "string",
+            "filter": {},
             "amount": 3,
+            "threshold": 0,
         },
     )
     assert response.status_code == 200
     assert response.json() is not None
-
-
-def test_explain_output() -> None:
-    """Test the function with valid arguments."""
-    response: Response = client.post(
-        "/explaination/aleph_alpha_explain", json={"prompt": "What is the capital of France?", "output": "Paris", "token": os.getenv("ALEPH_ALPHA_API_KEY")}
-    )
-    assert response.status_code == 200
 
 
 def test_wrong_input_explain_output() -> None:

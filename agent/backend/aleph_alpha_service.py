@@ -38,7 +38,7 @@ def get_tokenizer():
     """Initialize the tokenizer."""
     global tokenizer
     client = Client(token=aleph_alpha_token)
-    tokenizer = client.tokenizer("luminous-base-control")
+    tokenizer = client.tokenizer("luminous-base")
 
 
 def count_tokens(text: str):
