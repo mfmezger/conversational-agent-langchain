@@ -101,7 +101,5 @@ class QARequest(BaseModel):
 class ExplainQARequest(BaseModel):
     """Request for the QA endpoint."""
 
-    search: SearchRequest
-    language: Optional[Language] = Field(Language.DETECT, title="Language", description="The language to use for the answer.")
-    history: Optional[int] = Field(0, title="History", description="The number of previous questions to include in the context.")
-    history_list: Optional[List[str]] = Field([], title="History List", description="A list of previous questions to include in the context.")
+    qa_request: QARequest
+    explain_threshold: float = Field(0.7, title="Explain Threshold", description="The threshold to use for the explanation.")

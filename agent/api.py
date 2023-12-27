@@ -40,6 +40,7 @@ from agent.data_model.request_data_model import (
     CustomPromptCompletion,
     EmbeddTextFilesRequest,
     EmbeddTextRequest,
+    ExplainQARequest,
     LLMProvider,
     QARequest,
     SearchRequest,
@@ -377,9 +378,8 @@ def question_answer(request: QARequest) -> QAResponse:
 
 
 @app.post("/explanation/explain-qa")
-def explain_question_answer(
-    query: Optional[str] = None, llm_backend: str = "aa", token: Optional[str] = None, amount: int = 1, threshold: float = 0.0
-) -> ExplainQAResponse:
+def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQAResponse:
+    # query: Optional[str] = None, llm_backend: str = "aa", token: Optional[str] = None, amount: int = 1, threshold: float = 0.0
     """Answer a question & explains it based on the documents in the database. This only works with Aleph Alpha.
 
     This uses the normal qa but combines it with the explain function.
@@ -397,15 +397,25 @@ def explain_question_answer(
     """
     logger.info("Answering Question and Explaining it.")
     # if the query is not provided, raise an error
-    if query is None:
+    if explain_request.search.query is None:
         raise ValueError("Please provide a Question.")
 
-    token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    explain_request.qa_request.llm_provider.token = validate_token(
+        token=explain_request.qa_request.llm_provider.token,
+        llm_backend=explain_request.qa_request.llm_provider.llm_backend,
+        aleph_alpha_key=ALEPH_ALPHA_API_KEY,
+        openai_key=OPENAI_API_KEY,
+    )
 
-    documents = search_database(query=query, llm_backend=llm_backend, token=token, amount=amount, threshold=threshold)
+    documents = search_database(explain_request.qa_request.search)
 
     # call the qa function
-    explanation, score, text, answer, meta_data = explain_qa(query=query, document=documents, aleph_alpha_token=token)
+    explanation, score, text, answer, meta_data = explain_qa(
+        query=explain_request.qa_request.search.query,
+        explain_threshold=explain_request.explain_threshold,
+        document=documents,
+        aleph_alpha_token=explain_request.qa_request.llm_provider.token,
+    )
 
     return ExplainQAResponse(explanation=explanation, score=score, text=text, answer=answer, meta_data=meta_data)
 

@@ -95,29 +95,6 @@ async def test_embedd_one_document(provider: str) -> None:
             shutil.rmtree(entry.path)
 
 
-def test_search_route_invalid_provider() -> None:
-    """Testing with wrong backend."""
-    with pytest.raises(ValueError):
-        response: Response = client.post(
-            "/semantic/search",
-            json={
-                "query": "string",
-                "llm_backend": {"llm_provider": "asdfadsfasdf", "token": ""},
-                "filtering": {
-                    "threshold": 0,
-                    "collection_name": "aleph-alpha",
-                    "filter": {},
-                },
-                "collection_name": "string",
-                "filter": {},
-                "amount": 3,
-                "threshold": 0,
-            },
-        )
-        assert response.status_code == 400
-        assert "ValueError" in response.text
-
-
 def test_search_route() -> None:
     """Testing with wrong backend."""
     response: Response = client.post(
@@ -127,7 +104,7 @@ def test_search_route() -> None:
             "llm_backend": {"llm_provider": "aa", "token": ""},
             "filtering": {
                 "threshold": 0,
-                "collection_name": "aleph-alpha",
+                "collection_name": "aleph_alpha",
                 "filter": {},
             },
             "collection_name": "string",

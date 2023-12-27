@@ -328,7 +328,7 @@ def qa_aleph_alpha(
 
 
 @load_config(location="config/ai/aleph_alpha.yml")
-def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, cfg: DictConfig, collection_name: Optional[str] = None):
+def explain_qa(aleph_alpha_token: str, document: LangchainDocument, explain_threshold: float, query: str, cfg: DictConfig, collection_name: Optional[str] = None):
     """Explian QA WIP."""
     text = document[0][0].page_content
     meta_data = document[0][0].metadata
@@ -345,8 +345,8 @@ def explain_qa(aleph_alpha_token: str, document: LangchainDocument, query: str, 
     explanations = response_explain.explanations[0].items[0].scores
 
     # if all of the scores are belo 0.7 raise an error
-    if all(item.score < 0.7 for item in explanations):
-        raise ValueError("All scores are below 0.7.")
+    if all(item.score < explain_threshold for item in explanations):
+        raise ValueError("All scores are below explain_threshold.")
 
     # remove element if the text contains Response: or Instructions:
     for exp in explanations:

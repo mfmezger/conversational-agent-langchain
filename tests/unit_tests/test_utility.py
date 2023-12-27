@@ -64,4 +64,4 @@ def test_validate_token() -> None:
     assert token == "gpt4all"
 
     with pytest.raises(ValueError):
-        token = validate_token(token=None, llm_backend="openai", aleph_alpha_key=None, openai_key=None)
+        token = get_token(token=None, llm_backend="openai", aleph_alpha_key=None, openai_key=None)
