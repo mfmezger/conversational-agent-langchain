@@ -7,8 +7,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.openapi.utils import get_openapi
 from langchain.docstore.document import Document as LangchainDocument
 from loguru import logger
-from omegaconf import DictConfig
-from qdrant_client import QdrantClient, models
+from qdrant_client import models
 from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
 from ultra_simple_config import load_config
@@ -55,9 +54,9 @@ from agent.data_model.response_data_model import (
 from agent.utils.utility import (
     combine_text_from_list,
     create_tmp_folder,
-    load_vec_db_conn,
     validate_token,
 )
+from agent.utils.vdb import load_vec_db_conn
 
 # add file logger for loguru
 logger.add("logs/file_{time}.log", backtrace=False, diagnose=False)
@@ -138,7 +137,7 @@ def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONRe
         llm_provider (LLMProvider): Name of the LLM Provider
         collection_name (str): Name of the Collection
     """
-    qdrant_client, _ = initialize_qdrant_client_config()
+    qdrant_client, _ = load_vec_db_conn()
 
     if llm_provider == LLMProvider.ALEPH_ALPHA:
         generate_collection_aleph_alpha(qdrant_client=qdrant_client, collection_name=collection_name, embeddings_size=5120)
@@ -573,7 +572,7 @@ def delete(
     else:
         raise ValueError(f"Unsupported LLM provider: {llm_provider}")
 
-    qdrant_client = load_vec_db_conn()
+    qdrant_client, _ = load_vec_db_conn()
 
     result = qdrant_client.delete(
         collection_name=collection,
@@ -594,27 +593,13 @@ def delete(
     return result
 
 
-@load_config(location="config/db.yml")
-def initialize_qdrant_client_config(cfg: DictConfig):
-    """Initialize the Qdrant Client.
-
-    Args:
-        cfg (DictConfig): Configuration from the file
-
-    Returns:
-        _type_: Qdrant Client and Configuration.
-    """
-    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
-    return qdrant_client, cfg
-
-
 def initialize_aleph_alpha_vector_db() -> None:
     """Initializes the Aleph Alpha vector db.
 
     Args:
         cfg (DictConfig): Configuration from the file
     """
-    qdrant_client, cfg = initialize_qdrant_client_config()
+    qdrant_client, cfg = load_vec_db_conn()
     try:
         qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_aa)
         logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_aa} already exists.")
@@ -643,7 +628,7 @@ def initialize_open_ai_vector_db() -> None:
     Args:
         cfg (DictConfig): Configuration from the file
     """
-    qdrant_client, cfg = initialize_qdrant_client_config()
+    qdrant_client, cfg = load_vec_db_conn()
 
     try:
         qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_openai)
@@ -672,7 +657,7 @@ def initialize_gpt4all_vector_db() -> None:
     Args:
         cfg (DictConfig): Configuration from the file
     """
-    qdrant_client, cfg = initialize_qdrant_client_config()
+    qdrant_client, cfg = load_vec_db_conn()
 
     try:
         qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_gpt4all)
