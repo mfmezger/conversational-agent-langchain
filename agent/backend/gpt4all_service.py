@@ -1,5 +1,4 @@
 """GPT4ALL Backend Service."""
-import os
 from typing import List, Optional, Tuple
 
 from dotenv import load_dotenv
@@ -11,10 +10,10 @@ from langchain.text_splitter import NLTKTextSplitter
 from langchain.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
-from qdrant_client import QdrantClient
 from ultra_simple_config import load_config
 
 from agent.utils.utility import generate_prompt
+from agent.utils.vdb import init_vdb
 
 load_dotenv()
 
@@ -31,13 +30,10 @@ def get_db_connection(cfg: DictConfig, collection_name: str) -> Qdrant:
         Qdrant: The Qdrant DB connection.
     """
     embedding = GPT4AllEmbeddings()
-    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
-    if collection_name is None or collection_name == "":
+    if collection_name is None or not collection_name:
         collection_name = cfg.qdrant.collection_name_gpt4all
-    vector_db = Qdrant(client=qdrant_client, collection_name=collection_name, embeddings=embedding)
-    logger.info("SUCCESS: Qdrant DB initialized.")
 
-    return vector_db
+    return init_vdb(cfg, collection_name, embedding)
 
 
 def embedd_documents_gpt4all(dir: str, collection_name: Optional[str] = None) -> None:
