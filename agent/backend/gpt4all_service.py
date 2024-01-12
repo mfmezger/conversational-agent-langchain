@@ -4,10 +4,10 @@ from typing import List, Optional, Tuple
 from dotenv import load_dotenv
 from gpt4all import GPT4All
 from langchain.docstore.document import Document
-from langchain.document_loaders import DirectoryLoader, PyPDFLoader
-from langchain.embeddings import GPT4AllEmbeddings
 from langchain.text_splitter import NLTKTextSplitter
-from langchain.vectorstores import Qdrant
+from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
+from langchain_community.embeddings import GPT4AllEmbeddings
+from langchain_community.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config

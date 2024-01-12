@@ -6,8 +6,7 @@ from langchain_core.embeddings import Embeddings
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
-
-from agent.utils.configuration import load_config
+from ultra_simple_config import load_config
 
 
 def init_vdb(cfg: DictConfig, collection_name: str, embedding: Embeddings):

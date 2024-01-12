@@ -16,10 +16,10 @@ from aleph_alpha_client import (
 )
 from dotenv import load_dotenv
 from langchain.docstore.document import Document as LangchainDocument
-from langchain.document_loaders import DirectoryLoader, PyPDFium2Loader
-from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
 from langchain.text_splitter import NLTKTextSplitter
-from langchain.vectorstores import Qdrant
+from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader
+from langchain_community.embeddings import AlephAlphaAsymmetricSemanticEmbedding
+from langchain_community.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
