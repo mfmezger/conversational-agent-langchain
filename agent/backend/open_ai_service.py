@@ -11,10 +11,10 @@ from langchain.text_splitter import NLTKTextSplitter
 from langchain.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
-from qdrant_client import QdrantClient
 from ultra_simple_config import load_config
 
 from agent.utils.utility import generate_prompt
+from agent.utils.vdb import init_vdb
 
 load_dotenv()
 
@@ -36,12 +36,10 @@ def get_db_connection(open_ai_token: str, cfg: DictConfig, collection_name: str)
     else:
         embedding = OpenAIEmbeddings(model=cfg.openai.deployment, openai_api_key=open_ai_token)
 
-    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
-    if collection_name is None or collection_name == "":
+    if collection_name is None or not collection_name:
         collection_name = cfg.qdrant.collection_name_openai
-    vector_db = Qdrant(client=qdrant_client, collection_name=collection_name, embeddings=embedding)
-    logger.info("SUCCESS: Qdrant DB Connection.")
-    return vector_db
+
+    return init_vdb(cfg, collection_name, embedding)
 
 
 def embedd_documents_openai(dir: str, open_ai_token: str, collection_name: Optional[str] = None) -> None:

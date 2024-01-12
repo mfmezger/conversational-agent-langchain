@@ -7,9 +7,6 @@ from typing import Union
 from langchain.prompts import PromptTemplate
 from lingua import Language, LanguageDetectorBuilder
 from loguru import logger
-from omegaconf import DictConfig
-from qdrant_client import QdrantClient
-from ultra_simple_config import load_config
 
 from agent.data_model.request_data_model import LLMProvider
 
@@ -150,13 +147,6 @@ def validate_token(token: str | None, llm_backend: Union[str, LLMProvider], alep
     else:
         token = "gpt4all"
     return token
-
-
-@load_config("config/db.yml")
-def load_vec_db_conn(cfg: DictConfig) -> QdrantClient:
-    """Load the Vector Database Connection."""
-    qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
-    return qdrant_client
 
 
 if __name__ == "__main__":
