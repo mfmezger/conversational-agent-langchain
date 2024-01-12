@@ -9,8 +9,7 @@ from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
-
-from agent.utils.configuration import load_config
+from ultra_simple_config import load_config
 
 load_dotenv()
 data_folder = "resources/data"

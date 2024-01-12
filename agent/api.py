@@ -11,6 +11,7 @@ from omegaconf import DictConfig
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
+from ultra_simple_config import load_config
 
 from agent.backend.aleph_alpha_service import (
     custom_completion_prompt_aleph_alpha,
@@ -51,7 +52,6 @@ from agent.data_model.response_data_model import (
     QAResponse,
     SearchResponse,
 )
-from agent.utils.configuration import load_config
 from agent.utils.utility import (
     combine_text_from_list,
     create_tmp_folder,

@@ -1672,6 +1672,9 @@ tzdata==2023.3 ; python_version >= "3.11" and python_version < "3.12" \
 tzlocal==5.1 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:2938498395d5f6a898ab8009555cb37a4d360913ad375d4747ef16826b03ef23 \
     --hash=sha256:a5ccb2365b295ed964e0a98ad076fe10c495591e75505d34f154d60a7f1ed722
+ultra-simple-config==0.1.0 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:1f1d9b8f9f7bb9a5d8b725fc353465f270d8a72661ac3c941e08c028d38d7670 \
+    --hash=sha256:a0dc9573569cc82791081868308cbc018190bc435d1cd38c2a3670438d93186e
 urllib3==1.26.18 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:34b97092d7e0a3a8cf7cd10e386f401b3737364026c45e622aa02903dffe0f07 \
     --hash=sha256:f8ecc1bba5667413457c529ab955bf8c67b45db799d159066261719e328580a0

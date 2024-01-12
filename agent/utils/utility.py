@@ -9,9 +9,9 @@ from lingua import Language, LanguageDetectorBuilder
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
+from ultra_simple_config import load_config
 
 from agent.data_model.request_data_model import LLMProvider
-from agent.utils.configuration import load_config
 
 # add new languages to detect here
 languages = [Language.ENGLISH, Language.GERMAN]

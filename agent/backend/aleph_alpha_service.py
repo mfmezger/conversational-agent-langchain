@@ -23,8 +23,8 @@ from langchain.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
+from ultra_simple_config import load_config
 
-from agent.utils.configuration import load_config
 from agent.utils.utility import generate_prompt
 
 nltk.download("punkt")  # This needs to be installed for the tokenizer to work.
