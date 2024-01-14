@@ -98,12 +98,12 @@ def create_tmp_folder() -> str:
     return str(tmp_dir)
 
 
-def get_token(token: str | None, llm_backend: Union[str, LLMProvider] | None, aleph_alpha_key: str | None, openai_key: str | None) -> str:
+def get_token(token: str | None, llm_provider: Union[str, LLMProvider] | None, aleph_alpha_key: str | None, openai_key: str | None) -> str:
     """Get the token from the environment variables or the parameter.
 
     Args:
         token (str, optional): Token from the REST service.
-        llm_backend (Union[str, LLMProvider], optional): LLM provider. Defaults to "openai".
+        llm_provider (Union[str, LLMProvider], optional): LLM provider. Defaults to "openai".
 
     Returns:
         str: Token for the LLM Provider of choice.
@@ -111,8 +111,8 @@ def get_token(token: str | None, llm_backend: Union[str, LLMProvider] | None, al
     Raises:
         ValueError: If no token is provided.
     """
-    if isinstance(llm_backend, str):
-        llm_backend = LLMProvider.normalize(llm_backend)
+    if isinstance(llm_provider, str):
+        llm_provider = LLMProvider.normalize(llm_provider)
 
     if token == "string":
         token = None
@@ -120,7 +120,7 @@ def get_token(token: str | None, llm_backend: Union[str, LLMProvider] | None, al
     if token:
         return token
 
-    env_token = aleph_alpha_key if llm_backend.llm_provider == LLMProvider.ALEPH_ALPHA else openai_key
+    env_token = aleph_alpha_key if llm_provider == LLMProvider.ALEPH_ALPHA else openai_key
     if not env_token and not token:
         raise ValueError("No token provided.")
 

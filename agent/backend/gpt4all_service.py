@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from gpt4all import GPT4All
 from langchain.docstore.document import Document
 from langchain.text_splitter import NLTKTextSplitter
-from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
+from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader
 from langchain_community.embeddings import GPT4AllEmbeddings
 from langchain_community.vectorstores import Qdrant
 from loguru import logger
@@ -46,7 +46,7 @@ def embedd_documents_gpt4all(dir: str, collection_name: Optional[str] = None) ->
     """
     vector_db: Qdrant = get_db_connection(collection_name=collection_name)
 
-    loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
+    loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFium2Loader)
     splitter = NLTKTextSplitter(chunk_size=500, chunk_overlap=100)
     docs = loader.load_and_split(splitter)
 

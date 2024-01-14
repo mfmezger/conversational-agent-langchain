@@ -1,7 +1,7 @@
 """Vector Database Utilities."""
 import os
 
-from langchain.vectorstores import Qdrant
+from langchain_community.vectorstores import Qdrant
 from langchain_core.embeddings import Embeddings
 from loguru import logger
 from omegaconf import DictConfig

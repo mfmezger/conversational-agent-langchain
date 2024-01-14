@@ -10,7 +10,6 @@ from loguru import logger
 from qdrant_client import models
 from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
-from ultra_simple_config import load_config
 
 from agent.backend.aleph_alpha_service import (
     custom_completion_prompt_aleph_alpha,
@@ -101,7 +100,7 @@ def read_root() -> str:
     return "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
-def embedd_documents_wrapper(folder_name: str, llm_backend: str = "aa", token: Optional[str] = None, collection_name: Optional[str] = None) -> None:
+def embedd_documents_wrapper(folder_name: str, llm_provider: LLMProvider, token: Optional[str] = None, collection_name: Optional[str] = None) -> None:
     """Call the right embedding function for the chosen backend.
 
     Args:
@@ -112,18 +111,18 @@ def embedd_documents_wrapper(folder_name: str, llm_backend: str = "aa", token: O
     Raises:
         ValueError: If an invalid LLM Provider is set.
     """
-    token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    token = validate_token(token=token, llm_backend=llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
-    if llm_backend in {"aleph-alpha", "aleph_alpha", "aa"}:
+    if llm_provider == LLMProvider.ALEPH_ALPHA:
         # Embedd the documents with Aleph Alpha
         logger.debug("Embedding Documents with Aleph Alpha.")
         embedd_documents_aleph_alpha(dir=folder_name, aleph_alpha_token=token, collection_name=collection_name)
-    elif llm_backend == "openai":
+    elif llm_provider == LLMProvider.OPENAI:
         # Embedd the documents with OpenAI
         logger.debug("Embedding Documents with OpenAI.")
         embedd_documents_openai(dir=folder_name, open_ai_token=token)
 
-    elif llm_backend == "gpt4all":
+    elif llm_provider == LLMProvider.GPT4ALL:
         embedd_documents_gpt4all(dir=folder_name)
     else:
         raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
@@ -154,7 +153,7 @@ def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONRe
 
 @app.post("/embeddings/documents")
 async def post_embedd_documents(
-    files: List[UploadFile] = File(...), llm_backend: str = "aa", token: Optional[str] = None, collection_name: Optional[str] = None
+    files: List[UploadFile] = File(...), llm_provider: str = "aa", token: Optional[str] = None, collection_name: Optional[str] = None
 ) -> EmbeddingResponse:
     """Uploads multiple documents to the backend.
 
@@ -165,7 +164,8 @@ async def post_embedd_documents(
         JSONResponse: The response as JSON.
     """
     logger.info("Embedding Multiple Documents")
-    token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    llm_provider = LLMProvider.normalize(llm_provider)
+    token = validate_token(token=token, llm_backend=llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
     tmp_dir = create_tmp_folder()
 
     file_names = []
@@ -184,7 +184,7 @@ async def post_embedd_documents(
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
 
-    embedd_documents_wrapper(folder_name=tmp_dir, llm_backend=llm_backend, token=token, collection_name=collection_name)
+    embedd_documents_wrapper(folder_name=tmp_dir, llm_provider=llm_provider, token=token, collection_name=collection_name)
 
     return EmbeddingResponse(status="success", files=file_names)
 
@@ -256,7 +256,7 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> EmbeddingRespons
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
 
-    token = validate_token(token=request.token, llm_backend=request.search.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    token = validate_token(token=request.token, llm_backend=request.search.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     if request.search.llm_backend is None:
         raise ValueError("Please provide a LLM Provider of choice.")
@@ -281,7 +281,7 @@ def search(request: SearchRequest) -> List[SearchResponse]:
     """
     logger.info("Searching for Documents")
     request.llm_backend.token = validate_token(
-        token=request.llm_backend.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
+        token=request.llm_backend.token, llm_backend=request.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
     )
 
     if request.llm_backend.llm_provider is None:
@@ -332,7 +332,7 @@ def question_answer(request: QARequest) -> QAResponse:
         raise ValueError("Please provide a Question.")
 
     request.search.llm_backend.token = validate_token(
-        token=request.search.llm_backend.token, llm_backend=request.search.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
+        token=request.search.llm_backend.token, llm_backend=request.search.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
     )
 
     # if the history flag is activated and the history is not provided, raise an error
@@ -345,7 +345,7 @@ def question_answer(request: QARequest) -> QAResponse:
         text = combine_text_from_list(request.history_list)
         if request.search.llm_backend == LLMProvider.ALEPH_ALPHA:
             # summarize the text
-            summary = summarize_text_aleph_alpha(text=text, token=token)
+            summary = summarize_text_aleph_alpha(text=text, token=request.search.llm_backend.token)
             # combine the history and the query
             request.search.query = f"{summary}\n{request.search.query}"
 
@@ -358,7 +358,7 @@ def question_answer(request: QARequest) -> QAResponse:
             # combine the history and the query
             request.search.query = f"{summary}\n{request.search.query}"
         else:
-            raise ValueError(f"Unsupported LLM provider: {request.search.llm_backend}")
+            raise ValueError(f"Unsupported LLM provider: {request.search.llm_backend.llm_provider}")
 
     documents = search_database(request.search)
 

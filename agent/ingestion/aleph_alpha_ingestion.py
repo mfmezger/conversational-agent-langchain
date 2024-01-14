@@ -7,10 +7,10 @@ from typing import List
 
 from aleph_alpha_client import Client
 from dotenv import load_dotenv
-from langchain.document_loaders import DirectoryLoader, PyPDFLoader
-from langchain.embeddings import AlephAlphaAsymmetricSemanticEmbedding
 from langchain.text_splitter import NLTKTextSplitter
-from langchain.vectorstores import Qdrant
+from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader
+from langchain_community.embeddings import AlephAlphaAsymmetricSemanticEmbedding
+from langchain_community.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
@@ -150,7 +150,7 @@ def parse_pdf(dir: str, vector_db: Qdrant) -> None:
         dir (str): The directory to parse
         vector_db (Qdrant): The vector db
     """
-    loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
+    loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFium2Loader)
 
     docs = loader.load_and_split(splitter)
 

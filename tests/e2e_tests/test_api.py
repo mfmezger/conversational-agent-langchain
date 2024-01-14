@@ -101,7 +101,7 @@ def test_search_route() -> None:
         "/semantic/search",
         json={
             "query": "Was ist Vanilin",
-            "llm_backend": {"llm_provider": "aa", "token": ""},
+            "llm_backend": {"llm_provider": "aa"},
             "filtering": {
                 "threshold": 0,
                 "collection_name": "aleph_alpha",

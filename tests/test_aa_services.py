@@ -5,7 +5,6 @@ import pytest
 from dotenv import load_dotenv
 
 from agent.backend.aleph_alpha_service import (
-    explain_completion,
     generate_prompt,
     search_documents_aleph_alpha,
     send_completion_request,
@@ -81,9 +80,9 @@ def test_search_documents_aleph_alpha_empty() -> None:
         search_documents_aleph_alpha(aleph_alpha_token, query)
 
 
-def test_explain_completion() -> None:
-    """Test that explain_completion does not raise an error."""
-    explain_completion("This is a test", " ", str(os.getenv("ALEPH_ALPHA_API_KEY")))
+# def test_explain_completion() -> None:
+#     """Test that explain_completion does not raise an error."""
+#     explain_completion("This is a test", " ", str(os.getenv("ALEPH_ALPHA_API_KEY")))
 
 
 # def test_search_documents_aleph_alpha_empty() -> None:

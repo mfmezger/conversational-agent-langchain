@@ -60,3 +60,11 @@ def test_validate_token() -> None:
     token = validate_token(token="", llm_backend="gpt4all", aleph_alpha_key="example_key_a", openai_key="example_key_o")
 
     assert token == "gpt4all"
+
+    from agent.data_model.request_data_model import LLMProvider
+
+    backend = LLMProvider.ALEPH_ALPHA
+
+    token = validate_token(token="", llm_backend=backend, aleph_alpha_key="example_key_a", openai_key="example_key_o")
+
+    assert token == "example_key_a"

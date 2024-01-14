@@ -1133,9 +1133,6 @@ pydeck==0.8.0 ; python_version >= "3.11" and python_version < "3.12" \
 pygments==2.16.1 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:13fc09fa63bc8d8671a6d247e1eb303c4b343eaee81d861f3404db2935653692 \
     --hash=sha256:1daff0494820c69bc8941e407aa20f577374ee88364ee10a98fdbe0aece96e29
-pypdf==3.17.4 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:6aa0f61b33779b64486de3f42835d3668badd48dac4a536aeb87da187a5eacd2 \
-    --hash=sha256:ec96e2e4fc9648ac609d19c00d41e9d606e0ae2ce5a0bbe7691426f5f157166a
 pypdfium2==4.26.0 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:00c7c4ab787642ecdab74c5c9a52833fba0611ff368a45368bf2706441101300 \
     --hash=sha256:19e09093f0c6ff7db75ed704a989517867e0f4c07eabb39e4dfcd2625e05f68d \

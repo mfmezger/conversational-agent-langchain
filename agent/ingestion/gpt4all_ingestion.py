@@ -2,9 +2,13 @@
 import os
 
 from dotenv import load_dotenv
-from langchain.document_loaders import DirectoryLoader, PyPDFLoader, TextLoader
 from langchain.embeddings import GPT4AllEmbeddings
-from langchain.vectorstores import Qdrant
+from langchain_community.document_loaders import (
+    DirectoryLoader,
+    PyPDFium2Loader,
+    TextLoader,
+)
+from langchain_community.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient
@@ -63,7 +67,7 @@ def ingest_custom_text(text: str, seperator: str = "###") -> None:
 # ingest pdfs
 def ingest_pdfs_with_text(dir: str, vector_db: Qdrant) -> None:
     """Ingests pdfs from a directory."""
-    loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
+    loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFium2Loader)
     docs = loader.load()
 
     logger.info(f"Loaded {len(docs)} documents.")

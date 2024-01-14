@@ -5,10 +5,10 @@ from typing import Any, List, Optional, Tuple
 import openai
 from dotenv import load_dotenv
 from langchain.docstore.document import Document
-from langchain.document_loaders import DirectoryLoader, PyPDFLoader
-from langchain.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
 from langchain.text_splitter import NLTKTextSplitter
-from langchain.vectorstores import Qdrant
+from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader
+from langchain_community.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
+from langchain_community.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
@@ -56,7 +56,7 @@ def embedd_documents_openai(dir: str, open_ai_token: str, collection_name: Optio
 
     splitter = NLTKTextSplitter(chunk_size=500, chunk_overlap=100)
 
-    loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFLoader)
+    loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFium2Loader)
     docs = loader.load_and_split(splitter)
 
     logger.info(f"Loaded {len(docs)} documents.")

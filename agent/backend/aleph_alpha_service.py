@@ -510,8 +510,8 @@ if __name__ == "__main__":
     # open the text file and read the text
     DOCS = search_documents_aleph_alpha(aleph_alpha_token=token, query="What are Attentions?", amount=1)
     logger.info(DOCS)
-    explanation, score, text, answer, meta_data = explain_qa(aleph_alpha_token=token, document=DOCS, query="What are Attentions?")
-    logger.info(f"Answer: {answer}")
+    # explanation, score, text, answer, meta_data = explain_qa(aleph_alpha_token=token, document=DOCS, query="What are Attentions?")
+    # logger.info(f"Answer: {answer}")
     # explanations = explain_completion(prompt, answer, token)
 
-    print(explanation)
+    # print(explanation)
