@@ -114,7 +114,7 @@ def get_token(token: str | None, llm_provider: Union[str, LLMProvider] | None, a
     if isinstance(llm_provider, str):
         llm_provider = LLMProvider.normalize(llm_provider)
 
-    if token == "string":
+    if token == "string" or token == "":
         token = None
 
     if token:

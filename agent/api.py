@@ -401,7 +401,7 @@ def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQARespo
 
     explain_request.qa_request.search.llm_backend.token = validate_token(
         token=explain_request.qa_request.search.llm_backend.token,
-        llm_backend=explain_request.qa_request.search.llm_backend,
+        llm_backend=explain_request.qa_request.search.llm_backend.llm_provider,
         aleph_alpha_key=ALEPH_ALPHA_API_KEY,
         openai_key=OPENAI_API_KEY,
     )
