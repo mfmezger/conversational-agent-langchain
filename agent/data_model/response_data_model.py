@@ -15,8 +15,8 @@ class Status(str, Enum):
 class MetaData(BaseModel):
     """Metadata for the response."""
 
-    page: int
-    source: str
+    page: int = 0
+    source: str = ""
 
 
 class SearchResponse(BaseModel):
