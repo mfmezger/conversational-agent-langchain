@@ -27,6 +27,7 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
 - Switching for Aleph Alpha to Embeddings with luminous base control.
 ![Frontend](resources/research.png)
 
+If you want to use an Aleph Alpha only backend i would recommend my other backend: https://github.com/mfmezger/aleph-alpha-rag.
 
 
 ## Quickstart
