@@ -14,12 +14,12 @@ class LLMBase(ABC):
         self.collection_name = collection_name
 
     @abstractmethod
-    def embed_documents(self, dir: str, collection_name: Optional[str] = None):
+    def embed_documents(self, dir: str):
         """Embedd new docments in the Qdrant DB."""
         pass
 
     @abstractmethod
-    def create_collection(self, llm_provider: LLMProvider):
+    def create_collection(self, name: str):
         """Create a new collection in the Vector Database."""
         pass
 
