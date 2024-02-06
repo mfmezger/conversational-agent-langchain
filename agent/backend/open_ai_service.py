@@ -13,33 +13,55 @@ from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
+from agent.backend.LLMBase import LLMBase
+
 from agent.utils.utility import generate_prompt
 from agent.utils.vdb import init_vdb
 
 load_dotenv()
 
 
-@load_config(location="config/db.yml")
-def get_db_connection(open_ai_token: str, cfg: DictConfig, collection_name: str) -> Qdrant:
-    """Initializes a connection to the Qdrant DB.
+class OpenAIService(LLMBase):
 
-    Args:
-        open_ai_token (str): The openai token.
-        cfg (DictConfig): the config file.
-        collection_name (str): The name of the vector database collection.
+    @load_config(location="config/main.yml")
+    def __init__(self, cfg: DictConfig, collection_name: str, token: str) -> None:
+        if token:
+            self.openai_token = token
+        else:
+            self.openai_token = os.getenv("ALEPH_ALPHA_API_KEY")
 
-    Returns:
-        Qdrant: An Langchain Instance of the Qdrant DB.
-    """
-    if cfg.openai.azure:
-        embedding = AzureOpenAIEmbeddings(deployment=cfg.openai.deployment, openai_api_version="2023-05-15", openai_api_key=open_ai_token)  # type: ignore
-    else:
-        embedding = OpenAIEmbeddings(model=cfg.openai.deployment, openai_api_key=open_ai_token)
+        if not self.openai_token:
+            raise ValueError("API Token not provided!")
 
-    if collection_name is None or not collection_name:
-        collection_name = cfg.qdrant.collection_name_openai
+        self.cfg = cfg
 
-    return init_vdb(cfg, collection_name, embedding)
+        if collection_name:
+            self.collection_name = collection_name
+        else: 
+            self.collection_name = self.cfg.qdrant.collection_name_openai
+
+
+    @load_config(location="config/db.yml")
+    def get_db_connection(self) -> Qdrant:
+        """Initializes a connection to the Qdrant DB.
+
+        Args:
+            open_ai_token (str): The openai token.
+            cfg (DictConfig): the config file.
+            collection_name (str): The name of the vector database collection.
+
+        Returns:
+            Qdrant: An Langchain Instance of the Qdrant DB.
+        """
+        if self.cfg.openai.azure:
+            embedding = AzureOpenAIEmbeddings(deployment=cfg.openai.deployment, openai_api_version="2023-05-15", openai_api_key=open_ai_token)  # type: ignore
+        else:
+            embedding = OpenAIEmbeddings(model=self.cfg.openai.deployment, openai_api_key=self.open_ai_token)
+
+        if collection_name is None or not collection_name:
+            collection_name = self.cfg.qdrant.collection_name_openai
+
+        return init_vdb(self.cfg, collection_name, embedding)
 
 
 def embedd_documents_openai(dir: str, open_ai_token: str, collection_name: Optional[str] = None) -> None:
