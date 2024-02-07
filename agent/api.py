@@ -41,7 +41,7 @@ from agent.data_model.request_data_model import (
     EmbeddTextRequest,
     ExplainQARequest,
     LLMProvider,
-    QARequest,
+    RAGRequest,
     SearchRequest,
 )
 from agent.data_model.response_data_model import (
@@ -314,7 +314,7 @@ def search(request: SearchRequest) -> List[SearchResponse]:
 
 
 @app.post("/qa")
-def question_answer(request: QARequest) -> QAResponse:
+def question_answer(request: RAGRequest) -> QAResponse:
     """Answer a question based on the documents in the database.
 
     Args:
@@ -396,24 +396,24 @@ def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQARespo
     """
     logger.info("Answering Question and Explaining it.")
     # if the query is not provided, raise an error
-    if explain_request.qa_request.search.query is None:
+    if explain_request.rag_request.search.query is None:
         raise ValueError("Please provide a Question.")
 
-    explain_request.qa_request.search.llm_backend.token = validate_token(
-        token=explain_request.qa_request.search.llm_backend.token,
-        llm_backend=explain_request.qa_request.search.llm_backend.llm_provider,
+    explain_request.rag_request.search.llm_backend.token = validate_token(
+        token=explain_request.rag_request.search.llm_backend.token,
+        llm_backend=explain_request.rag_request.search.llm_backend.llm_provider,
         aleph_alpha_key=ALEPH_ALPHA_API_KEY,
         openai_key=OPENAI_API_KEY,
     )
 
-    documents = search_database(explain_request.qa_request.search)
+    documents = search_database(explain_request.rag_request.search)
 
     # call the qa function
     explanation, score, text, answer, meta_data = explain_qa(
-        query=explain_request.qa_request.search.query,
+        query=explain_request.rag_request.search.query,
         explain_threshold=explain_request.explain_threshold,
         document=documents,
-        aleph_alpha_token=explain_request.qa_request.search.llm_backend.token,
+        aleph_alpha_token=explain_request.rag_request.search.llm_backend.token,
     )
 
     return ExplainQAResponse(explanation=explanation, score=score, text=text, answer=answer, meta_data=meta_data)

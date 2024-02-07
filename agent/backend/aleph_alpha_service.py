@@ -2,7 +2,7 @@
 
 import os
 import pathlib
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import nltk
 import numpy as np
@@ -23,8 +23,9 @@ from langchain_community.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
-from agent.backend.LLMBase import LLMBase
 
+from agent.backend.LLMBase import LLMBase
+from agent.data_model.request_data_model import SearchRequest
 from agent.utils.utility import generate_prompt
 from agent.utils.vdb import init_vdb
 
@@ -35,12 +36,12 @@ aleph_alpha_token = os.getenv("ALEPH_ALPHA_API_KEY")
 tokenizer = None
 
 
-
-
 class AlephAlphaService(LLMBase):
+    """Aleph Alpha Strategy implementation."""
 
     @load_config(location="config/main.yml")
     def __init__(self, cfg: DictConfig, collection_name: str, token: str) -> None:
+        """Initialize the Aleph Alpha Service."""
         if token:
             self.aleph_alpha_token = token
         else:
@@ -53,15 +54,13 @@ class AlephAlphaService(LLMBase):
 
         if collection_name:
             self.collection_name = collection_name
-        else: 
+        else:
             self.collection_name = self.cfg.qdrant.collection_name_aa
-
 
     def get_tokenizer(self):
         """Initialize the tokenizer."""
         client = Client(token=self.aleph_alpha_token)
         self.tokenizer = client.tokenizer("luminous-base")
-
 
     def count_tokens(self, text: str):
         """Count the number of tokens in the text.
@@ -74,7 +73,6 @@ class AlephAlphaService(LLMBase):
         """
         tokens = self.tokenizer.encode(text)
         return len(tokens)
-
 
     def get_db_connection(self) -> Qdrant:
         """Initializes a connection to the Qdrant DB.
@@ -98,7 +96,6 @@ class AlephAlphaService(LLMBase):
 
         return init_vdb(self.cfg, collection_name, embedding)
 
-
     def summarize_text_aleph_alpha(text: str, token: str) -> str:
         """Summarizes the given text using the Luminous API.
 
@@ -116,7 +113,6 @@ class AlephAlphaService(LLMBase):
         response = client.summarize(request=request)
 
         return response.summary
-
 
     def send_completion_request(self, text: str) -> str:
         """Sends a completion request to the Luminous API.
@@ -154,7 +150,6 @@ class AlephAlphaService(LLMBase):
 
         return str(response.completions[0].completion)
 
-
     def embedd_documents_aleph_alpha(self, dir: str) -> None:
         """Embeds the documents in the given directory in the Aleph Alpha database.
 
@@ -183,7 +178,6 @@ class AlephAlphaService(LLMBase):
 
         logger.info("SUCCESS: Texts embedded.")
 
-
     def embedd_text_aleph_alpha(self, text: str, file_name: str, seperator: str) -> None:
         """Embeds the given text in the Aleph Alpha database.
 
@@ -211,7 +205,6 @@ class AlephAlphaService(LLMBase):
 
         vector_db.add_texts(texts=text_list, metadatas=metadata_list)
         logger.info("SUCCESS: Text embedded.")
-
 
     def embedd_text_files_aleph_alpha(self, folder: str, seperator: str) -> None:
         """Embeds text files in the Aleph Alpha database.
@@ -255,10 +248,7 @@ class AlephAlphaService(LLMBase):
 
         logger.info("SUCCESS: Text embedded.")
 
-
-    def search_documents_aleph_alpha(
-        aleph_alpha_token: str, query: str, amount: int = 1, threshold: float = 0.0, collection_name: Optional[str] = None
-    ) -> List[Tuple[LangchainDocument, float]]:
+    def search_documents_aleph_alpha(self, search: SearchRequest) -> List[Tuple[LangchainDocument, float]]:
         """Searches the Aleph Alpha service for similar documents.
 
         Args:
@@ -278,16 +268,15 @@ class AlephAlphaService(LLMBase):
         # TODO: FILTER
         try:
             vector_db: Qdrant = self.get_db_connection()
-            docs = vector_db.similarity_search_with_score(query=query, k=amount, score_threshold=threshold)
+            docs = vector_db.similarity_search_with_score(query=searh.query, k=search.amount, score_threshold=search.filtering.threshold)
             logger.info("SUCCESS: Documents found.")
             return docs
         except Exception as e:
             logger.error(f"ERROR: Failed to search documents: {e}")
             raise Exception(f"Failed to search documents: {e}") from e
 
-
-    def qa_aleph_alpha(self, 
-        documents: list[tuple[LangchainDocument, float]], query: str, summarization: bool = False
+    def qa_aleph_alpha(
+        self, documents: list[tuple[LangchainDocument, float]], query: str, summarization: bool = False
     ) -> Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]:
         """QA takes a list of documents and returns a list of answers.
 
@@ -339,7 +328,6 @@ class AlephAlphaService(LLMBase):
         # extract the answer
         return answer, prompt, meta_data
 
-
     @load_config(location="config/ai/aleph_alpha.yml")
     def explain_qa(self, document: LangchainDocument, explain_threshold: float, query: str, cfg: DictConfig):
         """Explian QA WIP."""
@@ -385,7 +373,6 @@ class AlephAlphaService(LLMBase):
 
         return explanation, score, text, answer, meta_data
 
-
     def explain_completion(self, prompt: str, output: str, token: str) -> Dict[str, float]:
         # TODO: repair
         """Returns an explanation of the given completion.
@@ -420,7 +407,6 @@ class AlephAlphaService(LLMBase):
                 result[prompt[start:end]] = np.round(item.score, decimals=3)
 
         return result
-
 
     def process_documents_aleph_alpha(self, folder: str, type: str) -> List[str]:
         """Process the documents in the given folder.
@@ -464,8 +450,8 @@ class AlephAlphaService(LLMBase):
 
         return answers
 
-
-    def custom_completion_prompt_aleph_alpha(self,
+    def custom_completion_prompt_aleph_alpha(
+        self,
         prompt: str,
         model: str = "luminous-extended-control",
         max_tokens: int = 256,
@@ -501,7 +487,6 @@ class AlephAlphaService(LLMBase):
 
         return str(response.completions[0].completion)
 
-
     def qa_chain(self, query: str, token: str, collection_name: str):
         """QA Chain Impl."""
         # TODO:
@@ -510,7 +495,6 @@ class AlephAlphaService(LLMBase):
         retriever = vector_db.as_retriever()
 
         retrieved_docs = retriever.invoke(query)
-
 
     def self_question_qa():
         """Self question QA."""
@@ -523,7 +507,7 @@ if __name__ == "__main__":
 
     if not token:
         raise ValueError("Token cannot be None or empty.")
-    
+
     aa_service = AlephAlphaService()
 
     aa_service.embedd_documents_aleph_alpha("data", token)

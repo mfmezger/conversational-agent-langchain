@@ -88,7 +88,7 @@ class CustomPromptCompletion(BaseModel):
     stop_sequences: List[str] = Field([], title="Stop Sequences", description="The stop sequences to use for the completion.")
 
 
-class QARequest(BaseModel):
+class RAGRequest(BaseModel):
     """Request for the QA endpoint."""
 
     search: SearchRequest
@@ -100,5 +100,5 @@ class QARequest(BaseModel):
 class ExplainQARequest(BaseModel):
     """Request for the QA endpoint."""
 
-    qa_request: QARequest
+    rag_request: RAGRequest
     explain_threshold: float = Field(0.7, title="Explain Threshold", description="The threshold to use for the explanation.")

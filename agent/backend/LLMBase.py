@@ -1,7 +1,7 @@
 """Strategy Pattern."""
 from abc import ABC, abstractmethod
 
-from agent.data_model.request_data_model import LLMProvider, QARequest, SearchRequest
+from agent.data_model.request_data_model import RAGRequest, SearchRequest
 
 
 class LLMBase(ABC):
@@ -29,7 +29,7 @@ class LLMBase(ABC):
         pass
 
     @abstractmethod
-    def rag(self, qa_request: QARequest):
+    def rag(self, qa_request: RAGRequest):
         """Retrieval Augmented Generation."""
         pass
 
