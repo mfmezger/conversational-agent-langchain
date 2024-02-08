@@ -14,7 +14,7 @@ class LLMBase(ABC):
         self.collection_name = collection_name
 
     @abstractmethod
-    def embed_documents(self, dir: str):
+    def embed_documents(self, directory: str):
         """Embedd new docments in the Qdrant DB."""
         pass
 
@@ -29,7 +29,7 @@ class LLMBase(ABC):
         pass
 
     @abstractmethod
-    def rag(self, qa_request: RAGRequest):
+    def rag(self, rag_request: RAGRequest):
         """Retrieval Augmented Generation."""
         pass
 

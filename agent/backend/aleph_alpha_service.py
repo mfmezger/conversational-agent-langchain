@@ -25,7 +25,7 @@ from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
-from agent.data_model.request_data_model import SearchRequest
+from agent.data_model.request_data_model import RAGRequest, SearchRequest
 from agent.utils.utility import generate_prompt
 from agent.utils.vdb import init_vdb
 
@@ -41,6 +41,7 @@ class AlephAlphaService(LLMBase):
 
     @load_config(location="config/main.yml")
     def __init__(self, cfg: DictConfig, collection_name: str, token: str) -> None:
+        super().__init__(token=token, collection_name=collection_name)
         """Initialize the Aleph Alpha Service."""
         if token:
             self.aleph_alpha_token = token
@@ -96,7 +97,11 @@ class AlephAlphaService(LLMBase):
 
         return init_vdb(self.cfg, collection_name, embedding)
 
-    def summarize_text_aleph_alpha(text: str, token: str) -> str:
+    def create_collection(self, name: str):
+        """Create a new collection in the Qdrant DB."""
+        pass
+
+    def summarize_text(self, text: str) -> str:
         """Summarizes the given text using the Luminous API.
 
         Args:
@@ -150,7 +155,7 @@ class AlephAlphaService(LLMBase):
 
         return str(response.completions[0].completion)
 
-    def embedd_documents_aleph_alpha(self, dir: str) -> None:
+    def embed_documents(self, directory: str, file_ending: str = "*.pdf"):
         """Embeds the documents in the given directory in the Aleph Alpha database.
 
         This method uses the Directory Loader for PDFs and the PyPDFium2Loader to load the documents.
@@ -163,9 +168,16 @@ class AlephAlphaService(LLMBase):
         Returns:
             None
         """
-        vector_db: Qdrant = self.get_db_connection()
+        vector_db: Qdrant = get_db_connection(collection_name=self.collection_name, aleph_alpha_token=self.aleph_alpha_token)
 
-        loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFium2Loader)
+        if file_ending == "*.pdf":
+            loader = DirectoryLoader(directory, glob=file_ending, loader_cls=PyPDFium2Loader)
+        elif file_ending == "*.txt":
+            loader = DirectoryLoader(directory, glob=file_ending, loader_cls=TextLoader)
+        else:
+            msg = "File ending not supported."
+            raise ValueError(msg)
+
         self.get_tokenizer()
 
         splitter = NLTKTextSplitter(length_function=self.count_tokens, chunk_size=300, chunk_overlap=50)
@@ -174,81 +186,19 @@ class AlephAlphaService(LLMBase):
         logger.info(f"Loaded {len(docs)} documents.")
         text_list = [doc.page_content for doc in docs]
         metadata_list = [doc.metadata for doc in docs]
+
+        for m in metadata_list:
+            # only when there are / in the source
+            if "/" in m["source"]:
+                m["source"] = m["source"].split("/")[-1]
+
+        vector_db.add_texts(texts=text_list, metadatas=metadata_list)
+
         vector_db.add_texts(texts=text_list, metadatas=metadata_list)
 
         logger.info("SUCCESS: Texts embedded.")
 
-    def embedd_text_aleph_alpha(self, text: str, file_name: str, seperator: str) -> None:
-        """Embeds the given text in the Aleph Alpha database.
-
-        Args:
-            text (str): The text to be embedded.
-            aleph_alpha_token (str): The Aleph Alpha API token.
-
-        Returns:
-            None
-        """
-        vector_db: Qdrant = self.get_db_connection()
-
-        # split the text at the seperator
-        text_list: List = text.split(seperator)
-
-        # check if first and last element are empty
-        if not text_list[0]:
-            text_list.pop(0)
-        if not text_list[-1]:
-            text_list.pop(-1)
-
-        metadata = file_name
-        # add _ and an incrementing number to the metadata
-        metadata_list: List = [{"source": f"{metadata}_{str(i)}", "page": 0} for i in range(len(text_list))]
-
-        vector_db.add_texts(texts=text_list, metadatas=metadata_list)
-        logger.info("SUCCESS: Text embedded.")
-
-    def embedd_text_files_aleph_alpha(self, folder: str, seperator: str) -> None:
-        """Embeds text files in the Aleph Alpha database.
-
-        Args:
-            folder (str): The folder containing the text files to embed.
-            aleph_alpha_token (str): The Aleph Alpha API token.
-            seperator (str): The seperator to use when splitting the text into chunks.
-
-        Returns:
-            None
-        """
-        vector_db: Qdrant = self.get_db_connection()
-
-        # iterate over the files in the folder
-        for file in os.listdir(folder):
-            # check if the file is a .txt or .md file
-            if not file.endswith((".txt", ".md")):
-                continue
-
-            # read the text from the file
-            text = pathlib.Path(os.path.join(folder, file)).read_text()
-            text_list: List = text.split(seperator)
-
-            # check if first and last element are empty
-            if not text_list[0]:
-                text_list.pop(0)
-            if not text_list[-1]:
-                text_list.pop(-1)
-
-            # ensure that the text is not empty
-            if not text_list:
-                raise ValueError("Text is empty.")
-
-            logger.info(f"Loaded {len(text_list)} documents.")
-            # get the name of the file
-            metadata = os.path.splitext(file)[0]
-            # add _ and an incrementing number to the metadata
-            metadata_list: List = [{"source": f"{metadata}_{str(i)}", "page": 0} for i in range(len(text_list))]
-            vector_db.add_texts(texts=text_list, metadatas=metadata_list)
-
-        logger.info("SUCCESS: Text embedded.")
-
-    def search_documents_aleph_alpha(self, search: SearchRequest) -> List[Tuple[LangchainDocument, float]]:
+    def search(self, search: SearchRequest) -> List[Tuple[LangchainDocument, float]]:
         """Searches the Aleph Alpha service for similar documents.
 
         Args:
@@ -259,25 +209,26 @@ class AlephAlphaService(LLMBase):
         Returns
             List[Tuple[Document, float]]: A list of tuples containing the documents and their similarity scores.
         """
-        if not aleph_alpha_token:
-            raise ValueError("Token cannot be None or empty.")
         if not query:
             raise ValueError("Query cannot be None or empty.")
         if amount < 1:
             raise ValueError("Amount must be greater than 0.")
+
         # TODO: FILTER
         try:
+
             vector_db: Qdrant = self.get_db_connection()
             docs = vector_db.similarity_search_with_score(query=searh.query, k=search.amount, score_threshold=search.filtering.threshold)
             logger.info("SUCCESS: Documents found.")
-            return docs
+
         except Exception as e:
+
             logger.error(f"ERROR: Failed to search documents: {e}")
             raise Exception(f"Failed to search documents: {e}") from e
 
-    def qa_aleph_alpha(
-        self, documents: list[tuple[LangchainDocument, float]], query: str, summarization: bool = False
-    ) -> Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]:
+        return docs
+
+    def rag(self, rag_request: RAGRequest) -> tuple:
         """QA takes a list of documents and returns a list of answers.
 
         Args:
@@ -298,7 +249,7 @@ class AlephAlphaService(LLMBase):
             # extract the text from the documents
             texts = [doc[0].page_content for doc in documents]
             if summarization:
-                text = "".join(self.summarize_text_aleph_alpha(t, aleph_alpha_token) for t in texts)
+                text = "".join(self.summarize_text_aleph_alpha(t) for t in texts)
             else:
                 # combine the texts to one text
                 text = " ".join(texts)
@@ -317,13 +268,13 @@ class AlephAlphaService(LLMBase):
                 logger.info("Prompt too long. Summarizing.")
 
                 # summarize the text
-                short_text = self.summarize_text_aleph_alpha(text, aleph_alpha_token)
+                short_text = self.summarize_text_aleph_alpha(text)
 
                 # generate the prompt
                 prompt = generate_prompt("aleph_alpha_qa.j2", text=short_text, query=query)
 
                 # call the luminous api
-                answer = self.send_completion_request(prompt, aleph_alpha_token)
+                answer = self.send_completion_request(prompt)
 
         # extract the answer
         return answer, prompt, meta_data
@@ -373,41 +324,6 @@ class AlephAlphaService(LLMBase):
 
         return explanation, score, text, answer, meta_data
 
-    def explain_completion(self, prompt: str, output: str, token: str) -> Dict[str, float]:
-        # TODO: repair
-        """Returns an explanation of the given completion.
-
-        Args:
-            prompt (str): The complete input in the model.
-            output (str): The answer of the model.
-            token (str): The Aleph Alpha API Token.
-
-        Returns:
-            dict: A dictionary containing the explanation. The keys are sentences from the prompt, and the values are the scores.
-
-        Raises:
-            ValueError: If the prompt, output, or token is None or empty.
-        """
-        exp_req = ExplanationRequest(Prompt.from_text(prompt), output, control_factor=0.1, prompt_granularity="sentence")
-        client = Client(token=token)
-        response_explain = client.explain(exp_req, model="luminous-extended-control")
-        explanations = response_explain.explanations[0].items[0]
-
-        # sort the explanations by score
-        # explanations = sorted(explanations, key=lambda x: x.score, reverse=True)
-
-        template = generate_prompt(prompt_name="aleph_alpha_qa.j2", text="", language="de")
-
-        result = {}
-        # remove the prompt from the explanations
-        for item in explanations:
-            start = item.start
-            end = item.start + item.length
-            if prompt[start:end] not in template:
-                result[prompt[start:end]] = np.round(item.score, decimals=3)
-
-        return result
-
     def process_documents_aleph_alpha(self, folder: str, type: str) -> List[str]:
         """Process the documents in the given folder.
 
@@ -444,7 +360,7 @@ class AlephAlphaService(LLMBase):
             # combine the prompt and the text
             prompt_text = generate_prompt(prompt_name=prompt_name, text=doc.page_content, language="en")
             # call the luminous api
-            answer = self.send_completion_request(prompt_text, token)
+            answer = self.send_completion_request(prompt_text)
 
             answers.append(answer)
 
@@ -487,20 +403,6 @@ class AlephAlphaService(LLMBase):
 
         return str(response.completions[0].completion)
 
-    def qa_chain(self, query: str, token: str, collection_name: str):
-        """QA Chain Impl."""
-        # TODO:
-        vector_db: Qdrant = self.get_db_connection(collection_name=collection_name, aleph_alpha_token=token)
-
-        retriever = vector_db.as_retriever()
-
-        retrieved_docs = retriever.invoke(query)
-
-    def self_question_qa():
-        """Self question QA."""
-        # TODO
-        pass
-
 
 if __name__ == "__main__":
     token = os.getenv("ALEPH_ALPHA_API_KEY")
@@ -510,9 +412,9 @@ if __name__ == "__main__":
 
     aa_service = AlephAlphaService()
 
-    aa_service.embedd_documents_aleph_alpha("data", token)
+    aa_service.embed_documents("tests/resources/")
     # open the text file and read the text
-    DOCS = aa_service.search_documents_aleph_alpha(query="What are Attentions?", amount=1)
+    DOCS = aa_service.search(search=SearchRequest(query="What are Attentions?"))
     logger.info(DOCS)
     # explanation, score, text, answer, meta_data = explain_qa(aleph_alpha_token=token, document=DOCS, query="What are Attentions?")
     # logger.info(f"Answer: {answer}")

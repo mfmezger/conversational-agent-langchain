@@ -11,30 +11,9 @@ from qdrant_client import models
 from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
 
-from agent.backend.aleph_alpha_service import (
-    custom_completion_prompt_aleph_alpha,
-    embedd_documents_aleph_alpha,
-    embedd_text_aleph_alpha,
-    embedd_text_files_aleph_alpha,
-    explain_qa,
-    process_documents_aleph_alpha,
-    qa_aleph_alpha,
-    search_documents_aleph_alpha,
-    summarize_text_aleph_alpha,
-)
-from agent.backend.gpt4all_service import (
-    custom_completion_prompt_gpt4all,
-    embedd_documents_gpt4all,
-    embedd_text_gpt4all,
-    qa_gpt4all,
-    search_documents_gpt4all,
-    summarize_text_gpt4all,
-)
-from agent.backend.open_ai_service import (
-    embedd_documents_openai,
-    search_documents_openai,
-    send_custom_completion_openai,
-)
+from agent.backend.aleph_alpha_service import AlephAlphaService
+from agent.backend.gpt4all_service import GPT4AllService
+from agent.backend.open_ai_service import OpenAIService
 from agent.data_model.request_data_model import (
     CustomPromptCompletion,
     EmbeddTextFilesRequest,
@@ -58,7 +37,7 @@ from agent.utils.utility import (
 from agent.utils.vdb import load_vec_db_conn
 
 # add file logger for loguru
-logger.add("logs/file_{time}.log", backtrace=False, diagnose=False)
+# logger.add("logs/file_{time}.log", backtrace=False, diagnose=False)
 logger.info("Startup.")
 
 
