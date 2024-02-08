@@ -25,6 +25,9 @@ class OpenAIService(LLMBase):
 
     @load_config(location="config/main.yml")
     def __init__(self, cfg: DictConfig, collection_name: str, token: str) -> None:
+        """Init the OpenAI Service."""
+        super().__init__(token=token, collection_name=collection_name)
+
         """Openai Service."""
         if token:
             self.openai_token = token
@@ -86,7 +89,7 @@ class OpenAIService(LLMBase):
         vector_db.add_texts(texts=texts, metadatas=metadatas)
         logger.info("SUCCESS: Texts embedded.")
 
-    def search_documents_openai(self, search: SearchRequest) -> List[Tuple[Document, float]]:
+    def search(self, search: SearchRequest) -> List[Tuple[Document, float]]:
         """Searches the documents in the Qdrant DB with a specific query.
 
         Args:
@@ -103,7 +106,7 @@ class OpenAIService(LLMBase):
         logger.info("SUCCESS: Documents found.")
         return docs
 
-    def summarize_text_openai(self, text: str, token: str) -> str:
+    def summarize_text(self, text: str, token: str) -> str:
         """Summarizes the given text using the Luminous API.
 
         Args:
@@ -190,7 +193,7 @@ class OpenAIService(LLMBase):
 
         return response.choices[0].text
 
-    def qa_openai(self, documents: list[tuple[Document, float]], query: str, summarization: bool = False) -> tuple[Any, str, dict[Any, Any]]:
+    def rag(self, documents: list[tuple[Document, float]], query: str, summarization: bool = False) -> tuple[Any, str, dict[Any, Any]]:
         """QA Function for OpenAI LLMs.
 
         Args:
