@@ -44,14 +44,16 @@ class OpenAIService(LLMBase):
         else:
             self.collection_name = self.cfg.qdrant.collection_name_openai
 
-    @load_config(location="config/db.yml")
-    def get_db_connection(self) -> Qdrant:
-        """Initializes a connection to the Qdrant DB.
+    def create_collection(self, name: str) -> None:
+        """Create a new collection in the Vector Database.
 
         Args:
-            open_ai_token (str): The openai token.
-            cfg (DictConfig): the config file.
-            collection_name (str): The name of the vector database collection.
+            name (str): The name of the new collection.
+        """
+        raise NotImplementedError
+
+    def get_db_connection(self) -> Qdrant:
+        """Initializes a connection to the Qdrant DB.
 
         Returns:
             Qdrant: An Langchain Instance of the Qdrant DB.
@@ -61,10 +63,10 @@ class OpenAIService(LLMBase):
         else:
             embedding = OpenAIEmbeddings(model=self.cfg.openai.deployment, openai_api_key=self.open_ai_token)
 
-        if collection_name is None or not collection_name:
+        if not self.collection_name:
             collection_name = self.cfg.qdrant.collection_name_openai
 
-        return init_vdb(self.cfg, collection_name, embedding)
+        return init_vdb(self.cfg, self.collection_name, embedding)
 
     def embedd_documents_openai(self, directory: str) -> None:
         """embedd_documents embedds the documents in the given directory.
@@ -107,11 +109,11 @@ class OpenAIService(LLMBase):
         return docs
 
     def summarize_text(self, text: str, token: str) -> str:
-        """Summarizes the given text using the Luminous API.
+        """Summarizes the given text using the OpenAI API.
 
         Args:
             text (str): The text to be summarized.
-            token (str): The token for the Luminous API.
+            token (str): The token for the OpenAI API.
 
         Returns:
             str: The summary of the text.

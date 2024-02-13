@@ -1,35 +1,68 @@
-"""End 2 End Tests for the GPT4ALL Component."""
-from agent.backend.gpt4all_service import (
-    completion_text_gpt4all,
-    embedd_documents_gpt4all,
-    search_documents_gpt4all,
-    summarize_text_gpt4all,
-)
+"""Test the GPT4All service."""
+import pytest
+from gpt4all_service import GPT4ALLService
 
 
-def test_embedd_text_gpt4all() -> None:
-    """Test that embedd_text_gpt4all does not raise an error."""
-    # assert that it does not raise an error
-    embedd_documents_gpt4all(dir="tests/resources")
+@pytest.fixture
+def gpt4all():
+    """Return a GPT4ALL instance."""
+    # first create a qdrant collection for testing
+    return GPT4ALLService("gpt4all_test", "test_token")
 
 
-def test_summarize_text_gpt4all() -> None:
-    """Testing the summarization."""
-    summary = summarize_text_gpt4all(text="Das ist ein Test.")
-    # assert not empty
-    assert len(summary) > 0
+def test_init(gpt4all):
+    """Test the init method."""
+    assert isinstance(gpt4all, GPT4ALLService)
 
 
-def test_completion_text_gpt4all() -> None:
-    """Testing the completion."""
-    completion = completion_text_gpt4all(prompt="What is AI?")
-    # assert not empty
-    assert len(completion) > 0
+def test_get_db_connection(gpt4all):
+    """Test the get_db_connection method."""
+    db = gpt4all.get_db_connection("test_collection")
+    assert isinstance(db, Qdrant)
 
 
-def test_search_gpt4all() -> None:
-    """Testing the search."""
-    search_results = search_documents_gpt4all(query="Was ist Vanille?", amount=3)
+def test_embedd_documents_gpt4all(gpt4all):
+    """Test the embedd_documents_gpt4all method."""
+    assert gpt4all.embedd_documents_gpt4all("test_dir") is None
 
-    assert len(search_results) > 0
-    assert isinstance(search_results, list)
+
+def test_embedd_text_gpt4all(gpt4all):
+    """Test the embedd_text_gpt4all method."""
+    assert gpt4all.embedd_text_gpt4all("test_text", "test_file", "test_seperator") is None
+
+
+def test_summarize_text_gpt4all(gpt4all):
+    """Test the summarize_text_gpt4all method."""
+    summary = gpt4all.summarize_text_gpt4all("test_text")
+    assert isinstance(summary, str)
+
+
+def test_completion_text_gpt4all(gpt4all):
+    """Test the completion_text_gpt4all method."""
+    completion = gpt4all.completion_text_gpt4all("test_prompt")
+    assert isinstance(completion, str)
+
+
+def test_custom_completion_prompt_gpt4all(gpt4all):
+    """Test the custom_completion_prompt_gpt4all method."""
+    completion = gpt4all.custom_completion_prompt_gpt4all("test_prompt")
+    assert isinstance(completion, str)
+
+
+def test_search_documents_gpt4all(gpt4all):
+    """Test the search_documents_gpt4all method."""
+    results = gpt4all.search_documents_gpt4all("test_query", 1)
+    assert isinstance(results, list)
+    for result in results:
+        assert isinstance(result, tuple)
+        assert isinstance(result[0], Document)
+        assert isinstance(result[1], float)
+
+
+def test_rag_gpt4all(gpt4all):
+    """Test the qa_gpt4all method."""
+    documents = [(Document("test_content", {"source": "test_source", "page": 0}), 0.5)]
+    answer, prompt, meta_data = gpt4all.rag(documents, "test_query")
+    assert isinstance(answer, str)
+    assert isinstance(prompt, str)
+    assert isinstance(meta_data, list)

@@ -1,8 +1,7 @@
 """The script to initialize the Qdrant db backend with aleph alpha."""
 
 import os
-import pathlib
-from typing import Any, Dict, List, Tuple, Union
+from typing import List, Tuple
 
 import nltk
 import numpy as np
@@ -39,8 +38,9 @@ tokenizer = None
 class AlephAlphaService(LLMBase):
     """Aleph Alpha Strategy implementation."""
 
-    @load_config(location="config/main.yml")
+    @load_config(location="config/db.yml")
     def __init__(self, cfg: DictConfig, collection_name: str, token: str) -> None:
+        """Initialize the Aleph Alpha Service."""
         super().__init__(token=token, collection_name=collection_name)
         """Initialize the Aleph Alpha Service."""
         if token:

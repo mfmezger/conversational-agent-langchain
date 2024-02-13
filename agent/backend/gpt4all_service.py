@@ -12,16 +12,17 @@ from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
+from agent.backend.LLMBase import LLMBase
 from agent.utils.utility import generate_prompt
 from agent.utils.vdb import init_vdb
 
 load_dotenv()
 
 
-class GPT4ALL(LLMBase):
+class GPT4AllService(LLMBase):
     """GPT4ALL Backend Service."""
 
-    @load_config(location="config/main.yml")
+    @load_config(location="config/db.yml")
     def __init__(self, cfg: DictConfig, collection_name: str, token: str | None) -> None:
         """Init the GPT4ALL Service."""
         self.cfg = cfg
@@ -30,6 +31,8 @@ class GPT4ALL(LLMBase):
             self.collection_name = collection_name
         else:
             self.collection_name = self.cfg.qdrant.collection_name_gpt4all
+
+        self.vector_db = self.get_db_connection(self.collection_name)
 
     def get_db_connection(self, collection_name: str) -> Qdrant:
         """Initializes a connection to the Qdrant DB.
@@ -42,58 +45,49 @@ class GPT4ALL(LLMBase):
             Qdrant: The Qdrant DB connection.
         """
         embedding = GPT4AllEmbeddings()
-        if collection_name is None or not collection_name:
-            collection_name = cfg.qdrant.collection_name_gpt4all
 
-        return init_vdb(cfg, collection_name, embedding)
+        return init_vdb(self.cfg, self.collection_name, embedding)
 
-    def embedd_documents_gpt4all(self, directoy: str) -> None:
-        """embedd_documents embedds the documents in the given directory.
+    def create_collection(self, name: str):
+        """Create a new collection in the Vector Database."""
+        pass
 
-        :param cfg: Configuration from the file
-        :type cfg: DictConfig
-        :param dir: PDF Directory
-        :type dir: str
+    def embed_documents(self, directory: str, file_ending: str = "*.pdf") -> None:
+        """Embeds the documents in the given directory.
+
+        Args:
+            cfg (DictConfig): Configuration from the file.
+            dir (str): PDF Directory.
+
+        Returns:
+            None
         """
-        vector_db: Qdrant = get_db_connection(collection_name=collection_name)
+        if file_ending == "*.pdf":
+            loader = DirectoryLoader(directory, glob=file_ending, loader_cls=PyPDFium2Loader)
+        elif file_ending == "*.txt":
+            loader = DirectoryLoader(directory, glob=file_ending, loader_cls=TextLoader)
+        else:
+            msg = "File ending not supported."
+            raise ValueError(msg)
 
-        loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFium2Loader)
-        splitter = NLTKTextSplitter(chunk_size=500, chunk_overlap=100)
+        splitter = NLTKTextSplitter(length_function=len, chunk_size=300, chunk_overlap=50)
+
         docs = loader.load_and_split(splitter)
 
         logger.info(f"Loaded {len(docs)} documents.")
-        texts = [doc.page_content for doc in docs]
-        metadatas = [doc.metadata for doc in docs]
-        vector_db.add_texts(texts=texts, metadatas=metadatas)
+        text_list = [doc.page_content for doc in docs]
+        metadata_list = [doc.metadata for doc in docs]
+
+        for m in metadata_list:
+            # only when there are / in the source
+            if "/" in m["source"]:
+                m["source"] = m["source"].split("/")[-1]
+
+        self.vector_db.add_texts(texts=text_list, metadatas=metadata_list)
+
         logger.info("SUCCESS: Texts embedded.")
 
-    def embedd_text_gpt4all(self, text: str, file_name: str, seperator: str) -> None:
-        """embedd_documents embedds the documents in the given directory.
-
-        :param cfg: Configuration from the file
-        :type cfg: DictConfig
-        :param dir: PDF Directory
-        :type dir: str
-        """
-        vector_db: Qdrant = get_db_connection(collection_name=collection_name)
-
-        # split the text at the seperator
-        text_list: List = text.split(seperator)
-
-        # check if first and last element are empty
-        if not text_list[0]:
-            text_list.pop(0)
-        if not text_list[-1]:
-            text_list.pop(-1)
-
-        metadata = file_name
-        # add _ and an incrementing number to the metadata
-        metadata_list: List = [{"source": f"{metadata}_{str(i)}", "page": 0} for i in range(len(text_list))]
-
-        vector_db.add_texts(texts=text_list, metadatas=metadata_list)
-        logger.info("SUCCESS: Text embedded.")
-
-    def summarize_text_gpt4all(self, text: str) -> str:
+    def summarize_text(self, text: str) -> str:
         """Summarize text with GPT4ALL.
 
         Args:
@@ -139,7 +133,7 @@ class GPT4ALL(LLMBase):
 
         return str(output)
 
-    def search_documents_gpt4all(self, query: str, amount: int, threshold: float = 0.0) -> List[Tuple[Document, float]]:
+    def search(self, query: str, amount: int, threshold: float = 0.0) -> List[Tuple[Document, float]]:
         """Searches the documents in the Qdrant DB with a specific query.
 
         Args:
@@ -156,7 +150,7 @@ class GPT4ALL(LLMBase):
         logger.info("SUCCESS: Documents found.")
         return docs
 
-    def qa_gpt4all(self, documents: list[tuple[Document, float]], query: str, summarization: bool = False, language: str = "de"):
+    def rag(self, documents: list[tuple[Document, float]], query: str, summarization: bool = False, language: str = "de"):
         """QA takes a list of documents and returns a list of answers.
 
         Args:
@@ -213,15 +207,15 @@ class GPT4ALL(LLMBase):
 
 if __name__ == "__main__":
 
-    gpt4all_service = GPT4AllService(collection_name="gpt4all")
+    gpt4all_service = GPT4AllService(collection_name="gpt4all", token="")
 
-    gpt4all.embedd_documents_gpt4all(dir="data")
+    gpt4all_service.embed_documents(directory="data")
 
-    print(f'Summary: {gpt4all.summarize_text_gpt4all(text="Das ist ein Test.")}')
+    print(f'Summary: {gpt4all_service.summarize_text(text="Das ist ein Test.")}')
 
-    print(f'Completion: {gpt4all.completion_text_gpt4all(text="Das ist ein Test.", query="Was ist das?")}')
+    print(f'Completion: {gpt4all_service.completion_text_gpt4all(text="Das ist ein Test.", query="Was ist das?")}')
 
-    answer, prompt, meta_data = gpt4all_service.qa_gpt4all(documents=search_documents_gpt4all(query="Das ist ein Test.", amount=1), query="Was ist das?")
+    answer, prompt, meta_data = gpt4all_service.rag(documents=search(query="Das ist ein Test.", amount=1), query="Was ist das?")
 
     logger.info(f"Answer: {answer}")
     logger.info(f"Prompt: {prompt}")
