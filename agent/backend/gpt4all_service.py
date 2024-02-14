@@ -70,7 +70,7 @@ class GPT4AllService(LLMBase):
             msg = "File ending not supported."
             raise ValueError(msg)
 
-        splitter = NLTKTextSplitter(length_function=len, chunk_size=300, chunk_overlap=50)
+        splitter = NLTKTextSplitter(length_function=len, chunk_size=500, chunk_overlap=75)
 
         docs = loader.load_and_split(splitter)
 
@@ -98,7 +98,7 @@ class GPT4AllService(LLMBase):
         """
         prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, language="de")
 
-        model = GPT4All(self.cfg.gpt4all.completion_model)
+        model = GPT4All(self.cfg.gpt4all_completion.completion_model)
 
         return model.generate(prompt, max_tokens=300)
 
@@ -112,7 +112,7 @@ class GPT4AllService(LLMBase):
         Returns:
             str: The completed text.
         """
-        model = GPT4All(self.cfg.gpt4all.completion_model)
+        model = GPT4All(self.cfg.gpt4all_completion.completion_model)
 
         return model.generate(prompt, max_tokens=100)
 
@@ -144,9 +144,7 @@ class GPT4AllService(LLMBase):
             List[Tuple[Document, float]]: A list of search results, where each result is a tuple
             containing a Document object and a float score.
         """
-        vector_db: Qdrant = get_db_connection(collection_name=collection_name)
-
-        docs = vector_db.similarity_search_with_score(query=query, k=amount, score_threshold=threshold)
+        docs = self.vector_db.similarity_search_with_score(query=query, k=amount, score_threshold=threshold)
         logger.info("SUCCESS: Documents found.")
         return docs
 
@@ -184,7 +182,7 @@ class GPT4AllService(LLMBase):
 
             # call the luminous api
             logger.info("starting completion")
-            answer = completion_text_gpt4all(prompt)
+            answer = self.completion_text_gpt4all(prompt)
             logger.info(f"completion done with answer {answer}")
 
         except ValueError as e:
@@ -193,13 +191,13 @@ class GPT4AllService(LLMBase):
                 logger.info("Prompt too long. Summarizing.")
 
                 # summarize the text
-                short_text = summarize_text_gpt4all(text)
+                short_text = self.summarize_text_gpt4all(text)
 
                 # generate the prompt
                 prompt = generate_prompt("gpt4all-completion.j2", text=short_text, query=query, language=language)
 
                 # call the luminous api
-                answer = completion_text_gpt4all(prompt)
+                answer = self.completion_text_gpt4all(prompt)
 
         # extract the answer
         return answer, prompt, meta_data
@@ -211,11 +209,15 @@ if __name__ == "__main__":
 
     gpt4all_service.embed_documents(directory="data")
 
-    print(f'Summary: {gpt4all_service.summarize_text(text="Das ist ein Test.")}')
+    print(f'Summary: {gpt4all_service.summarize_text(text="Was ist Attention?")}')
 
-    print(f'Completion: {gpt4all_service.completion_text_gpt4all(text="Das ist ein Test.", query="Was ist das?")}')
+    print(f'Completion: {gpt4all_service.completion_text_gpt4all(prompt="Was ist Attention?")}')
 
-    answer, prompt, meta_data = gpt4all_service.rag(documents=search(query="Das ist ein Test.", amount=1), query="Was ist das?")
+    docs = gpt4all_service.search(query="Was ist Attention?", amount=1)
+
+    logger.info(f"Documents: {docs}")
+
+    answer, prompt, meta_data = gpt4all_service.rag(documents=docs, query="Was ist das?")
 
     logger.info(f"Answer: {answer}")
     logger.info(f"Prompt: {prompt}")

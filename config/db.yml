@@ -17,3 +17,28 @@ openai:
   azure: True
   deployment: embedding-ada
   openai_api_version: 2023-05-15
+
+aleph_alpha_completion:
+  model: "luminous-extended-control"
+  temperature: 0
+  max_tokens: 200
+  top_p: 0 # not used must be changed in aleph alpha service send_completion_request
+  frequency_penalty: 0 # not used must be changed in aleph alpha service send_completion_request
+  presence_penalty: 0 # not used must be changed in aleph alpha service send_completion_request
+  best_of: 1 # not used must be changed in aleph alpha service send_completion_request
+  repetition_penalties_include_prompt: True # not used must be changed in aleph alpha service send_completion_request
+  stop_sequences: "###"
+  repetition_penalties_include_completion: True
+
+gpt4all_completion:
+  completion_model: "orca-mini-3b-gguf2-q4_0.gguf" # "mistral-7b-openorca.Q4_0.gguf"
+
+openai_completion:
+  model: gpt3.5
+  temperature: 0
+  max_tokens: 500
+  top_p: 1
+  frequency_penalty: 0
+  presence_penalty: 0
+  best_of: 1
+  stop: None
