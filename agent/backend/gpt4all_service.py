@@ -1,9 +1,6 @@
 """GPT4ALL Backend Service."""
-from typing import List, Tuple
-
 from dotenv import load_dotenv
 from gpt4all import GPT4All
-from langchain.docstore.document import Document
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader
 from langchain_community.embeddings import GPT4AllEmbeddings
@@ -13,6 +10,7 @@ from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
+from agent.data_model.request_data_model import RAGRequest, SearchRequest
 from agent.utils.utility import generate_prompt
 from agent.utils.vdb import init_vdb
 
@@ -133,7 +131,7 @@ class GPT4AllService(LLMBase):
 
         return str(output)
 
-    def search(self, query: str, amount: int, threshold: float = 0.0) -> List[Tuple[Document, float]]:
+    def search(self, search: SearchRequest) -> tuple:
         """Searches the documents in the Qdrant DB with a specific query.
 
         Args:
@@ -144,11 +142,11 @@ class GPT4AllService(LLMBase):
             List[Tuple[Document, float]]: A list of search results, where each result is a tuple
             containing a Document object and a float score.
         """
-        docs = self.vector_db.similarity_search_with_score(query=query, k=amount, score_threshold=threshold)
+        docs = self.vector_db.similarity_search_with_score(query=search.query, k=search.amount, score_threshold=search.filtering.threshold)
         logger.info("SUCCESS: Documents found.")
         return docs
 
-    def rag(self, documents: list[tuple[Document, float]], query: str, summarization: bool = False, language: str = "de"):
+    def rag(self, rag_request: RAGRequest) -> tuple:
         """QA takes a list of documents and returns a list of answers.
 
         Args:
@@ -161,7 +159,7 @@ class GPT4AllService(LLMBase):
             Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]: A tuple containing the answer, the prompt, and the metadata for the documents.
         """
         # if the list of documents contains only one document extract the text directly
-        if len(documents) == 1:
+        if len(rag_request.documents) == 1:
             text = documents[0][0].page_content
             meta_data = documents[0][0].metadata
 
@@ -213,11 +211,11 @@ if __name__ == "__main__":
 
     print(f'Completion: {gpt4all_service.completion_text_gpt4all(prompt="Was ist Attention?")}')
 
-    docs = gpt4all_service.search(query="Was ist Attention?", amount=1)
+    docs = gpt4all_service.search(SearchRequest(query="Was ist Attention?", amount=1))
 
     logger.info(f"Documents: {docs}")
 
-    answer, prompt, meta_data = gpt4all_service.rag(documents=docs, query="Was ist das?")
+    answer, prompt, meta_data = gpt4all_service.rag(RAGRequest(documents=docs, query="Was ist das?"))
 
     logger.info(f"Answer: {answer}")
     logger.info(f"Prompt: {prompt}")

@@ -92,9 +92,6 @@ class AlephAlphaService(LLMBase):
             compress_to_size=self.cfg.aleph_alpha_embeddings.compress_to_size,
         )
 
-        if collection_name is None or not collection_name:
-            collection_name = self.cfg.qdrant.collection_name_aa
-
         return init_vdb(self.cfg, collection_name, embedding)
 
     def create_collection(self, name: str):
@@ -249,7 +246,7 @@ class AlephAlphaService(LLMBase):
             # extract the text from the documents
             texts = [doc[0].page_content for doc in documents]
             if summarization:
-                text = "".join(self.summarize_text_aleph_alpha(t) for t in texts)
+                text = "".join(self.summarize_text(t) for t in texts)
             else:
                 # combine the texts to one text
                 text = " ".join(texts)
@@ -268,7 +265,7 @@ class AlephAlphaService(LLMBase):
                 logger.info("Prompt too long. Summarizing.")
 
                 # summarize the text
-                short_text = self.summarize_text_aleph_alpha(text)
+                short_text = self.summarize_text(text)
 
                 # generate the prompt
                 prompt = generate_prompt("aleph_alpha_qa.j2", text=short_text, query=query)

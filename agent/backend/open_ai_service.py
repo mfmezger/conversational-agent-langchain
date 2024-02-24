@@ -14,6 +14,7 @@ from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
+from agent.data_model.request_data_model import RAGRequest, SearchRequest
 from agent.utils.utility import generate_prompt
 from agent.utils.vdb import init_vdb
 
@@ -68,7 +69,7 @@ class OpenAIService(LLMBase):
 
         return init_vdb(self.cfg, self.collection_name, embedding)
 
-    def embedd_documents_openai(self, directory: str) -> None:
+    def embed_documents(self, directory: str) -> None:
         """embedd_documents embedds the documents in the given directory.
 
         :param cfg: Configuration from the file
@@ -195,7 +196,7 @@ class OpenAIService(LLMBase):
 
         return response.choices[0].text
 
-    def rag(self, documents: list[tuple[Document, float]], query: str, summarization: bool = False) -> tuple[Any, str, dict[Any, Any]]:
+    def rag(self, rag_request: RAGRequest) -> tuple[Any, str, dict[Any, Any]]:
         """QA Function for OpenAI LLMs.
 
         Args:
@@ -261,11 +262,11 @@ if __name__ == "__main__":
 
     openai_service = OpenAIService(collection_name="openai", token=token)
 
-    openai_service.embedd_documents_openai(directory="data")
+    openai_service.embed_documents(directory="data")
 
-    DOCS = openai_service.search_documents_openai(query="Was ist Vanille?", amount=3)
+    DOCS = openai_service.search(SearchRequest(query="Was ist Vanille?"))
     print(f"DOCUMENTS: {DOCS}")
 
-    summary = openai_service.summarize_text_openai(text="Below is an extract from the annual financial report of a company. ", token=token)
+    summary = openai_service.rag(RAGRequest(query="Was ist Vanille?", documents=DOCS))
 
     print(f"SUMMARY: {summary}")
