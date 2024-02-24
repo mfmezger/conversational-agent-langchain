@@ -416,8 +416,5 @@ if __name__ == "__main__":
     # open the text file and read the text
     DOCS = aa_service.search(search=SearchRequest(query="What are Attentions?"))
     logger.info(DOCS)
-    # explanation, score, text, answer, meta_data = explain_qa(aleph_alpha_token=token, document=DOCS, query="What are Attentions?")
-    # logger.info(f"Answer: {answer}")
-    # explanations = explain_completion(prompt, answer, token)
 
-    # print(explanation)
+    answer, prompt, meta_data = aa_service.rag(rag_request=RAGRequest(documents=DOCS, query="What are Attentions?"))
