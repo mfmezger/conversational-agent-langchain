@@ -8,6 +8,7 @@ from langchain.prompts import PromptTemplate
 from lingua import Language, LanguageDetectorBuilder
 from loguru import logger
 
+from agent.data_model.internal_model import RetrievalResults
 from agent.data_model.request_data_model import LLMProvider
 
 # add new languages to detect here
@@ -147,6 +148,18 @@ def validate_token(token: str | None, llm_backend: Union[str, LLMProvider], alep
     else:
         token = "gpt4all"
     return token
+
+
+def convert_qdrant_result_to_retrieval_results(docs: list) -> list[RetrievalResults]:
+    """Converts the Qdrant result to a list of tuples.
+
+    Args:
+        docs (list): The Qdrant result.
+
+    Returns:
+        list: The list of tuples.
+    """
+    return [RetrievalResults(document=doc[0].page_content, score=doc[1], metadata=doc[0].metadata) for doc in docs]
 
 
 if __name__ == "__main__":

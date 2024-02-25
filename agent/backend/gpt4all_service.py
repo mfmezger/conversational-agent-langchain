@@ -10,8 +10,17 @@ from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
-from agent.data_model.request_data_model import RAGRequest, SearchRequest
-from agent.utils.utility import generate_prompt
+from agent.data_model.internal_model import RetrievalResults
+from agent.data_model.request_data_model import (
+    Filtering,
+    LLMBackend,
+    RAGRequest,
+    SearchRequest,
+)
+from agent.utils.utility import (
+    convert_qdrant_result_to_retrieval_results,
+    generate_prompt,
+)
 from agent.utils.vdb import init_vdb
 
 load_dotenv()
@@ -112,7 +121,7 @@ class GPT4AllService(LLMBase):
         """
         model = GPT4All(self.cfg.gpt4all_completion.completion_model)
 
-        return model.generate(prompt, max_tokens=100)
+        return model.generate(prompt, max_tokens=250)
 
     def custom_completion_prompt_gpt4all(self, prompt: str, model: str = "orca-mini-3b.ggmlv3.q4_0.bin", max_tokens: int = 256, temperature: float = 0) -> str:
         """This method sents a custom completion request to the Aleph Alpha API.
@@ -131,7 +140,7 @@ class GPT4AllService(LLMBase):
 
         return str(output)
 
-    def search(self, search: SearchRequest) -> tuple:
+    def search(self, search: SearchRequest) -> list[RetrievalResults]:
         """Searches the documents in the Qdrant DB with a specific query.
 
         Args:
@@ -143,79 +152,64 @@ class GPT4AllService(LLMBase):
             containing a Document object and a float score.
         """
         docs = self.vector_db.similarity_search_with_score(query=search.query, k=search.amount, score_threshold=search.filtering.threshold)
-        logger.info("SUCCESS: Documents found.")
-        return docs
+        logger.info(f"SUCCESS: {len(docs)} Documents found.")
+
+        return convert_qdrant_result_to_retrieval_results(docs)
 
     def rag(self, rag_request: RAGRequest) -> tuple:
-        """QA takes a list of documents and returns a list of answers.
+        """RAG takes a Rag Request Object and performs a semantic search and then a generation.
 
         Args:
-            aleph_alpha_token (str): The Aleph Alpha API token.
-            documents (List[Tuple[Document, float]]): A list of tuples containing the document and its relevance score.
-            query (str): The query to ask.
-            summarization (bool, optional): Whether to use summarization. Defaults to False.
+            rag_request (RAGRequest): The RAG Request Object.
 
         Returns:
-            Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]: A tuple containing the answer, the prompt, and the metadata for the documents.
+            Tuple[str, str, List[RetrievalResults]]: The answer, the prompt and the metadata.
         """
-        # if the list of documents contains only one document extract the text directly
-        if len(rag_request.documents) == 1:
-            text = documents[0][0].page_content
-            meta_data = documents[0][0].metadata
-
+        documents = self.search(rag_request.search)
+        if rag_request.search.amount == 0:
+            raise ValueError("No documents found.")
+        if rag_request.search.amount > 1:
+            # extract all documents
+            text = "\n".join([doc.document for doc in documents])
         else:
-            # extract the text from the documents
-            texts = [doc[0].page_content for doc in documents]
-            if summarization:
-                text = "".join(summarize_text_gpt4all(t) for t in texts)
-            else:
-                # combine the texts to one text
-                text = " ".join(texts)
-            meta_data = [doc[0].metadata for doc in documents]
+            text = documents[0].document
 
-        # load the prompt
-        prompt = generate_prompt("gpt4all-completion.j2", text=text, query=query, language=language)
+        prompt = generate_prompt(prompt_name="gpt4all-completion.j2", text=text, query=rag_request.search.query)
 
-        try:
+        answer = self.completion_text_gpt4all(prompt)
 
-            # call the luminous api
-            logger.info("starting completion")
-            answer = self.completion_text_gpt4all(prompt)
-            logger.info(f"completion done with answer {answer}")
-
-        except ValueError as e:
-            # if the code is PROMPT_TOO_LONG, split it into chunks
-            if e.args[0] == "PROMPT_TOO_LONG":
-                logger.info("Prompt too long. Summarizing.")
-
-                # summarize the text
-                short_text = self.summarize_text_gpt4all(text)
-
-                # generate the prompt
-                prompt = generate_prompt("gpt4all-completion.j2", text=short_text, query=query, language=language)
-
-                # call the luminous api
-                answer = self.completion_text_gpt4all(prompt)
-
-        # extract the answer
-        return answer, prompt, meta_data
+        return answer, prompt, documents
 
 
 if __name__ == "__main__":
 
     gpt4all_service = GPT4AllService(collection_name="gpt4all", token="")
 
-    gpt4all_service.embed_documents(directory="data")
+    gpt4all_service.embed_documents(directory="tests/resources/")
 
-    print(f'Summary: {gpt4all_service.summarize_text(text="Was ist Attention?")}')
-
-    print(f'Completion: {gpt4all_service.completion_text_gpt4all(prompt="Was ist Attention?")}')
-
-    docs = gpt4all_service.search(SearchRequest(query="Was ist Attention?", amount=1))
+    docs = gpt4all_service.search(
+        SearchRequest(
+            query="Was ist Attention?",
+            amount=3,
+            filtering=Filtering(threshold=0.0, collection_name="gpt4all"),
+            llm_backend=LLMBackend(token="gpt4all, provider=LLMProvider.GPT4ALL"),
+        )
+    )
 
     logger.info(f"Documents: {docs}")
 
-    answer, prompt, meta_data = gpt4all_service.rag(RAGRequest(documents=docs, query="Was ist das?"))
+    answer, prompt, meta_data = gpt4all_service.rag(
+        RAGRequest(
+            search=SearchRequest(
+                query="Was ist Attention?",
+                amount=3,
+                filtering=Filtering(threshold=0.0, collection_name="gpt4all"),
+                llm_backend=LLMBackend(token="gpt4all, provider=LLMProvider.GPT4ALL"),
+            ),
+            documents=docs,
+            query="Was ist das?",
+        )
+    )
 
     logger.info(f"Answer: {answer}")
     logger.info(f"Prompt: {prompt}")
