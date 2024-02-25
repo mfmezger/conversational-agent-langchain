@@ -24,8 +24,17 @@ from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
-from agent.data_model.request_data_model import RAGRequest, SearchRequest
-from agent.utils.utility import generate_prompt
+from agent.data_model.request_data_model import (
+    Filtering,
+    LLMBackend,
+    LLMProvider,
+    RAGRequest,
+    SearchRequest,
+)
+from agent.utils.utility import (
+    convert_qdrant_result_to_retrieval_results,
+    generate_prompt,
+)
 from agent.utils.vdb import init_vdb
 
 nltk.download("punkt")  # This needs to be installed for the tokenizer to work.
@@ -58,6 +67,8 @@ class AlephAlphaService(LLMBase):
         else:
             self.collection_name = self.cfg.qdrant.collection_name_aa
 
+        self.vector_db = self.get_db_connection(self.collection_name)
+
     def get_tokenizer(self):
         """Initialize the tokenizer."""
         client = Client(token=self.aleph_alpha_token)
@@ -75,7 +86,7 @@ class AlephAlphaService(LLMBase):
         tokens = self.tokenizer.encode(text)
         return len(tokens)
 
-    def get_db_connection(self) -> Qdrant:
+    def get_db_connection(self, collection_name: str) -> Qdrant:
         """Initializes a connection to the Qdrant DB.
 
         Args:
@@ -116,7 +127,7 @@ class AlephAlphaService(LLMBase):
 
         return response.summary
 
-    def send_completion_request(self, text: str) -> str:
+    def generate(self, text: str) -> str:
         """Sends a completion request to the Luminous API.
 
         Args:
@@ -165,8 +176,6 @@ class AlephAlphaService(LLMBase):
         Returns:
             None
         """
-        vector_db: Qdrant = get_db_connection(collection_name=self.collection_name, aleph_alpha_token=self.aleph_alpha_token)
-
         if file_ending == "*.pdf":
             loader = DirectoryLoader(directory, glob=file_ending, loader_cls=PyPDFium2Loader)
         elif file_ending == "*.txt":
@@ -189,9 +198,7 @@ class AlephAlphaService(LLMBase):
             if "/" in m["source"]:
                 m["source"] = m["source"].split("/")[-1]
 
-        vector_db.add_texts(texts=text_list, metadatas=metadata_list)
-
-        vector_db.add_texts(texts=text_list, metadatas=metadata_list)
+        self.vector_db.add_texts(texts=text_list, metadatas=metadata_list)
 
         logger.info("SUCCESS: Texts embedded.")
 
@@ -206,78 +213,36 @@ class AlephAlphaService(LLMBase):
         Returns
             List[Tuple[Document, float]]: A list of tuples containing the documents and their similarity scores.
         """
-        if not query:
-            raise ValueError("Query cannot be None or empty.")
-        if amount < 1:
-            raise ValueError("Amount must be greater than 0.")
+        docs = self.vector_db.similarity_search_with_score(query=search.query, k=search.amount, score_threshold=search.filtering.threshold)
+        logger.info(f"SUCCESS: {len(docs)} Documents found.")
 
-        # TODO: FILTER
-        try:
-
-            vector_db: Qdrant = self.get_db_connection()
-            docs = vector_db.similarity_search_with_score(query=searh.query, k=search.amount, score_threshold=search.filtering.threshold)
-            logger.info("SUCCESS: Documents found.")
-
-        except Exception as e:
-
-            logger.error(f"ERROR: Failed to search documents: {e}")
-            raise Exception(f"Failed to search documents: {e}") from e
-
-        return docs
+        return convert_qdrant_result_to_retrieval_results(docs)
 
     def rag(self, rag_request: RAGRequest) -> tuple:
         """QA takes a list of documents and returns a list of answers.
 
         Args:
-            aleph_alpha_token (str): The Aleph Alpha API token.
-            documents (List[Tuple[Document, float]]): A list of tuples containing the document and its relevance score.
-            query (str): The query to ask.
-            summarization (bool, optional): Whether to use summarization. Defaults to False.
+            rag_request (RAGRequest): The request for the RAG endpoint.
 
         Returns:
-            Tuple[str, str, Union[Dict[Any, Any], List[Dict[Any, Any]]]]: A tuple containing the answer, the prompt, and the metadata for the documents.
+            Tuple[str, str, List[RetrievalResults]]: The answer, the prompt and the metadata.
         """
-        # if the list of documents contains only one document extract the text directly
-        if len(documents) == 1:
-            text = documents[0][0].page_content
-            meta_data = documents[0][0].metadata
-
+        documents = self.search(rag_request.search)
+        if rag_request.search.amount == 0:
+            raise ValueError("No documents found.")
+        if rag_request.search.amount > 1:
+            # extract all documents
+            text = "\n".join([doc.document for doc in documents])
         else:
-            # extract the text from the documents
-            texts = [doc[0].page_content for doc in documents]
-            if summarization:
-                text = "".join(self.summarize_text(t) for t in texts)
-            else:
-                # combine the texts to one text
-                text = " ".join(texts)
-            meta_data = [doc[0].metadata for doc in documents]
+            text = documents[0].document
 
-        # load the prompt
-        prompt = generate_prompt("aleph_alpha_qa.j2", text=text, query=query)
+        prompt = generate_prompt(prompt_name="aleph_alpha_qa.j2", text=text, query=rag_request.search.query)
 
-        try:
-            # call the luminous api
-            answer = self.send_completion_request(prompt, aleph_alpha_token)
+        answer = self.generate(prompt)
 
-        except ValueError as e:
-            # if the code is PROMPT_TOO_LONG, split it into chunks
-            if e.args[0] == "PROMPT_TOO_LONG":
-                logger.info("Prompt too long. Summarizing.")
+        return answer, prompt, documents
 
-                # summarize the text
-                short_text = self.summarize_text(text)
-
-                # generate the prompt
-                prompt = generate_prompt("aleph_alpha_qa.j2", text=short_text, query=query)
-
-                # call the luminous api
-                answer = self.send_completion_request(prompt)
-
-        # extract the answer
-        return answer, prompt, meta_data
-
-    @load_config(location="config/ai/aleph_alpha.yml")
-    def explain_qa(self, document: LangchainDocument, explain_threshold: float, query: str, cfg: DictConfig):
+    def explain_qa(self, document: LangchainDocument, explain_threshold: float, query: str):
         """Explian QA WIP."""
         text = document[0][0].page_content
         meta_data = document[0][0].metadata
@@ -363,43 +328,6 @@ class AlephAlphaService(LLMBase):
 
         return answers
 
-    def custom_completion_prompt_aleph_alpha(
-        self,
-        prompt: str,
-        model: str = "luminous-extended-control",
-        max_tokens: int = 256,
-        stop_sequences: List[str] = ["###"],
-        temperature: float = 0,
-    ) -> str:
-        """This method sents a custom completion request to the Aleph Alpha API.
-
-        Args:
-            token (str): The token for the Aleph Alpha API.
-            prompt (str): The prompt to be sent to the API.
-
-        Raises:
-            ValueError: Error if their are no completions or the completion is empty or the prompt and tokenis empty.
-        """
-        if not prompt:
-            raise ValueError("Prompt cannot be None or empty.")
-        if not token:
-            raise ValueError("Token cannot be None or empty.")
-
-        client = Client(token=token)
-
-        request = CompletionRequest(prompt=Prompt.from_text(prompt), maximum_tokens=max_tokens, stop_sequences=stop_sequences, temperature=temperature)
-        response = client.complete(request, model=model)
-
-        # ensure that the response is not empty
-        if not response.completions:
-            raise ValueError("Response is empty.")
-
-        # ensure that the completion is not empty
-        if not response.completions[0].completion:
-            raise ValueError("Completion is empty.")
-
-        return str(response.completions[0].completion)
-
 
 if __name__ == "__main__":
     token = os.getenv("ALEPH_ALPHA_API_KEY")
@@ -407,11 +335,34 @@ if __name__ == "__main__":
     if not token:
         raise ValueError("Token cannot be None or empty.")
 
-    aa_service = AlephAlphaService()
+    aa_service = AlephAlphaService(token=token, collection_name="aleph_alpha")
 
     aa_service.embed_documents("tests/resources/")
     # open the text file and read the text
-    DOCS = aa_service.search(search=SearchRequest(query="What are Attentions?"))
-    logger.info(DOCS)
+    docs = aa_service.search(
+        SearchRequest(
+            query="Was ist Attention?",
+            amount=3,
+            filtering=Filtering(threshold=0.0, collection_name="gpt4all"),
+            llm_backend=LLMBackend(token=token, provider=LLMProvider.ALEPH_ALPHA),
+        )
+    )
 
-    answer, prompt, meta_data = aa_service.rag(rag_request=RAGRequest(documents=DOCS, query="What are Attentions?"))
+    logger.info(f"Documents: {docs}")
+
+    answer, prompt, meta_data = aa_service.rag(
+        RAGRequest(
+            search=SearchRequest(
+                query="Was ist Attention?",
+                amount=3,
+                filtering=Filtering(threshold=0.0, collection_name="gpt4all"),
+                llm_backend=LLMBackend(token=token, provider=LLMProvider.ALEPH_ALPHA),
+            ),
+            documents=docs,
+            query="Was ist das?",
+        )
+    )
+
+    logger.info(f"Answer: {answer}")
+    logger.info(f"Prompt: {prompt}")
+    logger.info(f"Metadata: {meta_data}")

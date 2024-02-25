@@ -14,6 +14,7 @@ from agent.data_model.internal_model import RetrievalResults
 from agent.data_model.request_data_model import (
     Filtering,
     LLMBackend,
+    LLMProvider,
     RAGRequest,
     SearchRequest,
 )
@@ -159,7 +160,7 @@ class GPT4AllService(LLMBase):
 
         prompt = generate_prompt(prompt_name="gpt4all-completion.j2", text=text, query=rag_request.search.query)
 
-        answer = self.completion_text_gpt4all(prompt)
+        answer = self.generate(prompt)
 
         return answer, prompt, documents
 
@@ -175,7 +176,7 @@ if __name__ == "__main__":
             query="Was ist Attention?",
             amount=3,
             filtering=Filtering(threshold=0.0, collection_name="gpt4all"),
-            llm_backend=LLMBackend(token="gpt4all, provider=LLMProvider.GPT4ALL"),
+            llm_backend=LLMBackend(token="gpt4all", provider=LLMProvider.GPT4ALL),
         )
     )
 
@@ -187,7 +188,7 @@ if __name__ == "__main__":
                 query="Was ist Attention?",
                 amount=3,
                 filtering=Filtering(threshold=0.0, collection_name="gpt4all"),
-                llm_backend=LLMBackend(token="gpt4all, provider=LLMProvider.GPT4ALL"),
+                llm_backend=LLMBackend(token="gpt4all", provider=LLMProvider.GPT4ALL),
             ),
             documents=docs,
             query="Was ist das?",
