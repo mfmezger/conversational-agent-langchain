@@ -45,6 +45,8 @@ class OpenAIService(LLMBase):
         else:
             self.collection_name = self.cfg.qdrant.collection_name_openai
 
+        self.vector_db = self.get_db_connection()
+
     def create_collection(self, name: str) -> None:
         """Create a new collection in the Vector Database.
 
@@ -64,9 +66,6 @@ class OpenAIService(LLMBase):
         else:
             embedding = OpenAIEmbeddings(model=self.cfg.openai.deployment, openai_api_key=self.open_ai_token)
 
-        if not self.collection_name:
-            collection_name = self.cfg.qdrant.collection_name_openai
-
         return init_vdb(self.cfg, self.collection_name, embedding)
 
     def embed_documents(self, directory: str) -> None:
@@ -79,17 +78,29 @@ class OpenAIService(LLMBase):
         :param open_ai_token: OpenAI API Token
         :type open_ai_token: str
         """
-        vector_db: Qdrant = get_db_connection(open_ai_token=self.open_ai_token, collection_name=self.collection_name)
+        if file_ending == "*.pdf":
+            loader = DirectoryLoader(directory, glob=file_ending, loader_cls=PyPDFium2Loader)
+        elif file_ending == "*.txt":
+            loader = DirectoryLoader(directory, glob=file_ending, loader_cls=TextLoader)
+        else:
+            msg = "File ending not supported."
+            raise ValueError(msg)
 
-        splitter = NLTKTextSplitter(chunk_size=500, chunk_overlap=100)
+        splitter = NLTKTextSplitter(length_function=len, chunk_size=500, chunk_overlap=75)
 
-        loader = DirectoryLoader(directory, glob="*.pdf", loader_cls=PyPDFium2Loader)
         docs = loader.load_and_split(splitter)
 
         logger.info(f"Loaded {len(docs)} documents.")
-        texts = [doc.page_content for doc in docs]
-        metadatas = [doc.metadata for doc in docs]
-        vector_db.add_texts(texts=texts, metadatas=metadatas)
+        text_list = [doc.page_content for doc in docs]
+        metadata_list = [doc.metadata for doc in docs]
+
+        for m in metadata_list:
+            # only when there are / in the source
+            if "/" in m["source"]:
+                m["source"] = m["source"].split("/")[-1]
+
+        self.vector_db.add_texts(texts=text_list, metadatas=metadata_list)
+
         logger.info("SUCCESS: Texts embedded.")
 
     def search(self, search: SearchRequest) -> List[Tuple[Document, float]]:
@@ -103,9 +114,7 @@ class OpenAIService(LLMBase):
             List[Tuple[Document, float]]: A list of search results, where each result is a tuple
             containing a Document object and a float score.
         """
-        vector_db = get_db_connection(open_ai_token=self.open_ai_token, collection_name=self.collection_name)
-
-        docs = vector_db.similarity_search_with_score(search.query, k=search.amount, score_threshold=search.filtering.threshold)
+        docs = self.vector_db.similarity_search_with_score(search.query, k=search.amount, score_threshold=search.filtering.threshold)
         logger.info("SUCCESS: Documents found.")
         return docs
 
@@ -136,20 +145,15 @@ class OpenAIService(LLMBase):
 
         return response.choices[0].text
 
-    def send_completion(self, text: str, query: str) -> str:
+    def generate(self, prompt: str) -> str:
         """Sent completion request to OpenAI API.
 
         Args:
-            text (str): The text on which the completion should be based.
-            query (str): The query for the completion.
-            token (str): The token for the OpenAI API.
-            cfg (DictConfig):
+            prompt (str): The text on which the completion should be based.
 
         Returns:
             str: Response from the OpenAI API.
         """
-        prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, query=query, language="de")
-
         openai.api_key = token
         response = openai.Completion.create(
             engine=self.cfg.openai.model,
@@ -165,108 +169,66 @@ class OpenAIService(LLMBase):
 
         return response.choices[0].text
 
-    def send_custom_completion_openai(
-        self,
-        token: str,
-        prompt: str,
-        model: str = "gpt3.5",
-        max_tokens: int = 256,
-        stop_sequences: List[str] = ["###"],
-        temperature: float = 0,
-    ) -> str:
-        """Sent completion request to OpenAI API.
-
-        Args:
-            text (str): The text on which the completion should be based.
-            query (str): The query for the completion.
-            token (str): The token for the OpenAI API.
-            cfg (DictConfig):
-
-        Returns:
-            str: Response from the OpenAI API.
-        """
-        openai.api_key = self.token
-        response = openai.Completion.create(
-            engine=model,
-            prompt=prompt,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            stop_sequences=stop_sequences,
-        )
-
-        return response.choices[0].text
-
     def rag(self, rag_request: RAGRequest) -> tuple[Any, str, dict[Any, Any]]:
         """QA Function for OpenAI LLMs.
 
         Args:
-            token (str): The token for the OpenAI API.
-            documents (list[tuple[Document, float]]): The documents to be searched.
-            query (str): The question for which the LLM should generate an answer.
-            summarization (bool, optional): If the Documents should be summarized. Defaults to False.
+            rag_request (RAGRequest): The RAG Request Object.
 
         Returns:
             tuple: answer, prompt, meta_data
         """
-        # if the list of documents contains only one document extract the text directly
-        if len(documents) == 1:
-            text = documents[0][0].page_content
-            meta_data = documents[0][0].metadata
-
+        documents = self.search(rag_request.search)
+        if rag_request.search.amount == 0:
+            raise ValueError("No documents found.")
+        if rag_request.search.amount > 1:
+            # extract all documents
+            text = "\n".join([doc.document for doc in documents])
         else:
-            # extract the text from the documents
-            texts = [doc[0].page_content for doc in documents]
-            if summarization:
-                # call summarization
-                text = ""
-                for t in texts:
-                    text += summarize_text_openai(text=t, token=token)
+            text = documents[0].document
 
-            else:
-                # combine the texts to one text
-                text = " ".join(texts)
-            meta_data = [doc[0].metadata for doc in documents]
+        prompt = generate_prompt(prompt_name="openai-qa.j2", text=text, query=rag_request.search.query)
 
-        # load the prompt
-        prompt = generate_prompt("aleph_alpha_qa.j2", text=text, query=query)
+        answer = self.generate(prompt)
 
-        try:
-
-            # call the luminous api
-            answer = send_completion(prompt, token)
-
-        except ValueError as e:
-            # if the code is PROMPT_TOO_LONG, split it into chunks
-            if e.args[0] == "PROMPT_TOO_LONG":
-                logger.info("Prompt too long. Summarizing.")
-
-                # summarize the text
-                short_text = summarize_text_openai(text, token)
-
-                # generate the prompt
-                prompt = generate_prompt("openai-qa.j2", text=short_text, query=query)
-
-                # call the luminous api
-                answer = send_completion(prompt, token)
-
-        # extract the answer
-        return answer, prompt, meta_data
+        return answer, prompt, documents
 
 
 if __name__ == "__main__":
 
-    token = os.getenv("OPENAI_API_KEY")
+    token = os.getenv("AZURE_OPENAI_API_KEY")
 
     if not token:
         raise ValueError("OPENAI_API_KEY is not set.")
 
-    openai_service = OpenAIService(collection_name="openai", token=token)
+    openai_service = OpenAIService(collection_name="openai", token="")
 
-    openai_service.embed_documents(directory="data")
+    openai_service.embed_documents(directory="tests/resources/")
 
-    DOCS = openai_service.search(SearchRequest(query="Was ist Vanille?"))
-    print(f"DOCUMENTS: {DOCS}")
+    docs = openai_service.search(
+        SearchRequest(
+            query="Was ist Attention?",
+            amount=3,
+            filtering=Filtering(threshold=0.0, collection_name="openai"),
+            llm_backend=LLMBackend(token="gpt4all", provider=LLMProvider.GPT4ALL),
+        )
+    )
 
-    summary = openai_service.rag(RAGRequest(query="Was ist Vanille?", documents=DOCS))
+    logger.info(f"Documents: {docs}")
 
-    print(f"SUMMARY: {summary}")
+    answer, prompt, meta_data = openai_service.rag(
+        RAGRequest(
+            search=SearchRequest(
+                query="Was ist Attention?",
+                amount=3,
+                filtering=Filtering(threshold=0.0, collection_name="gpt4all"),
+                llm_backend=LLMBackend(token="gpt4all", provider=LLMProvider.GPT4ALL),
+            ),
+            documents=docs,
+            query="Was ist das?",
+        )
+    )
+
+    logger.info(f"Answer: {answer}")
+    logger.info(f"Prompt: {prompt}")
+    logger.info(f"Metadata: {meta_data}")

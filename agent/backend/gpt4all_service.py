@@ -40,9 +40,9 @@ class GPT4AllService(LLMBase):
         else:
             self.collection_name = self.cfg.qdrant.collection_name_gpt4all
 
-        self.vector_db = self.get_db_connection(self.collection_name)
+        self.vector_db = self.get_db_connection()
 
-    def get_db_connection(self, collection_name: str) -> Qdrant:
+    def get_db_connection(self) -> Qdrant:
         """Initializes a connection to the Qdrant DB.
 
         Args:
