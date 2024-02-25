@@ -29,6 +29,11 @@ class LLMBase(ABC):
         pass
 
     @abstractmethod
+    def generate(self, prompt: str):
+        """Generate text from a prompt."""
+        pass
+
+    @abstractmethod
     def rag(self, rag_request: RAGRequest):
         """Retrieval Augmented Generation."""
         pass

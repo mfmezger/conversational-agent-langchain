@@ -103,13 +103,13 @@ class GPT4AllService(LLMBase):
         Returns:
             str: The summarized text.
         """
-        prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, language="de")
+        prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text)
 
         model = GPT4All(self.cfg.gpt4all_completion.completion_model)
 
         return model.generate(prompt, max_tokens=300)
 
-    def completion_text_gpt4all(self, prompt: str) -> str:
+    def generate(self, prompt: str) -> str:
         """Complete text with GPT4ALL.
 
         Args:
@@ -122,23 +122,6 @@ class GPT4AllService(LLMBase):
         model = GPT4All(self.cfg.gpt4all_completion.completion_model)
 
         return model.generate(prompt, max_tokens=250)
-
-    def custom_completion_prompt_gpt4all(self, prompt: str, model: str = "orca-mini-3b.ggmlv3.q4_0.bin", max_tokens: int = 256, temperature: float = 0) -> str:
-        """This method sents a custom completion request to the Aleph Alpha API.
-
-        Args:
-            token (str): The token for the Aleph Alpha API.
-            prompt (str): The prompt to be sent to the API.
-
-        Raises:
-            ValueError: Error if their are no completions or the completion is empty or the prompt and tokenis empty.
-        """
-        if not prompt:
-            raise ValueError("Prompt cannot be None or empty.")
-
-        output = (GPT4All(model)).generate(prompt, max_tokens=max_tokens, temp=temperature)
-
-        return str(output)
 
     def search(self, search: SearchRequest) -> list[RetrievalResults]:
         """Searches the documents in the Qdrant DB with a specific query.
