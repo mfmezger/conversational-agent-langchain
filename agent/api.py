@@ -10,6 +10,7 @@ from qdrant_client import models
 from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
 
+from agent.backend.aleph_alpha_service import AlephAlphaService
 from agent.data_model.request_data_model import (
     CustomPromptCompletion,
     EmbeddTextFilesRequest,
@@ -56,7 +57,7 @@ def my_schema() -> dict:
 
 # initialize the Fast API Application.
 app = FastAPI(debug=True)
-app.openapi = my_schema  # type: ignore
+app.openapi = my_schema
 
 load_dotenv()
 
@@ -77,35 +78,20 @@ def read_root() -> str:
     return "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
-def embedd_documents_wrapper(folder_name: str, llm_provider: LLMProvider, token: str | None = None, collection_name: str | None = None) -> None:
+def embedd_documents_wrapper(folder_name: str, service: AlephAlphaService | OpenAIService | GPT4ALLService) -> None:
     """Call the right embedding function for the chosen backend.
 
     Args:
     ----
         folder_name (str): Name of the temporary folder.
-        llm_backend (str, optional): LLM provider. Defaults to "openai".
-        token (str, optional): Token for the LLM Provider of choice. Defaults to None.
+        service ()
+        collection_name (str, optional): Name of the Collection. Defaults to None.
 
     Raises:
     ------
         ValueError: If an invalid LLM Provider is set.
     """
-    token = validate_token(token=token, llm_backend=llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
-
-    if llm_provider == LLMProvider.ALEPH_ALPHA:
-        # Embedd the documents with Aleph Alpha
-        logger.debug("Embedding Documents with Aleph Alpha.")
-        embedd_documents_aleph_alpha(dir=folder_name, aleph_alpha_token=token, collection_name=collection_name)
-    elif llm_provider == LLMProvider.OPENAI:
-        # Embedd the documents with OpenAI
-        logger.debug("Embedding Documents with OpenAI.")
-        embedd_documents_openai(dir=folder_name, open_ai_token=token)
-
-    elif llm_provider == LLMProvider.GPT4ALL:
-        embedd_documents_gpt4all(dir=folder_name)
-    else:
-        msg = "Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet."
-        raise ValueError(msg)
+    service.embed_documents(directory=folder_name, collection_name=collection_name)
 
 
 @app.post("/collection/create/{llm_provider}/{collection_name}")
@@ -158,7 +144,7 @@ async def post_embedd_documents(
         file_names.append(file_name)
 
         # Save the file to the temporary folder
-        if tmp_dir is None or not os.path.exists(tmp_dir):
+        if tmp_dir is None or not Path(tmp_dir).exists():
             msg = "Please provide a temporary folder to save the files."
             raise ValueError(msg)
 
@@ -166,7 +152,7 @@ async def post_embedd_documents(
             msg = "Please provide a file to save."
             raise ValueError(msg)
 
-        with open(os.path.join(tmp_dir, file_name), "wb") as f:
+        with Path(os.path.join(tmp_dir, file_name)).open("wb") as f:
             f.write(await file.read())
 
     embedd_documents_wrapper(folder_name=tmp_dir, llm_provider=llm_provider, token=token, collection_name=collection_name)

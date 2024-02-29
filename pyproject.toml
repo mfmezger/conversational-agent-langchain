@@ -135,9 +135,9 @@ exclude = [
 ]
 
 # Same as Black.
-line-length = 170
-indent-width = 4
-unsafe-fixes = true
+"line-length" = 170
+"indent-width" = 4
+"unsafe-fixes" = true
 # Assume Python 3.11
 target-version = "py311"
 

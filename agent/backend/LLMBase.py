@@ -15,23 +15,23 @@ class LLMBase(ABC):
         self.collection_name = collection_name
 
     @abstractmethod
-    def embed_documents(self, directory: str):
+    def embed_documents(self, directory: str) -> None:
         """Embedd new docments in the Qdrant DB."""
 
     @abstractmethod
-    def create_collection(self, name: str):
+    def create_collection(self, name: str) -> None:
         """Create a new collection in the Vector Database."""
 
     @abstractmethod
-    def search(self, search_request: SearchRequest):
+    def search(self, search_request: SearchRequest) -> list:
         """Searches the documents in the Qdrant DB with semantic search."""
 
     @abstractmethod
-    def generate(self, prompt: str):
+    def generate(self, prompt: str) -> str:
         """Generate text from a prompt."""
 
     @abstractmethod
-    def rag(self, rag_request: RAGRequest):
+    def rag(self, rag_request: RAGRequest) -> tuple:
         """Retrieval Augmented Generation."""
 
     @abstractmethod

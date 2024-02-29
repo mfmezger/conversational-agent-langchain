@@ -15,7 +15,7 @@ from aleph_alpha_client import (
 from dotenv import load_dotenv
 from langchain.docstore.document import Document as LangchainDocument
 from langchain.text_splitter import NLTKTextSplitter
-from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader
+from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_community.embeddings import AlephAlphaAsymmetricSemanticEmbedding
 from langchain_community.vectorstores import Qdrant
 from loguru import logger
@@ -75,7 +75,7 @@ class AlephAlphaService(LLMBase):
         client = Client(token=self.aleph_alpha_token)
         self.tokenizer = client.tokenizer("luminous-base")
 
-    def count_tokens(self, text: str):
+    def count_tokens(self, text: str) -> int:
         """Count the number of tokens in the text.
 
         Args:
@@ -221,9 +221,7 @@ class AlephAlphaService(LLMBase):
 
         Args:
         ----
-            aleph_alpha_token (str): Aleph Alpha API Token.
-            query (str): The query that should be searched for.
-            amount (int, optional): The number of documents to return. Defaults to 1.
+            search (SearchRequest): Search  Request
 
         Returns:
         -------
@@ -306,14 +304,14 @@ class AlephAlphaService(LLMBase):
 
         return explanation, score, text, answer, meta_data
 
-    def process_documents_aleph_alpha(self, folder: str, type: str) -> list[str]:
+    def process_documents_aleph_alpha(self, folder: str, processing_type: str) -> list[str]:
         """Process the documents in the given folder.
 
         Args:
         ----
             folder (str): Folder where the documents are located.
             token (str): The Aleph Alpha API Token.
-            type (str): The type of the documents.
+            processing_type (str): The processing_type of the documents.
 
         Raises:
         ------
@@ -326,7 +324,7 @@ class AlephAlphaService(LLMBase):
         docs = loader.load()
 
         # load the correct prompt
-        match type:
+        match processing_type:
             case "qa":
                 raise NotImplementedError
             case "summarization":
