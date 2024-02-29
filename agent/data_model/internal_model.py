@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 
 class RetrievalResults(BaseModel):
+
     """The Retrieval Results Model."""
 
     document: str

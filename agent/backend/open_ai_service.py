@@ -1,6 +1,6 @@
 """This script is used to initialize the Qdrant db backend with Azure OpenAI."""
 import os
-from typing import Any, List, Tuple
+from typing import Any
 
 import openai
 from dotenv import load_dotenv
@@ -22,6 +22,7 @@ load_dotenv()
 
 
 class OpenAIService(LLMBase):
+
     """OpenAI Backend Service."""
 
     @load_config(location="config/main.yml")
@@ -36,7 +37,8 @@ class OpenAIService(LLMBase):
             self.openai_token = os.getenv("ALEPH_ALPHA_API_KEY")
 
         if not self.openai_token:
-            raise ValueError("API Token not provided!")
+            msg = "API Token not provided!"
+            raise ValueError(msg)
 
         self.cfg = cfg
 
@@ -51,6 +53,7 @@ class OpenAIService(LLMBase):
         """Create a new collection in the Vector Database.
 
         Args:
+        ----
             name (str): The name of the new collection.
         """
         raise NotImplementedError
@@ -58,7 +61,8 @@ class OpenAIService(LLMBase):
     def get_db_connection(self) -> Qdrant:
         """Initializes a connection to the Qdrant DB.
 
-        Returns:
+        Returns
+        -------
             Qdrant: An Langchain Instance of the Qdrant DB.
         """
         if self.cfg.openai.azure:
@@ -103,14 +107,16 @@ class OpenAIService(LLMBase):
 
         logger.info("SUCCESS: Texts embedded.")
 
-    def search(self, search: SearchRequest) -> List[Tuple[Document, float]]:
+    def search(self, search: SearchRequest) -> list[tuple[Document, float]]:
         """Searches the documents in the Qdrant DB with a specific query.
 
         Args:
+        ----
             open_ai_token (str): The OpenAI API token.
             query (str): The question for which documents should be searched.
 
         Returns:
+        -------
             List[Tuple[Document, float]]: A list of search results, where each result is a tuple
             containing a Document object and a float score.
         """
@@ -122,10 +128,12 @@ class OpenAIService(LLMBase):
         """Summarizes the given text using the OpenAI API.
 
         Args:
+        ----
             text (str): The text to be summarized.
             token (str): The token for the OpenAI API.
 
         Returns:
+        -------
             str: The summary of the text.
         """
         prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, language="de")
@@ -149,9 +157,11 @@ class OpenAIService(LLMBase):
         """Sent completion request to OpenAI API.
 
         Args:
+        ----
             prompt (str): The text on which the completion should be based.
 
         Returns:
+        -------
             str: Response from the OpenAI API.
         """
         openai.api_key = token
@@ -173,14 +183,17 @@ class OpenAIService(LLMBase):
         """QA Function for OpenAI LLMs.
 
         Args:
+        ----
             rag_request (RAGRequest): The RAG Request Object.
 
         Returns:
+        -------
             tuple: answer, prompt, meta_data
         """
         documents = self.search(rag_request.search)
         if rag_request.search.amount == 0:
-            raise ValueError("No documents found.")
+            msg = "No documents found."
+            raise ValueError(msg)
         if rag_request.search.amount > 1:
             # extract all documents
             text = "\n".join([doc.document for doc in documents])
@@ -195,11 +208,11 @@ class OpenAIService(LLMBase):
 
 
 if __name__ == "__main__":
-
     token = os.getenv("AZURE_OPENAI_API_KEY")
 
     if not token:
-        raise ValueError("OPENAI_API_KEY is not set.")
+        msg = "OPENAI_API_KEY is not set."
+        raise ValueError(msg)
 
     openai_service = OpenAIService(collection_name="openai", token="")
 

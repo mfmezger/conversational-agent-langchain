@@ -28,6 +28,7 @@ load_dotenv()
 
 
 class GPT4AllService(LLMBase):
+
     """GPT4ALL Backend Service."""
 
     @load_config(location="config/db.yml")
@@ -46,28 +47,31 @@ class GPT4AllService(LLMBase):
         """Initializes a connection to the Qdrant DB.
 
         Args:
+        ----
             cfg (DictConfig): The configuration file loaded via OmegaConf.
             aleph_alpha_token (str): The Aleph Alpha API token.
 
         Returns:
+        -------
             Qdrant: The Qdrant DB connection.
         """
         embedding = GPT4AllEmbeddings()
 
         return init_vdb(self.cfg, self.collection_name, embedding)
 
-    def create_collection(self, name: str):
+    def create_collection(self, name: str) -> None:
         """Create a new collection in the Vector Database."""
-        pass
 
     def embed_documents(self, directory: str, file_ending: str = "*.pdf") -> None:
         """Embeds the documents in the given directory.
 
         Args:
+        ----
             cfg (DictConfig): Configuration from the file.
             dir (str): PDF Directory.
 
         Returns:
+        -------
             None
         """
         if file_ending == "*.pdf":
@@ -99,9 +103,11 @@ class GPT4AllService(LLMBase):
         """Summarize text with GPT4ALL.
 
         Args:
+        ----
             text (str): The text to be summarized.
 
         Returns:
+        -------
             str: The summarized text.
         """
         prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text)
@@ -114,10 +120,12 @@ class GPT4AllService(LLMBase):
         """Complete text with GPT4ALL.
 
         Args:
+        ----
             text (str): The text as basic input.
             query (str): The query to be inserted into the template.
 
         Returns:
+        -------
             str: The completed text.
         """
         model = GPT4All(self.cfg.gpt4all_completion.completion_model)
@@ -128,10 +136,12 @@ class GPT4AllService(LLMBase):
         """Searches the documents in the Qdrant DB with a specific query.
 
         Args:
+        ----
             open_ai_token (str): The OpenAI API token.
             query (str): The question for which documents should be searched.
 
         Returns:
+        -------
             List[Tuple[Document, float]]: A list of search results, where each result is a tuple
             containing a Document object and a float score.
         """
@@ -144,14 +154,17 @@ class GPT4AllService(LLMBase):
         """RAG takes a Rag Request Object and performs a semantic search and then a generation.
 
         Args:
+        ----
             rag_request (RAGRequest): The RAG Request Object.
 
         Returns:
+        -------
             Tuple[str, str, List[RetrievalResults]]: The answer, the prompt and the metadata.
         """
         documents = self.search(rag_request.search)
         if rag_request.search.amount == 0:
-            raise ValueError("No documents found.")
+            msg = "No documents found."
+            raise ValueError(msg)
         if rag_request.search.amount > 1:
             # extract all documents
             text = "\n".join([doc.document for doc in documents])
@@ -166,7 +179,6 @@ class GPT4AllService(LLMBase):
 
 
 if __name__ == "__main__":
-
     gpt4all_service = GPT4AllService(collection_name="gpt4all", token="")
 
     gpt4all_service.embed_documents(directory="tests/resources/")

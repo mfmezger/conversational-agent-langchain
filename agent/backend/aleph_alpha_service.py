@@ -1,7 +1,6 @@
 """The script to initialize the Qdrant db backend with aleph alpha."""
 
 import os
-from typing import List, Tuple
 
 import nltk
 import numpy as np
@@ -45,6 +44,7 @@ tokenizer = None
 
 
 class AlephAlphaService(LLMBase):
+
     """Aleph Alpha Strategy implementation."""
 
     @load_config(location="config/db.yml")
@@ -58,7 +58,8 @@ class AlephAlphaService(LLMBase):
             self.aleph_alpha_token = os.getenv("ALEPH_ALPHA_API_KEY")
 
         if not self.aleph_alpha_token:
-            raise ValueError("API Token not provided!")
+            msg = "API Token not provided!"
+            raise ValueError(msg)
 
         self.cfg = cfg
 
@@ -69,7 +70,7 @@ class AlephAlphaService(LLMBase):
 
         self.vector_db = self.get_db_connection(self.collection_name)
 
-    def get_tokenizer(self):
+    def get_tokenizer(self) -> None:
         """Initialize the tokenizer."""
         client = Client(token=self.aleph_alpha_token)
         self.tokenizer = client.tokenizer("luminous-base")
@@ -78,9 +79,11 @@ class AlephAlphaService(LLMBase):
         """Count the number of tokens in the text.
 
         Args:
+        ----
             text (str): The text to count the tokens for.
 
         Returns:
+        -------
             int: Number of tokens.
         """
         tokens = self.tokenizer.encode(text)
@@ -90,10 +93,12 @@ class AlephAlphaService(LLMBase):
         """Initializes a connection to the Qdrant DB.
 
         Args:
+        ----
             cfg (DictConfig): The configuration file loaded via OmegaConf.
             aleph_alpha_token (str): The Aleph Alpha API token.
 
         Returns:
+        -------
             Qdrant: The Qdrant DB connection.
         """
         embedding = AlephAlphaAsymmetricSemanticEmbedding(
@@ -105,18 +110,19 @@ class AlephAlphaService(LLMBase):
 
         return init_vdb(self.cfg, collection_name, embedding)
 
-    def create_collection(self, name: str):
+    def create_collection(self, name: str) -> None:
         """Create a new collection in the Qdrant DB."""
-        pass
 
     def summarize_text(self, text: str) -> str:
         """Summarizes the given text using the Luminous API.
 
         Args:
+        ----
             text (str): The text to be summarized.
             token (str): The token for the Luminous API.
 
         Returns:
+        -------
             str: The summary of the text.
         """
         # TODO: rewrite because deprecated.
@@ -131,17 +137,21 @@ class AlephAlphaService(LLMBase):
         """Sends a completion request to the Luminous API.
 
         Args:
+        ----
             text (str): The prompt to be sent to the API.
             token (str): The token for the Luminous API.
 
         Returns:
+        -------
             str: The response from the API.
 
         Raises:
+        ------
             ValueError: If the text or token is None or empty, or if the response or completion is empty.
         """
         if not text:
-            raise ValueError("Text cannot be None or empty.")
+            msg = "Text cannot be None or empty."
+            raise ValueError(msg)
 
         client = Client(token=self.aleph_alpha_token)
 
@@ -155,25 +165,29 @@ class AlephAlphaService(LLMBase):
 
         # ensure that the response is not empty
         if not response.completions:
-            raise ValueError("Response is empty.")
+            msg = "Response is empty."
+            raise ValueError(msg)
 
         # ensure that the completion is not empty
         if not response.completions[0].completion:
-            raise ValueError("Completion is empty.")
+            msg = "Completion is empty."
+            raise ValueError(msg)
 
         return str(response.completions[0].completion)
 
-    def embed_documents(self, directory: str, file_ending: str = "*.pdf"):
+    def embed_documents(self, directory: str, file_ending: str = "*.pdf") -> None:
         """Embeds the documents in the given directory in the Aleph Alpha database.
 
         This method uses the Directory Loader for PDFs and the PyPDFium2Loader to load the documents.
         The documents are then added to the Qdrant DB which embeds them without deleting the old collection.
 
         Args:
+        ----
             dir (str): The directory containing the PDFs to embed.
             aleph_alpha_token (str): The Aleph Alpha API token.
 
         Returns:
+        -------
             None
         """
         if file_ending == "*.pdf":
@@ -202,15 +216,17 @@ class AlephAlphaService(LLMBase):
 
         logger.info("SUCCESS: Texts embedded.")
 
-    def search(self, search: SearchRequest) -> List[Tuple[LangchainDocument, float]]:
+    def search(self, search: SearchRequest) -> list[tuple[LangchainDocument, float]]:
         """Searches the Aleph Alpha service for similar documents.
 
         Args:
+        ----
             aleph_alpha_token (str): Aleph Alpha API Token.
             query (str): The query that should be searched for.
             amount (int, optional): The number of documents to return. Defaults to 1.
 
-        Returns
+        Returns:
+        -------
             List[Tuple[Document, float]]: A list of tuples containing the documents and their similarity scores.
         """
         docs = self.vector_db.similarity_search_with_score(query=search.query, k=search.amount, score_threshold=search.filtering.threshold)
@@ -222,14 +238,17 @@ class AlephAlphaService(LLMBase):
         """QA takes a list of documents and returns a list of answers.
 
         Args:
+        ----
             rag_request (RAGRequest): The request for the RAG endpoint.
 
         Returns:
+        -------
             Tuple[str, str, List[RetrievalResults]]: The answer, the prompt and the metadata.
         """
         documents = self.search(rag_request.search)
         if rag_request.search.amount == 0:
-            raise ValueError("No documents found.")
+            msg = "No documents found."
+            raise ValueError(msg)
         if rag_request.search.amount > 1:
             # extract all documents
             text = "\n".join([doc.document for doc in documents])
@@ -260,7 +279,8 @@ class AlephAlphaService(LLMBase):
 
         # if all of the scores are belo 0.7 raise an error
         if all(item.score < explain_threshold for item in explanations):
-            raise ValueError("All scores are below explain_threshold.")
+            msg = "All scores are below explain_threshold."
+            raise ValueError(msg)
 
         # remove element if the text contains Response: or Instructions:
         for exp in explanations:
@@ -286,15 +306,17 @@ class AlephAlphaService(LLMBase):
 
         return explanation, score, text, answer, meta_data
 
-    def process_documents_aleph_alpha(self, folder: str, type: str) -> List[str]:
+    def process_documents_aleph_alpha(self, folder: str, type: str) -> list[str]:
         """Process the documents in the given folder.
 
         Args:
+        ----
             folder (str): Folder where the documents are located.
             token (str): The Aleph Alpha API Token.
             type (str): The type of the documents.
 
         Raises:
+        ------
             ValueError: If the type is not one of 'qa', 'summarization', or 'invoice'.
         """
         # load the documents
@@ -313,7 +335,8 @@ class AlephAlphaService(LLMBase):
                 # load the prompt
                 prompt_name = "aleph-alpha-invoice.j2"
             case _:
-                raise ValueError("Type must be one of 'qa', 'summarization', or 'invoice'.")
+                msg = "Type must be one of 'qa', 'summarization', or 'invoice'."
+                raise ValueError(msg)
 
         # generate the prompt
         answers = []
@@ -333,7 +356,8 @@ if __name__ == "__main__":
     token = os.getenv("ALEPH_ALPHA_API_KEY")
 
     if not token:
-        raise ValueError("Token cannot be None or empty.")
+        msg = "Token cannot be None or empty."
+        raise ValueError(msg)
 
     aa_service = AlephAlphaService(token=token, collection_name="aleph_alpha")
 

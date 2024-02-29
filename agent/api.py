@@ -1,6 +1,5 @@
 """FastAPI Backend for the Knowledge Agent."""
 import os
-from typing import List, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
@@ -11,9 +10,6 @@ from qdrant_client import models
 from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
 
-from agent.backend.aleph_alpha_service import AlephAlphaService
-from agent.backend.gpt4all_service import GPT4AllService
-from agent.backend.open_ai_service import OpenAIService
 from agent.data_model.request_data_model import (
     CustomPromptCompletion,
     EmbeddTextFilesRequest,
@@ -44,7 +40,8 @@ logger.info("Startup.")
 def my_schema() -> dict:
     """Used to generate the OpenAPI schema.
 
-    Returns:
+    Returns
+    -------
         FastAPI: FastAPI App
     """
     openapi_schema = get_openapi(
@@ -73,21 +70,24 @@ logger.info("Loading REST API Finished.")
 def read_root() -> str:
     """Returns the welcome message.
 
-    Returns:
+    Returns
+    -------
         str: The welcome message.
     """
     return "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
-def embedd_documents_wrapper(folder_name: str, llm_provider: LLMProvider, token: Optional[str] = None, collection_name: Optional[str] = None) -> None:
+def embedd_documents_wrapper(folder_name: str, llm_provider: LLMProvider, token: str | None = None, collection_name: str | None = None) -> None:
     """Call the right embedding function for the chosen backend.
 
     Args:
+    ----
         folder_name (str): Name of the temporary folder.
         llm_backend (str, optional): LLM provider. Defaults to "openai".
         token (str, optional): Token for the LLM Provider of choice. Defaults to None.
 
     Raises:
+    ------
         ValueError: If an invalid LLM Provider is set.
     """
     token = validate_token(token=token, llm_backend=llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
@@ -104,7 +104,8 @@ def embedd_documents_wrapper(folder_name: str, llm_provider: LLMProvider, token:
     elif llm_provider == LLMProvider.GPT4ALL:
         embedd_documents_gpt4all(dir=folder_name)
     else:
-        raise ValueError("Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet.")
+        msg = "Please provide either 'aleph-alpha' or 'openai' as a parameter. Other backends are not implemented yet."
+        raise ValueError(msg)
 
 
 @app.post("/collection/create/{llm_provider}/{collection_name}")
@@ -112,6 +113,7 @@ def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONRe
     """Create a new collection in the vector database.
 
     Args:
+    ----
         llm_provider (LLMProvider): Name of the LLM Provider
         collection_name (str): Name of the Collection
     """
@@ -132,14 +134,16 @@ def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONRe
 
 @app.post("/embeddings/documents")
 async def post_embedd_documents(
-    files: List[UploadFile] = File(...), llm_provider: str = "aa", token: Optional[str] = None, collection_name: Optional[str] = None
+    files: list[UploadFile] = File(...), llm_provider: str = "aa", token: str | None = None, collection_name: str | None = None
 ) -> EmbeddingResponse:
     """Uploads multiple documents to the backend.
 
     Args:
+    ----
         files (List[UploadFile], optional): Uploaded files. Defaults to File(...).
 
     Returns:
+    -------
         JSONResponse: The response as JSON.
     """
     logger.info("Embedding Multiple Documents")
@@ -155,10 +159,12 @@ async def post_embedd_documents(
 
         # Save the file to the temporary folder
         if tmp_dir is None or not os.path.exists(tmp_dir):
-            raise ValueError("Please provide a temporary folder to save the files.")
+            msg = "Please provide a temporary folder to save the files."
+            raise ValueError(msg)
 
         if file_name is None:
-            raise ValueError("Please provide a file to save.")
+            msg = "Please provide a file to save."
+            raise ValueError(msg)
 
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
@@ -173,12 +179,15 @@ async def embedd_text(request: EmbeddTextRequest) -> EmbeddingResponse:
     """Embeds text in the database.
 
     Args:
+    ----
         request (EmbeddTextRequest): The request parameters.
 
     Raises:
+    ------
         ValueError: If no token is provided or if no LLM provider is specified.
 
     Returns:
+    -------
         JSONResponse: A response indicating that the text was received and saved, along with the name of the file it was saved to.
     """
     logger.info("Embedding Text")
@@ -193,12 +202,14 @@ async def embedd_text(request: EmbeddTextRequest) -> EmbeddingResponse:
     elif request.llm_backend.llm_provider == "openai":
         # Embedd the documents with OpenAI
         # TODO: Implement
-        raise ValueError("Not implemented yet.")
+        msg = "Not implemented yet."
+        raise ValueError(msg)
     elif request.llm_backend.llm_provider == "gpt4all":
         embedd_text_gpt4all(text=request.text, file_name=request.file_name, seperator=request.seperator)
 
     else:
-        raise ValueError("Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet.")
+        msg = "Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet."
+        raise ValueError(msg)
 
     return EmbeddingResponse(status="success", files=[request.file_name])
 
@@ -208,12 +219,15 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> EmbeddingRespons
     """Embeds text files in the database.
 
     Args:
+    ----
         request (EmbeddTextFilesRequest): The request parameters.
 
     Raises:
+    ------
         ValueError: If a file does not have a valid name, if no temporary folder is provided, or if no token or LLM provider is specified.
 
     Returns:
+    -------
         JSONResponse: A response indicating that the files were received and saved, along with the names of the files they were saved to.
     """
     logger.info("Embedding Text Files")
@@ -226,11 +240,13 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> EmbeddingRespons
         file_names.append(file_name)
 
         if file_name is None:
-            raise ValueError("File does not have a valid name.")
+            msg = "File does not have a valid name."
+            raise ValueError(msg)
 
         # Save the files to the temporary folder
         if tmp_dir is None or not os.path.exists(tmp_dir):
-            raise ValueError("Please provide a temporary folder to save the files.")
+            msg = "Please provide a temporary folder to save the files."
+            raise ValueError(msg)
 
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
@@ -238,7 +254,8 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> EmbeddingRespons
     token = validate_token(token=request.token, llm_backend=request.search.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     if request.search.llm_backend is None:
-        raise ValueError("Please provide a LLM Provider of choice.")
+        msg = "Please provide a LLM Provider of choice."
+        raise ValueError(msg)
 
     embedd_text_files_aleph_alpha(folder=tmp_dir, aleph_alpha_token=token, seperator=request.seperator)
 
@@ -246,16 +263,19 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> EmbeddingRespons
 
 
 @app.post("/semantic/search")
-def search(request: SearchRequest) -> List[SearchResponse]:
+def search(request: SearchRequest) -> list[SearchResponse]:
     """Searches for a query in the vector database.
 
     Args:
+    ----
         request (SearchRequest): The search request.
 
     Raises:
+    ------
         ValueError: If the LLM provider is not implemented yet.
 
     Returns:
+    -------
         List[str]: A list of matching documents.
     """
     logger.info("Searching for Documents")
@@ -264,7 +284,8 @@ def search(request: SearchRequest) -> List[SearchResponse]:
     )
 
     if request.llm_backend.llm_provider is None:
-        raise ValueError("Please provide a LLM Provider of choice.")
+        msg = "Please provide a LLM Provider of choice."
+        raise ValueError(msg)
 
     DOCS = search_database(request)
 
@@ -282,7 +303,7 @@ def search(request: SearchRequest) -> List[SearchResponse]:
             page = d[0].metadata["page"]
             source = d[0].metadata["source"]
             response.append(SearchResponse(text=text, page=page, source=source, score=score))
-    except Exception as e:
+    except Exception:
         for d in DOCS:
             score = d[1]
             text = d[0].page_content
@@ -297,18 +318,22 @@ def question_answer(request: RAGRequest) -> QAResponse:
     """Answer a question based on the documents in the database.
 
     Args:
+    ----
         request (QARequest): The request parameters.
 
     Raises:
+    ------
         ValueError: Error if no query or token is provided.
 
     Returns:
+    -------
         Tuple: Answer, Prompt and Meta Data
     """
     logger.info("Answering Question")
     # if the query is not provided, raise an error
     if request.search.query is None:
-        raise ValueError("Please provide a Question.")
+        msg = "Please provide a Question."
+        raise ValueError(msg)
 
     request.search.llm_backend.token = validate_token(
         token=request.search.llm_backend.token, llm_backend=request.search.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
@@ -316,7 +341,8 @@ def question_answer(request: RAGRequest) -> QAResponse:
 
     # if the history flag is activated and the history is not provided, raise an error
     if request.history and request.history_list is None:
-        raise ValueError("Please provide a HistoryList.")
+        msg = "Please provide a HistoryList."
+        raise ValueError(msg)
 
     # summarize the history
     if request.history:
@@ -337,7 +363,8 @@ def question_answer(request: RAGRequest) -> QAResponse:
             # combine the history and the query
             request.search.query = f"{summary}\n{request.search.query}"
         else:
-            raise ValueError(f"Unsupported LLM provider: {request.search.llm_backend.llm_provider}")
+            msg = f"Unsupported LLM provider: {request.search.llm_backend.llm_provider}"
+            raise ValueError(msg)
 
     documents = search_database(request.search)
 
@@ -345,12 +372,14 @@ def question_answer(request: RAGRequest) -> QAResponse:
     if request.search.llm_backend.llm_provider == LLMProvider.ALEPH_ALPHA:
         answer, prompt, meta_data = qa_aleph_alpha(query=request.search.query, documents=documents, aleph_alpha_token=request.search.llm_backend.token)
     elif request.search.llm_backend.llm_provider == LLMProvider.OPENAI:
-        # todo:
-        raise ValueError(f"Unsupported LLM provider: {request.search.llm_backend.llm_provider}")
+        # TODO:
+        msg = f"Unsupported LLM provider: {request.search.llm_backend.llm_provider}"
+        raise ValueError(msg)
     elif request.search.llm_backend.llm_provider == LLMProvider.GPT4ALL:
         answer, prompt, meta_data = qa_gpt4all(documents=documents, query=request.search.query, summarization=request.summarization, language=request.language)
     else:
-        raise ValueError(f"Unsupported LLM provider: {request.search.llm_backend.llm_provider}")
+        msg = f"Unsupported LLM provider: {request.search.llm_backend.llm_provider}"
+        raise ValueError(msg)
 
     return QAResponse(answer=answer, prompt=prompt, meta_data=meta_data)
 
@@ -361,22 +390,27 @@ def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQARespo
     """Answer a question & explains it based on the documents in the database. This only works with Aleph Alpha.
 
     This uses the normal qa but combines it with the explain function.
+
     Args:
+    ----
         query (str, optional): _description_. Defaults to None.
         aa_or_openai (str, optional): _description_. Defaults to "openai".
         token (str, optional): _description_. Defaults to None.
         amount (int, optional): _description_. Defaults to 1.
 
     Raises:
+    ------
         ValueError: Error if no query or token is provided.
 
     Returns:
+    -------
         Tuple: Answer, Prompt and Meta Data
     """
     logger.info("Answering Question and Explaining it.")
     # if the query is not provided, raise an error
     if explain_request.rag_request.search.query is None:
-        raise ValueError("Please provide a Question.")
+        msg = "Please provide a Question."
+        raise ValueError(msg)
 
     explain_request.rag_request.search.llm_backend.token = validate_token(
         token=explain_request.rag_request.search.llm_backend.token,
@@ -399,16 +433,18 @@ def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQARespo
 
 
 @app.post("/process_document")
-async def process_document(files: List[UploadFile] = File(...), llm_backend: str = "aa", token: Optional[str] = None, type: str = "invoice") -> None:
+async def process_document(files: list[UploadFile] = File(...), llm_backend: str = "aa", token: str | None = None, type: str = "invoice") -> None:
     """Process a document.
 
     Args:
+    ----
         files (UploadFile): _description_
         llm_backend (str, optional): _description_. Defaults to "openai".
         token (Optional[str], optional): _description_. Defaults to None.
         type (str, optional): _description_. Defaults to "invoice".
 
     Returns:
+    -------
         JSONResponse: _description_
     """
     logger.info("Processing Document")
@@ -425,10 +461,12 @@ async def process_document(files: List[UploadFile] = File(...), llm_backend: str
 
         # Save the file to the temporary folder
         if tmp_dir is None or not os.path.exists(tmp_dir):
-            raise ValueError("Please provide a temporary folder to save the files.")
+            msg = "Please provide a temporary folder to save the files."
+            raise ValueError(msg)
 
         if file_name is None:
-            raise ValueError("Please provide a file to save.")
+            msg = "Please provide a file to save."
+            raise ValueError(msg)
 
         with open(os.path.join(tmp_dir, file_name), "wb") as f:
             f.write(await file.read())
@@ -436,16 +474,19 @@ async def process_document(files: List[UploadFile] = File(...), llm_backend: str
     process_documents_aleph_alpha(folder=tmp_dir, token=token, type=type)
 
 
-def search_database(request: SearchRequest) -> List[tuple[LangchainDocument, float]]:
+def search_database(request: SearchRequest) -> list[tuple[LangchainDocument, float]]:
     """Searches the database for a query.
 
     Args:
+    ----
         request (SearchRequest): The request parameters.
 
     Raises:
+    ------
         ValueError: If the LLM provider is not implemented yet.
 
     Returns:
+    -------
         JSON List of Documents consisting of the text, page, source and score.
     """
     logger.info("Searching for Documents")
@@ -475,7 +516,8 @@ def search_database(request: SearchRequest) -> List[tuple[LangchainDocument, flo
             collection_name=request.filtering.collection_name,
         )
     else:
-        raise ValueError(f"Unsupported LLM provider: {request.llm_backend}")
+        msg = f"Unsupported LLM provider: {request.llm_backend}"
+        raise ValueError(msg)
 
     logger.info(f"Found {len(documents)} documents.")
     return documents
@@ -486,9 +528,11 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
     """This method sents a custom completion request to the LLM Provider.
 
     Args:
+    ----
         request (CustomPromptCompletion): The request parameters.
 
     Raises:
+    ------
         ValueError: If the LLM provider is not implemented yet.
     """
     logger.info("Sending Custom Completion Request")
@@ -520,7 +564,8 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
         )
 
     else:
-        raise ValueError(f"Unsupported LLM provider: {request.search.llm_backend}")
+        msg = f"Unsupported LLM provider: {request.search.llm_backend}"
+        raise ValueError(msg)
 
     return answer
 
@@ -534,11 +579,13 @@ def delete(
     """Delete a Vector from the database based on the page and source.
 
     Args:
+    ----
         page (int): The page of the Document
         source (str): The name of the Document
         llm_provider (LLMProvider, optional): The LLM Provider. Defaults to LLMProvider.OPENAI.
 
     Returns:
+    -------
         UpdateResult: The result of the Deletion Operation from the Vector Database.
     """
     logger.info("Deleting Vector from Database")
@@ -549,7 +596,8 @@ def delete(
     elif llm_provider == LLMProvider.GPT4ALL:
         collection = "gpt4all"
     else:
-        raise ValueError(f"Unsupported LLM provider: {llm_provider}")
+        msg = f"Unsupported LLM provider: {llm_provider}"
+        raise ValueError(msg)
 
     qdrant_client, _ = load_vec_db_conn()
 
@@ -576,6 +624,7 @@ def initialize_aleph_alpha_vector_db() -> None:
     """Initializes the Aleph Alpha vector db.
 
     Args:
+    ----
         cfg (DictConfig): Configuration from the file
     """
     qdrant_client, cfg = load_vec_db_conn()
@@ -586,10 +635,11 @@ def initialize_aleph_alpha_vector_db() -> None:
         generate_collection_aleph_alpha(qdrant_client, collection_name=cfg.qdrant.collection_name_aa, embeddings_size=cfg.aleph_alpha_embeddings.size)
 
 
-def generate_collection_aleph_alpha(qdrant_client, collection_name, embeddings_size):
+def generate_collection_aleph_alpha(qdrant_client, collection_name, embeddings_size) -> None:
     """Generate a collection for the Aleph Alpha Backend.
 
     Args:
+    ----
         qdrant_client (_type_): _description_
         collection_name (_type_): _description_
         embeddings_size (_type_): _description_
@@ -605,6 +655,7 @@ def initialize_open_ai_vector_db() -> None:
     """Initializes the OpenAI vector db.
 
     Args:
+    ----
         cfg (DictConfig): Configuration from the file
     """
     qdrant_client, cfg = load_vec_db_conn()
@@ -616,10 +667,11 @@ def initialize_open_ai_vector_db() -> None:
         generate_collection_openai(qdrant_client, collection_name=cfg.qdrant.collection_name_openai)
 
 
-def generate_collection_openai(qdrant_client, collection_name):
+def generate_collection_openai(qdrant_client, collection_name) -> None:
     """Generate a collection for the OpenAI Backend.
 
     Args:
+    ----
         qdrant_client (_type_): Qdrant Client Langchain.
         collection_name (_type_): Name of the Collection
     """
@@ -634,6 +686,7 @@ def initialize_gpt4all_vector_db() -> None:
     """Initializes the GPT4ALL vector db.
 
     Args:
+    ----
         cfg (DictConfig): Configuration from the file
     """
     qdrant_client, cfg = load_vec_db_conn()
@@ -645,10 +698,11 @@ def initialize_gpt4all_vector_db() -> None:
         generate_collection_gpt4all(qdrant_client, collection_name=cfg.qdrant.collection_name_gpt4all)
 
 
-def generate_collection_gpt4all(qdrant_client, collection_name):
+def generate_collection_gpt4all(qdrant_client, collection_name) -> None:
     """Generate a collection for the GPT4ALL Backend.
 
     Args:
+    ----
         qdrant_client (Qdrant): Qdrant Client
         collection_name (str): Name of the Collection
     """
