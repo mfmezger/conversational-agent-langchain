@@ -1,5 +1,4 @@
 """This is the utility module."""
-import os
 import uuid
 from pathlib import Path
 
@@ -81,7 +80,7 @@ def generate_prompt(prompt_name: str, text: str, query: str = "", language: str 
             msg = "Language not supported."
             raise ValueError(msg)
 
-        with open(os.path.join("prompts", language, prompt_name), encoding="utf-8") as f:
+        with open(Path("prompts") / language / prompt_name, encoding="utf-8") as f:
             prompt = PromptTemplate.from_template(f.read(), template_format="jinja2")
     except FileNotFoundError:
         msg = f"Prompt file '{prompt_name}' not found."

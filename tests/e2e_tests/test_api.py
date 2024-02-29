@@ -1,6 +1,7 @@
 """API Tests."""
 import os
 import shutil
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import httpx
@@ -36,8 +37,8 @@ async def test_upload_documents(provider: str) -> None:
     """Testing the upload of multiple documents."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
         files = [
-            open("tests/resources/1706.03762v5.pdf", "rb"),
-            open("tests/resources/1912.01703v1.pdf", "rb"),
+            Path("tests/resources/1706.03762v5.pdf").open("rb"),
+            Path("tests/resources/1912.01703v1.pdf").open("rb"),
         ]
         if provider == "openai":
             logger.warning("Using OpenAI API")
@@ -71,7 +72,7 @@ async def test_upload_documents(provider: str) -> None:
 async def test_embedd_one_document(provider: str) -> None:
     """Testing the upload of one document."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
-        tmp_file = open("tests/resources/1706.03762v5.pdf", "rb")
+        tmp_file = Path("tests/resources/1706.03762v5.pdf").open("rb")
 
         if provider == "aa":
             logger.warning("Using Aleph Alpha API")
@@ -123,7 +124,7 @@ def test_search_route() -> None:
 def test_embedd_text() -> None:
     """Test the embedd_text function."""
     # load text
-    with open("tests/resources/file1.txt") as f:
+    with Path("tests/resources/file1.txt").open() as f:
         text = f.read()
 
     response: Response = client.post(

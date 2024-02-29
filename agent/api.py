@@ -635,7 +635,7 @@ def initialize_aleph_alpha_vector_db() -> None:
         generate_collection_aleph_alpha(qdrant_client, collection_name=cfg.qdrant.collection_name_aa, embeddings_size=cfg.aleph_alpha_embeddings.size)
 
 
-def generate_collection_aleph_alpha(qdrant_client, collection_name, embeddings_size) -> None:
+def generate_collection_aleph_alpha(qdrant_client: Qdrant, collection_name: str, embeddings_size: int) -> None:
     """Generate a collection for the Aleph Alpha Backend.
 
     Args:
