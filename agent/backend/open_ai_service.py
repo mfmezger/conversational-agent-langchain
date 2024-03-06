@@ -223,7 +223,7 @@ if __name__ == "__main__":
             query="Was ist Attention?",
             amount=3,
             filtering=Filtering(threshold=0.0, collection_name="openai"),
-            llm_backend=LLMBackend(token="gpt4all", provider=LLMProvider.GPT4ALL),
+            llm_backend=LLMBackend(token=token, provider=LLMProvider.OPENAI),
         )
     )
 
@@ -235,10 +235,8 @@ if __name__ == "__main__":
                 query="Was ist Attention?",
                 amount=3,
                 filtering=Filtering(threshold=0.0, collection_name="gpt4all"),
-                llm_backend=LLMBackend(token="gpt4all", provider=LLMProvider.GPT4ALL),
-            ),
-            documents=docs,
-            query="Was ist das?",
+                llm_backend=LLMBackend(token=token, provider=LLMProvider.OPENAI),
+            )
         )
     )
 
