@@ -1,6 +1,7 @@
 """This is the utility module."""
 import uuid
 from pathlib import Path
+from fastapi import HTTPException
 
 from langchain.prompts import PromptTemplate
 from lingua import Language, LanguageDetectorBuilder
@@ -80,12 +81,12 @@ def generate_prompt(prompt_name: str, text: str, query: str = "", language: str 
             msg = "Language not supported."
             raise ValueError(msg)
 
-        with open(Path("prompts") / language / prompt_name, encoding="utf-8") as f:
+        with Path("prompts" / language / prompt_name).open(encoding="utf-8") as f:
             prompt = PromptTemplate.from_template(f.read(), template_format="jinja2")
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         msg = f"Prompt file '{prompt_name}' not found."
-        raise FileNotFoundError(msg)
-
+        raise FileNotFoundError(msg) from e
+ 
     return prompt.format(text=text, query=query) if query else prompt.format(text=text)
 
 
@@ -136,7 +137,6 @@ def get_token(token: str | None, llm_provider: str | LLMProvider | None, aleph_a
     if not env_token and not token:
         msg = "No token provided."
         raise ValueError(msg)
-
     return env_token  # type: ignore
 
 

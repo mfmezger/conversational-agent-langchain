@@ -1,5 +1,6 @@
 """FastAPI Backend for the Knowledge Agent."""
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
@@ -10,7 +11,7 @@ from qdrant_client import models
 from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
 
-from agent.backend.aleph_alpha_service import AlephAlphaService
+from agent.backend.LLMBase import LLMContext, LLMProvider, LLMStrategyFactory
 from agent.data_model.request_data_model import (
     CustomPromptCompletion,
     EmbeddTextFilesRequest,
@@ -78,20 +79,20 @@ def read_root() -> str:
     return "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
-def embedd_documents_wrapper(folder_name: str, service: AlephAlphaService | OpenAIService | GPT4ALLService) -> None:
+def embedd_documents_wrapper(folder_name: str, service: LLMContext) -> None:
     """Call the right embedding function for the chosen backend.
 
     Args:
     ----
         folder_name (str): Name of the temporary folder.
-        service ()
-        collection_name (str, optional): Name of the Collection. Defaults to None.
+        service (LLMContext): The llm context.
 
     Raises:
     ------
         ValueError: If an invalid LLM Provider is set.
     """
-    service.embed_documents(directory=folder_name, collection_name=collection_name)
+    # TODO: make file ending dynamic
+    service.embed_documents(directory=folder_name, file_ending="*.pdf")
 
 
 @app.post("/collection/create/{llm_provider}/{collection_name}")
@@ -134,8 +135,11 @@ async def post_embedd_documents(
     """
     logger.info("Embedding Multiple Documents")
     llm_provider = LLMProvider.normalize(llm_provider)
+
     token = validate_token(token=token, llm_backend=llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
     tmp_dir = create_tmp_folder()
+
+    llm_context = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=LLMProvider.ALEPH_ALPHA, token=token, collection_name=collection_name))
 
     file_names = []
 
@@ -152,10 +156,10 @@ async def post_embedd_documents(
             msg = "Please provide a file to save."
             raise ValueError(msg)
 
-        with Path(os.path.join(tmp_dir, file_name)).open("wb") as f:
+        with Path(tmp_dir / file_name).open("wb") as f:
             f.write(await file.read())
 
-    embedd_documents_wrapper(folder_name=tmp_dir, llm_provider=llm_provider, token=token, collection_name=collection_name)
+    embedd_documents_wrapper(folder_name=tmp_dir, service=llm_context)
 
     return EmbeddingResponse(status="success", files=file_names)
 
@@ -230,11 +234,11 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> EmbeddingRespons
             raise ValueError(msg)
 
         # Save the files to the temporary folder
-        if tmp_dir is None or not os.path.exists(tmp_dir):
+        if tmp_dir is None or not Path(tmp_dir).exists():
             msg = "Please provide a temporary folder to save the files."
             raise ValueError(msg)
 
-        with open(os.path.join(tmp_dir, file_name), "wb") as f:
+        with Path(tmp_dir / file_name).open("wb") as f:
             f.write(await file.read())
 
     token = validate_token(token=request.token, llm_backend=request.search.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
@@ -268,10 +272,6 @@ def search(request: SearchRequest) -> list[SearchResponse]:
     request.llm_backend.token = validate_token(
         token=request.llm_backend.token, llm_backend=request.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
     )
-
-    if request.llm_backend.llm_provider is None:
-        msg = "Please provide a LLM Provider of choice."
-        raise ValueError(msg)
 
     DOCS = search_database(request)
 
@@ -446,7 +446,7 @@ async def process_document(files: list[UploadFile] = File(...), llm_backend: str
         file_names.append(file_name)
 
         # Save the file to the temporary folder
-        if tmp_dir is None or not os.path.exists(tmp_dir):
+        if tmp_dir is None or not Path(tmp_dir).exists():
             msg = "Please provide a temporary folder to save the files."
             raise ValueError(msg)
 
@@ -454,7 +454,7 @@ async def process_document(files: list[UploadFile] = File(...), llm_backend: str
             msg = "Please provide a file to save."
             raise ValueError(msg)
 
-        with open(os.path.join(tmp_dir, file_name), "wb") as f:
+        with Path(tmp_dir / file_name).open() as f:
             f.write(await file.read())
 
     process_documents_aleph_alpha(folder=tmp_dir, token=token, type=type)
