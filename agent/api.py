@@ -17,7 +17,6 @@ from agent.data_model.request_data_model import (
     EmbeddTextFilesRequest,
     EmbeddTextRequest,
     ExplainQARequest,
-    LLMProvider,
     RAGRequest,
     SearchRequest,
 )
