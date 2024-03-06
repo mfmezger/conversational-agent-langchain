@@ -40,14 +40,18 @@ class LLMBase(ABC):
 
 
 class LLMStrategyFactory:
+
     """The Factory to select the correct LLM Backend.
 
-    Raises:
+    Raises
+    ------
         ValueError: If Provider is not known.
 
-    Returns:
-        Strategy: The correct strategy. 
+    Returns
+    -------
+        Strategy: The correct strategy.
     """
+
     _strategies: Dict[str, Type[LLMBase]] = {
         LLMProvider.ALEPH_ALPHA: AlephAlphaService,
         LLMProvider.OPENAI: OpenAIService,
@@ -59,19 +63,23 @@ class LLMStrategyFactory:
         """Get the correct strategy.
 
         Args:
+        ----
             strategy_type (str): The strategy type.
             token (str): The token for the strategy.
             collection_name (str): The collection name of the vector database.
 
         Raises:
+        ------
             ValueError: _description_
 
         Returns:
+        -------
             LLMBase: _description_
         """
         Strategy = LLMStrategyFactory._strategies.get(strategy_type)
         if Strategy is None:
-            raise ValueError("Unknown Strategy Type")
+            msg = "Unknown Strategy Type"
+            raise ValueError(msg)
         return Strategy(token, collection_name)
 
 
@@ -79,7 +87,7 @@ class LLMContext:
     def __init__(self, llm: LLMBase) -> None:
         self.llm = llm
 
-    def change_strategy(self, strategy_type: str, token: str, collection_name: str):
+    def change_strategy(self, strategy_type: str, token: str, collection_name: str) -> None:
         self.llm = LLMStrategyFactory.get_strategy(strategy_type, token, collection_name)
 
     def search(self, search_request: SearchRequest) -> list:

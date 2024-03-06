@@ -1,7 +1,6 @@
 """This is the utility module."""
 import uuid
 from pathlib import Path
-from fastapi import HTTPException
 
 from langchain.prompts import PromptTemplate
 from lingua import Language, LanguageDetectorBuilder
@@ -48,6 +47,28 @@ def combine_text_from_list(input_list: list) -> str:
     return combined_text
 
 
+def detect_language(text: str) -> str:
+    """Detect the language.
+
+    Args:
+    ----
+        text (str): The input text.
+
+    Returns:
+    -------
+        str: The language which was detected.
+    """
+    detected_lang = detector.detect_language_of(text)
+    if detected_lang == "Language.ENGLISH":
+        language = "en"
+    elif detected_lang == "Language.GERMAN":
+        language = "de"
+    else:
+        logger.info(f"Detected Language is not supported. Using English. Detected language was {detected_lang}.")
+        language = "en"
+    return language
+
+
 def generate_prompt(prompt_name: str, text: str, query: str = "", language: str = "detect") -> str:
     """Generates a prompt for the Luminous API using a Jinja template.
 
@@ -68,25 +89,16 @@ def generate_prompt(prompt_name: str, text: str, query: str = "", language: str 
     """
     try:
         if language == "detect":
-            detected_lang = detector.detect_language_of(query)
-            if detected_lang == "Language.ENGLISH":
-                language = "en"
-            elif detected_lang == "Language.GERMAN":
-                language = "de"
-            else:
-                logger.info(f"Detected Language is not supported. Using English. Detected language was {detected_lang}.")
-                language = "en"
-
+            language = detect_language(text)
         if language not in {"en", "de"}:
             msg = "Language not supported."
             raise ValueError(msg)
-
         with Path("prompts" / language / prompt_name).open(encoding="utf-8") as f:
             prompt = PromptTemplate.from_template(f.read(), template_format="jinja2")
     except FileNotFoundError as e:
         msg = f"Prompt file '{prompt_name}' not found."
         raise FileNotFoundError(msg) from e
- 
+
     return prompt.format(text=text, query=query) if query else prompt.format(text=text)
 
 

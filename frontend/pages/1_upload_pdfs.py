@@ -12,7 +12,7 @@ def upload_files(save_path_input: str) -> list[tuple[str, bytes]]:
     files = []
 
     for file in uploaded_files:
-        with open(f"{save_path_input}{file.name}", "wb") as f:
+        with Path(f"{save_path_input}{file.name}").open() as f:
             f.write(file.getbuffer())
         files.append((file.name, file.getbuffer()))
     return files
