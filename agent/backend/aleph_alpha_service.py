@@ -47,7 +47,7 @@ class AlephAlphaService(LLMBase):
 
     """Aleph Alpha Strategy implementation."""
 
-    @load_config(location="config/db.yml")
+    @load_config(location="config/main.yml")
     def __init__(self, cfg: DictConfig, collection_name: str, token: str) -> None:
         """Initialize the Aleph Alpha Service."""
         super().__init__(token=token, collection_name=collection_name)

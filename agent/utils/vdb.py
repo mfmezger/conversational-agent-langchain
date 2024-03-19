@@ -9,7 +9,7 @@ from qdrant_client import QdrantClient
 from ultra_simple_config import load_config
 
 
-def init_vdb(cfg: DictConfig, collection_name: str, embedding: Embeddings):
+def init_vdb(cfg: DictConfig, collection_name: str, embedding: Embeddings) -> Qdrant:
     """Establish a connection to the Qdrant DB.
 
     Args:
@@ -32,7 +32,7 @@ def init_vdb(cfg: DictConfig, collection_name: str, embedding: Embeddings):
     return vector_db
 
 
-@load_config("config/db.yml")
+@load_config("config/main.yml")
 def load_vec_db_conn(cfg: DictConfig) -> QdrantClient:
     """Load the Vector Database Connection."""
     return QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc), cfg

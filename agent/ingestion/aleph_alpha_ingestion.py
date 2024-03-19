@@ -18,9 +18,10 @@ from tqdm import tqdm
 from ultra_simple_config import load_config
 
 load_dotenv()
+collection_name = "aleph_alpha_collection"
 
 
-@load_config(location="config/db.yml")
+@load_config(location="config/main.yml")
 def setup_tokenizer_client(cfg: DictConfig):
     """Set up the tokenizer and the aleph alpha client.
 
@@ -40,7 +41,7 @@ def setup_tokenizer_client(cfg: DictConfig):
 client, tokenizer = setup_tokenizer_client()
 
 
-def split_text(text: str):
+def split_text(text: str) -> list:
     """Split the text into chunks.
 
     Args:
@@ -55,7 +56,7 @@ def split_text(text: str):
     return splitter.split_text(text)
 
 
-def count_tokens(text: str):
+def count_tokens(text: str) -> int:
     """Count the number of tokens in the text.
 
     Args:
@@ -74,7 +75,7 @@ def count_tokens(text: str):
 splitter = NLTKTextSplitter(length_function=count_tokens, chunk_size=300, chunk_overlap=50)
 
 
-@load_config(location="config/db.yml")
+@load_config(location="config/main.yml")
 def initialize_aleph_alpha_vector_db(cfg: DictConfig) -> None:
     """Initializes the Aleph Alpha vector db.
 
@@ -95,7 +96,7 @@ def initialize_aleph_alpha_vector_db(cfg: DictConfig) -> None:
         logger.info(f"SUCCESS: Collection {collection_name} created.")
 
 
-@load_config(location="config/db.yml")
+@load_config(location="config/main.yml")
 def setup_connection_vector_db(cfg: DictConfig) -> Qdrant:
     """Sets up the connection to the vector db.
 
@@ -234,7 +235,7 @@ def parse_json(dir: str, vector_db: Qdrant) -> None:
         final_split[i] = {"text": text_result_list[i], "metadata": metadata_list[i], "token": token_list[i], "clean_text": enriched_text_list[i]}
 
     # save the dict to a json file but as utf8
-    with open("splits_nltk.json", "w", encoding="utf8") as outfile:
+    with Path("splits_nltk.json").open("w", encoding="utf8") as outfile:
         json.dump(final_split, outfile, ensure_ascii=False)
 
         # start the embedding

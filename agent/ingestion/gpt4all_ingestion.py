@@ -17,9 +17,10 @@ from ultra_simple_config import load_config
 
 load_dotenv()
 data_folder = "resources/data"
+collection_name = "gpt4all_collection"
 
 
-@load_config(location="config/db.yml")
+@load_config(location="config/main.yml")
 def main(cfg: DictConfig) -> None:
     """Main function for the GPT4ALL ingestion service."""
     # Define the name of the collection you want to embedd the documents into.
@@ -47,9 +48,9 @@ def main(cfg: DictConfig) -> None:
     ingest_pdfs_with_text(dir=data_folder, vector_db=vector_db)
 
 
-def ingest_text_files(dir: str, vector_db: Qdrant, file_ending: str = "*.txt") -> None:
+def ingest_text_files(directory: str, vector_db: Qdrant, file_ending: str = "*.txt") -> None:
     """Ingests text files from a directory."""
-    loader = DirectoryLoader(dir, glob=file_ending, loader_cls=TextLoader)
+    loader = DirectoryLoader(directory, glob=file_ending, loader_cls=TextLoader)
     docs = loader.load()
 
     logger.info(f"Loaded {len(docs)} documents.")
@@ -59,14 +60,14 @@ def ingest_text_files(dir: str, vector_db: Qdrant, file_ending: str = "*.txt") -
     logger.info("SUCCESS: Texts embedded.")
 
 
-def ingest_custom_text(text: str, seperator: str = "###") -> None:
-    """Ingests custom text."""
+# def ingest_custom_text(text: str, seperator: str = "###") -> None:
+#     """Ingests custom text."""
 
 
 # ingest pdfs
-def ingest_pdfs_with_text(dir: str, vector_db: Qdrant) -> None:
+def ingest_pdfs_with_text(directory: str, vector_db: Qdrant) -> None:
     """Ingests pdfs from a directory."""
-    loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFium2Loader)
+    loader = DirectoryLoader(directory, glob="*.pdf", loader_cls=PyPDFium2Loader)
     docs = loader.load()
 
     logger.info(f"Loaded {len(docs)} documents.")

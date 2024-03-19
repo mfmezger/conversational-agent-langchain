@@ -6,17 +6,19 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.openapi.utils import get_openapi
 from langchain.docstore.document import Document as LangchainDocument
+from langchain_community.vectorstores import Qdrant
 from loguru import logger
 from qdrant_client import models
 from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
 
-from agent.backend.LLMBase import LLMContext, LLMProvider, LLMStrategyFactory
+from agent.backend.LLMStrategy import LLMContext, LLMStrategyFactory
 from agent.data_model.request_data_model import (
     CustomPromptCompletion,
     EmbeddTextFilesRequest,
     EmbeddTextRequest,
     ExplainQARequest,
+    LLMProvider,
     RAGRequest,
     SearchRequest,
 )
@@ -94,7 +96,7 @@ def embedd_documents_wrapper(folder_name: str, service: LLMContext) -> None:
     service.embed_documents(directory=folder_name, file_ending="*.pdf")
 
 
-@app.post("/collection/create/{llm_provider}/{collection_name}")
+@app.post("/collection/create/{llm_provider}/{collection_name}", tags=["collection"])
 def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONResponse:
     """Create a new collection in the vector database.
 
@@ -118,7 +120,7 @@ def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONRe
     return JSONResponse(content={"message": f"Collection {collection_name} created."})
 
 
-@app.post("/embeddings/documents")
+@app.post("/embeddings/documents", tags=["embeddings"])
 async def post_embedd_documents(
     files: list[UploadFile] = File(...), llm_provider: str = "aa", token: str | None = None, collection_name: str | None = None
 ) -> EmbeddingResponse:
@@ -127,6 +129,9 @@ async def post_embedd_documents(
     Args:
     ----
         files (List[UploadFile], optional): Uploaded files. Defaults to File(...).
+        llm_provider (str, optional): The LLM Provider. Defaults to "aa".
+        token (str, optional): The token for the LLM Provider. Defaults to None.
+        collection_name (str, optional): The name of the collection. Defaults to None.
 
     Returns:
     -------
@@ -163,7 +168,7 @@ async def post_embedd_documents(
     return EmbeddingResponse(status="success", files=file_names)
 
 
-@app.post("/embeddings/text/")
+@app.post("/embeddings/text/", tags=["embeddings"])
 async def embedd_text(request: EmbeddTextRequest) -> EmbeddingResponse:
     """Embeds text in the database.
 
@@ -203,7 +208,7 @@ async def embedd_text(request: EmbeddTextRequest) -> EmbeddingResponse:
     return EmbeddingResponse(status="success", files=[request.file_name])
 
 
-@app.post("/embeddings/texts/files")
+@app.post("/embeddings/texts/files", tags=["embeddings"])
 async def embedd_text_files(request: EmbeddTextFilesRequest) -> EmbeddingResponse:
     """Embeds text files in the database.
 
@@ -251,7 +256,7 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> EmbeddingRespons
     return EmbeddingResponse(status="success", files=file_names)
 
 
-@app.post("/semantic/search")
+@app.post("/semantic/search", tags=["search"])
 def search(request: SearchRequest) -> list[SearchResponse]:
     """Searches for a query in the vector database.
 
@@ -288,7 +293,7 @@ def search(request: SearchRequest) -> list[SearchResponse]:
             page = d[0].metadata["page"]
             source = d[0].metadata["source"]
             response.append(SearchResponse(text=text, page=page, source=source, score=score))
-    except Exception:
+    except ValueError:
         for d in DOCS:
             score = d[1]
             text = d[0].page_content
@@ -357,7 +362,7 @@ def question_answer(request: RAGRequest) -> QAResponse:
     if request.search.llm_backend.llm_provider == LLMProvider.ALEPH_ALPHA:
         answer, prompt, meta_data = qa_aleph_alpha(query=request.search.query, documents=documents, aleph_alpha_token=request.search.llm_backend.token)
     elif request.search.llm_backend.llm_provider == LLMProvider.OPENAI:
-        # TODO:
+        # TODO: Implement
         msg = f"Unsupported LLM provider: {request.search.llm_backend.llm_provider}"
         raise ValueError(msg)
     elif request.search.llm_backend.llm_provider == LLMProvider.GPT4ALL:

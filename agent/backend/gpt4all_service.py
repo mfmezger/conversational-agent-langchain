@@ -31,7 +31,7 @@ class GPT4AllService(LLMBase):
 
     """GPT4ALL Backend Service."""
 
-    @load_config(location="config/db.yml")
+    @load_config(location="config/main.yml")
     def __init__(self, cfg: DictConfig, collection_name: str, token: str | None) -> None:
         """Init the GPT4ALL Service."""
         self.cfg = cfg

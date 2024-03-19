@@ -1,4 +1,4 @@
-"""This is the utility module."""
+"""Utility module."""
 import uuid
 from pathlib import Path
 
@@ -93,7 +93,7 @@ def generate_prompt(prompt_name: str, text: str, query: str = "", language: str 
         if language not in {"en", "de"}:
             msg = "Language not supported."
             raise ValueError(msg)
-        with Path("prompts" / language / prompt_name).open(encoding="utf-8") as f:
+        with Path(Path("prompts") / language / prompt_name).open(encoding="utf-8") as f:
             prompt = PromptTemplate.from_template(f.read(), template_format="jinja2")
     except FileNotFoundError as e:
         msg = f"Prompt file '{prompt_name}' not found."
@@ -127,6 +127,8 @@ def get_token(token: str | None, llm_provider: str | LLMProvider | None, aleph_a
     ----
         token (str, optional): Token from the REST service.
         llm_provider (Union[str, LLMProvider], optional): LLM provider. Defaults to "openai".
+        aleph_alpha_key (str, optional): Key from the .env file. Defaults to None.
+        openai_key (str, optional): Key from the .env file. Defaults to None.
 
     Returns:
     -------
@@ -149,7 +151,7 @@ def get_token(token: str | None, llm_provider: str | LLMProvider | None, aleph_a
     if not env_token and not token:
         msg = "No token provided."
         raise ValueError(msg)
-    return env_token  # type: ignore
+    return env_token
 
 
 def validate_token(token: str | None, llm_backend: str | LLMProvider, aleph_alpha_key: str | None, openai_key: str | None) -> str:

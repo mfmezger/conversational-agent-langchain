@@ -34,7 +34,7 @@ class OpenAIService(LLMBase):
         if token:
             self.openai_token = token
         else:
-            self.openai_token = os.getenv("ALEPH_ALPHA_API_KEY")
+            self.openai_token = os.getenv("AZURE_OPENAI_API_KEY")
 
         if not self.openai_token:
             msg = "API Token not provided!"
@@ -65,14 +65,19 @@ class OpenAIService(LLMBase):
         -------
             Qdrant: An Langchain Instance of the Qdrant DB.
         """
-        if self.cfg.openai.azure:
-            embedding = AzureOpenAIEmbeddings(deployment=cfg.openai.deployment, openai_api_version="2023-05-15", openai_api_key=open_ai_token)  # type: ignore
+        if self.cfg.openai_embeddings.azure:
+            embedding = AzureOpenAIEmbeddings(
+                azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+                deployment=self.cfg.openai_embeddings.embedding_model_name,
+                openai_api_version=self.cfg.openai_embeddings.openai_api_version,
+                openai_api_key=self.openai_token,
+            )  # type: ignore
         else:
-            embedding = OpenAIEmbeddings(model=self.cfg.openai.deployment, openai_api_key=self.open_ai_token)
+            embedding = OpenAIEmbeddings(model=self.cfg.openai_embeddings.embedding_model_name, openai_api_key=self.openai_token)
 
         return init_vdb(self.cfg, self.collection_name, embedding)
 
-    def embed_documents(self, directory: str) -> None:
+    def embed_documents(self, directory: str, file_ending: str = "*.pdf") -> None:
         """embedd_documents embedds the documents in the given directory.
 
         :param cfg: Configuration from the file
@@ -217,15 +222,6 @@ if __name__ == "__main__":
     openai_service = OpenAIService(collection_name="openai", token="")
 
     openai_service.embed_documents(directory="tests/resources/")
-
-    docs = openai_service.search(
-        SearchRequest(
-            query="Was ist Attention?",
-            amount=3,
-            filtering=Filtering(threshold=0.0, collection_name="openai"),
-            llm_backend=LLMBackend(token=token, provider=LLMProvider.OPENAI),
-        )
-    )
 
     logger.info(f"Documents: {docs}")
 
