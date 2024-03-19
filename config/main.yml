@@ -15,7 +15,7 @@ aleph_alpha_embeddings:
 
 openai_embeddings:
   azure: True
-  embedding_model_name: embeddingada7afb6a4c18b7
+  embedding_model_name: embedding-ada
   openai_api_version: 2024-02-15-preview
 
 aleph_alpha_completion:
@@ -34,11 +34,10 @@ gpt4all_completion:
   completion_model: "orca-mini-3b-gguf2-q4_0.gguf" # "mistral-7b-openorca.Q4_0.gguf"
 
 openai_completion:
-  model: gpt35turbo03017afb6a4c18b7
+  model: gpt35turbo
   temperature: 0
   max_tokens: 500
   top_p: 1
   frequency_penalty: 0
   presence_penalty: 0
-  best_of: 1
   stop: None

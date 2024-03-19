@@ -142,20 +142,20 @@ class OpenAIService(LLMBase):
         """
         prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, language="de")
 
-        openai.api_key = token
-        response = openai.Completion.create(
-            engine=self.cfg.openai.model,
-            prompt=prompt,
-            temperature=self.cfg.openai.temperature,
-            max_tokens=self.cfg.openai.max_tokens,
-            top_p=self.cfg.openai.top_p,
-            frequency_penalty=self.cfg.openai.frequency_penalty,
-            presence_penalty=self.cfg.openai.presence_penalty,
-            best_of=self.cfg.openai.best_of,
-            stop=self.cfg.openai.stop,
+        openai.api_key = self.token
+        response = openai.chat.completions.create(
+            model=self.cfg.openai_completion.model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=self.cfg.openai_completion.temperature,
+            max_tokens=self.cfg.openai_completion.max_tokens,
+            top_p=self.cfg.openai_completion.top_p,
+            frequency_penalty=self.cfg.openai_completion.frequency_penalty,
+            presence_penalty=self.cfg.openai_completion.presence_penalty,
+            stop=self.cfg.openai_completion.stop,
+            stream=False,
         )
 
-        return response.choices[0].text
+        return response.choices[0].messages.content
 
     def generate(self, prompt: str) -> str:
         """Sent completion request to OpenAI API.
@@ -168,20 +168,20 @@ class OpenAIService(LLMBase):
         -------
             str: Response from the OpenAI API.
         """
-        openai.api_key = token
-        response = openai.Completion.create(
-            engine=self.cfg.openai.model,
-            prompt=prompt,
-            temperature=self.cfg.openai.temperature,
-            max_tokens=self.cfg.openai.max_tokens,
-            top_p=self.cfg.openai.top_p,
-            frequency_penalty=self.cfg.openai.frequency_penalty,
-            presence_penalty=self.cfg.openai.presence_penalty,
-            best_of=self.cfg.openai.best_of,
-            stop=self.cfg.openai.stop,
+        openai.api_key = self.token
+        response = openai.chat.completions.create(
+            model=self.cfg.openai_completion.model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=self.cfg.openai_completion.temperature,
+            max_tokens=self.cfg.openai_completion.max_tokens,
+            top_p=self.cfg.openai_completion.top_p,
+            frequency_penalty=self.cfg.openai_completion.frequency_penalty,
+            presence_penalty=self.cfg.openai_completion.presence_penalty,
+            stop=self.cfg.openai_completion.stop,
+            stream=False,
         )
 
-        return response.choices[0].text
+        return response.choices[0].messages.content
 
     def rag(self, rag_request: RAGRequest) -> tuple[Any, str, dict[Any, Any]]:
         """QA Function for OpenAI LLMs.
@@ -200,9 +200,9 @@ class OpenAIService(LLMBase):
             raise ValueError(msg)
         if rag_request.search.amount > 1:
             # extract all documents
-            text = "\n".join([doc.document for doc in documents])
+            text = "\n".join([doc[0].page_content for doc in documents])
         else:
-            text = documents[0].document
+            text = documents[0].page_content
 
         prompt = generate_prompt(prompt_name="openai-qa.j2", text=text, query=rag_request.search.query)
 
@@ -220,7 +220,7 @@ if __name__ == "__main__":
         msg = "OPENAI_API_KEY is not set."
         raise ValueError(msg)
 
-    openai_service = OpenAIService(collection_name="openai", token="")
+    openai_service = OpenAIService(collection_name="openai", token=token)
 
     openai_service.embed_documents(directory="tests/resources/")
 
@@ -229,7 +229,7 @@ if __name__ == "__main__":
             search=SearchRequest(
                 query="Was ist Attention?",
                 amount=3,
-                filtering=Filtering(threshold=0.0, collection_name="gpt4all"),
+                filtering=Filtering(threshold=0.0, collection_name="openai"),
                 llm_backend=LLMBackend(token=token, provider=LLMProvider.OPENAI),
             )
         )
