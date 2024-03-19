@@ -55,6 +55,7 @@ class LLMContext:
     """The Context for the LLM Backend."""
 
     def __init__(self, llm: LLMBase) -> None:
+        """Init the Context."""
         self.llm = llm
 
     def change_strategy(self, strategy_type: str, token: str, collection_name: str) -> None:
@@ -65,11 +66,11 @@ class LLMContext:
         """Wrapper for the search."""
         return self.llm.search(search_request)
 
-    def embed_documents(self, directory: str):
+    def embed_documents(self, directory: str) -> None:
         """Wrapper for the Embedding of Documents."""
         return self.llm.embed_documents(directory)
 
-    def create_collection(self, name: str):
+    def create_collection(self, name: str) -> None:
         """Wrapper for creating a collection."""
         return self.llm.create_collection(name)
 

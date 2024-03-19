@@ -94,8 +94,7 @@ class AlephAlphaService(LLMBase):
 
         Args:
         ----
-            cfg (DictConfig): The configuration file loaded via OmegaConf.
-            aleph_alpha_token (str): The Aleph Alpha API token.
+            collection_name (str): The name of the collection in the Qdrant DB.
 
         Returns:
         -------
@@ -111,7 +110,13 @@ class AlephAlphaService(LLMBase):
         return init_vdb(self.cfg, collection_name, embedding)
 
     def create_collection(self, name: str) -> None:
-        """Create a new collection in the Qdrant DB."""
+        """Create a new collection in the Qdrant DB.
+
+        Args:
+        ----
+            name (str): The name of the new collection.
+
+        """
 
     def summarize_text(self, text: str) -> str:
         """Summarizes the given text using the Luminous API.
@@ -183,8 +188,9 @@ class AlephAlphaService(LLMBase):
 
         Args:
         ----
-            dir (str): The directory containing the PDFs to embed.
+            directory (str): The directory containing the PDFs to embed.
             aleph_alpha_token (str): The Aleph Alpha API token.
+            file_ending (str): The file ending of the documents to embed.
 
         Returns:
         -------
@@ -247,11 +253,7 @@ class AlephAlphaService(LLMBase):
         if rag_request.search.amount == 0:
             msg = "No documents found."
             raise ValueError(msg)
-        if rag_request.search.amount > 1:
-            # extract all documents
-            text = "\n".join([doc.document for doc in documents])
-        else:
-            text = documents[0].document
+        text = "\n".join([doc.document for doc in documents]) if len(documents) > 1 else documents[0].document
 
         prompt = generate_prompt(prompt_name="aleph_alpha_qa.j2", text=text, query=rag_request.search.query)
 
@@ -259,7 +261,7 @@ class AlephAlphaService(LLMBase):
 
         return answer, prompt, documents
 
-    def explain_qa(self, document: LangchainDocument, explain_threshold: float, query: str):
+    def explain_qa(self, document: LangchainDocument, explain_threshold: float, query: str) -> tuple:
         """Explian QA WIP."""
         text = document[0][0].page_content
         meta_data = document[0][0].metadata
@@ -267,12 +269,12 @@ class AlephAlphaService(LLMBase):
         # load the prompt
         prompt = generate_prompt("aleph_alpha_qa.j2", text=text, query=query)
 
-        answer = self.send_completion_request(prompt, aleph_alpha_token)
+        answer = self.send_completion_request(prompt, self.aleph_alpha_token)
 
         exp_req = ExplanationRequest(Prompt.from_text(prompt), answer, control_factor=0.1, prompt_granularity="sentence", normalize=True)
-        client = Client(token=aleph_alpha_token)
+        client = Client(token=self.aleph_alpha_token)
 
-        response_explain = client.explain(exp_req, model=cfg.aleph_alpha_completion.model)
+        response_explain = client.explain(exp_req, model=self.cfg.aleph_alpha_completion.model)
         explanations = response_explain.explanations[0].items[0].scores
 
         # if all of the scores are belo 0.7 raise an error

@@ -34,7 +34,7 @@ def test_generate_prompt() -> None:
         generate_prompt("nonexistent_template.j2", text=text, query=query)
 
     # Test that generate_prompt raises an error when the template file is invalid
-    with pytest.raises(Exception):
+    with pytest.raises(FileNotFoundError):
         generate_prompt("invalid_template.j2", text=text, query=query)
 
 

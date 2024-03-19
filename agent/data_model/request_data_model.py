@@ -14,7 +14,7 @@ class LLMProvider(str, Enum):
     GPT4ALL = "gpt4all"
 
     @classmethod
-    def normalize(cls, value: str) -> "LLMProvider":
+    def normalize(cls: type["LLMProvider"], value: str) -> "LLMProvider":
         """Normalize the LLM provider."""
         normalized_value = value.lower().replace("-", "").replace("_", "")
         if normalized_value in {"aa", "alephalpha"}:

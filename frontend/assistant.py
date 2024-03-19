@@ -45,7 +45,7 @@ def initialize() -> None:
         headers = {"accept": "application/json"}
 
         with st.spinner("Waiting for response...."):
-            qa = requests.post(url_qa, params=params, headers=headers).json()
+            qa = requests.post(url_qa, params=params, headers=headers, timeout=6000).json()
             with st.chat_message(name="ai", avatar="🤖"):
                 st.write(qa["answer"])
 
@@ -66,6 +66,7 @@ def initialize() -> None:
                         "history": 0,
                         "history_list": [],
                     },
+                    timeout=6000,
                 ).json()
                 # make this one hidden
                 # iterate over the objects in the json documents

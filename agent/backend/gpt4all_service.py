@@ -2,7 +2,7 @@
 from dotenv import load_dotenv
 from gpt4all import GPT4All
 from langchain.text_splitter import NLTKTextSplitter
-from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader
+from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_community.embeddings import GPT4AllEmbeddings
 from langchain_community.vectorstores import Qdrant
 from loguru import logger
@@ -35,6 +35,7 @@ class GPT4AllService(LLMBase):
     def __init__(self, cfg: DictConfig, collection_name: str, token: str | None) -> None:
         """Init the GPT4ALL Service."""
         self.cfg = cfg
+        self.token = token
 
         if collection_name:
             self.collection_name = collection_name
@@ -67,8 +68,8 @@ class GPT4AllService(LLMBase):
 
         Args:
         ----
-            cfg (DictConfig): Configuration from the file.
-            dir (str): PDF Directory.
+            directory (str): PDF Directory.
+            file_ending (str): The file ending of the documents.
 
         Returns:
         -------
@@ -121,8 +122,7 @@ class GPT4AllService(LLMBase):
 
         Args:
         ----
-            text (str): The text as basic input.
-            query (str): The query to be inserted into the template.
+            prompt (str): The prompt to be completed.
 
         Returns:
         -------
@@ -137,8 +137,7 @@ class GPT4AllService(LLMBase):
 
         Args:
         ----
-            open_ai_token (str): The OpenAI API token.
-            query (str): The question for which documents should be searched.
+            search (SearchRequest): The search request.
 
         Returns:
         -------
@@ -165,11 +164,7 @@ class GPT4AllService(LLMBase):
         if rag_request.search.amount == 0:
             msg = "No documents found."
             raise ValueError(msg)
-        if rag_request.search.amount > 1:
-            # extract all documents
-            text = "\n".join([doc.document for doc in documents])
-        else:
-            text = documents[0].document
+        text = "\n".join([doc.document for doc in documents]) if rag_request.search.amount > 1 else documents[0].document
 
         prompt = generate_prompt(prompt_name="gpt4all-completion.j2", text=text, query=rag_request.search.query)
 

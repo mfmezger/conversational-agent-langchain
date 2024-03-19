@@ -1,4 +1,4 @@
-"""This script is used to initialize the Qdrant db backend with Azure OpenAI."""
+"""Script is used to initialize the Qdrant db backend with Azure OpenAI."""
 import os
 from typing import Any
 
@@ -6,7 +6,7 @@ import openai
 from dotenv import load_dotenv
 from langchain.docstore.document import Document
 from langchain.text_splitter import NLTKTextSplitter
-from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader
+from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_community.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
 from langchain_community.vectorstores import Qdrant
 from loguru import logger
@@ -71,7 +71,7 @@ class OpenAIService(LLMBase):
                 deployment=self.cfg.openai_embeddings.embedding_model_name,
                 openai_api_version=self.cfg.openai_embeddings.openai_api_version,
                 openai_api_key=self.openai_token,
-            )  # type: ignore
+            )
         else:
             embedding = OpenAIEmbeddings(model=self.cfg.openai_embeddings.embedding_model_name, openai_api_key=self.openai_token)
 
@@ -117,8 +117,7 @@ class OpenAIService(LLMBase):
 
         Args:
         ----
-            open_ai_token (str): The OpenAI API token.
-            query (str): The question for which documents should be searched.
+            search (SearchRequest): The search request object.
 
         Returns:
         -------
@@ -215,6 +214,8 @@ class OpenAIService(LLMBase):
 if __name__ == "__main__":
     token = os.getenv("AZURE_OPENAI_API_KEY")
 
+    from agent.data_model.request_data_model import Filtering, LLMBackend, LLMProvider, SearchRequest
+
     if not token:
         msg = "OPENAI_API_KEY is not set."
         raise ValueError(msg)
@@ -222,8 +223,6 @@ if __name__ == "__main__":
     openai_service = OpenAIService(collection_name="openai", token="")
 
     openai_service.embed_documents(directory="tests/resources/")
-
-    logger.info(f"Documents: {docs}")
 
     answer, prompt, meta_data = openai_service.rag(
         RAGRequest(

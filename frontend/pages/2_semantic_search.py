@@ -62,6 +62,7 @@ def initialize() -> None:
                     "collection_name": collection_name,
                     "amount": amount,
                 },
+                timeout=60,
             ).json()
             with st.chat_message(name="ai", avatar="🤖"):
                 # Search the documents

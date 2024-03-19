@@ -423,7 +423,7 @@ def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQARespo
 
 
 @app.post("/process_document")
-async def process_document(files: list[UploadFile] = File(...), llm_backend: str = "aa", token: str | None = None, type: str = "invoice") -> None:
+async def process_document(files: list[UploadFile] = File(...), llm_backend: str = "aa", token: str | None = None, document_type: str = "invoice") -> None:
     """Process a document.
 
     Args:
@@ -461,7 +461,7 @@ async def process_document(files: list[UploadFile] = File(...), llm_backend: str
         with Path(tmp_dir / file_name).open() as f:
             f.write(await file.read())
 
-    process_documents_aleph_alpha(folder=tmp_dir, token=token, type=type)
+    process_documents_aleph_alpha(folder=tmp_dir, token=token, type=document_type)
 
 
 def search_database(request: SearchRequest) -> list[tuple[LangchainDocument, float]]:
@@ -657,7 +657,7 @@ def initialize_open_ai_vector_db() -> None:
         generate_collection_openai(qdrant_client, collection_name=cfg.qdrant.collection_name_openai)
 
 
-def generate_collection_openai(qdrant_client, collection_name) -> None:
+def generate_collection_openai(qdrant_client: Qdrant, collection_name: str) -> None:
     """Generate a collection for the OpenAI Backend.
 
     Args:
@@ -688,7 +688,7 @@ def initialize_gpt4all_vector_db() -> None:
         generate_collection_gpt4all(qdrant_client, collection_name=cfg.qdrant.collection_name_gpt4all)
 
 
-def generate_collection_gpt4all(qdrant_client, collection_name) -> None:
+def generate_collection_gpt4all(qdrant_client: Qdrant, collection_name: str) -> None:
     """Generate a collection for the GPT4ALL Backend.
 
     Args:

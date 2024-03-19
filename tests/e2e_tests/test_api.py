@@ -13,14 +13,14 @@ from agent.api import app, create_tmp_folder
 
 if TYPE_CHECKING:
     from httpx._models import Response
-
+http_ok = 200
 client: TestClient = TestClient(app)
 
 
 def test_read_root() -> None:
     """Test the root method."""
     response: Response = client.get("/")
-    assert response.status_code == 200
+    assert response.status_code == http_ok
     assert response.json() == "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
@@ -55,7 +55,7 @@ async def test_upload_documents(provider: str) -> None:
                 "/embeddings/documents", params={"llm_backend": "gpt4all", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
             )
 
-    assert response.status_code == 200
+    assert response.status_code == http_ok
     assert response.json() == {
         "status": "success",
         "files": ["1706.03762v5.pdf", "1912.01703v1.pdf"],
@@ -72,26 +72,26 @@ async def test_upload_documents(provider: str) -> None:
 async def test_embedd_one_document(provider: str) -> None:
     """Testing the upload of one document."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
-        tmp_file = Path("tests/resources/1706.03762v5.pdf").open("rb")
-
-        if provider == "aa":
-            logger.warning("Using Aleph Alpha API")
-            response: Response = await ac.post(
-                "/embeddings/documents",
-                params={"llm_backend": "aa", "token": os.getenv("ALEPH_ALPHA_API_KEY")},
-                files=[("files", tmp_file)],
-            )
-        elif provider == "gpt4all":
-            response: Response = await ac.post(
-                "/embeddings/documents",
-                params={"llm_backend": "gpt4all", "token": os.getenv("ALEPH_ALPHA_API_KEY")},
-                files=[("files", tmp_file)],
-            )
-    assert response.status_code == 200
-    assert response.json() == {
-        "status": "success",
-        "files": ["1706.03762v5.pdf"],
-    }
+        with Path("tests/resources/1706.03762v5.pdf").open("rb") as tmp_file:
+            # Use tmp_file here
+            if provider == "aa":
+                logger.warning("Using Aleph Alpha API")
+                response: Response = await ac.post(
+                    "/embeddings/documents",
+                    params={"llm_backend": "aa", "token": os.getenv("ALEPH_ALPHA_API_KEY")},
+                    files=[("files", tmp_file)],
+                )
+            elif provider == "gpt4all":
+                response: Response = await ac.post(
+                    "/embeddings/documents",
+                    params={"llm_backend": "gpt4all", "token": os.getenv("ALEPH_ALPHA_API_KEY")},
+                    files=[("files", tmp_file)],
+                )
+        assert response.status_code == http_ok
+        assert response.json() == {
+            "status": "success",
+            "files": ["1706.03762v5.pdf"],
+        }
 
     # Clean up temporary folders
     for entry in os.scandir():
@@ -117,7 +117,7 @@ def test_search_route() -> None:
             "threshold": 0,
         },
     )
-    assert response.status_code == 200
+    assert response.status_code == http_ok
     assert response.json() is not None
 
 
@@ -132,6 +132,6 @@ def test_embedd_text() -> None:
         json={"text": text, "llm_backend": {"llm_provider": "aa", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, "file_name": "file", "seperator": "###"},
     )
     logger.info(response)
-    assert response.status_code == 200
+    assert response.status_code == http_ok
     logger.info(response.json())
     assert response.json() == {"message": "Text received and saved.", "filenames": "file"}
