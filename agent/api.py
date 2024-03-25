@@ -91,12 +91,13 @@ def embedd_documents_wrapper(folder_name: str, service: LLMContext) -> None:
     Raises:
     ------
         ValueError: If an invalid LLM Provider is set.
+
     """
     # TODO: make file ending dynamic
     service.embed_documents(directory=folder_name, file_ending="*.pdf")
 
 
-@app.post("/collection/create/{llm_provider}/{collection_name}", tags=["collection"])
+@app.post("/collection/create/{llm_provider}/{collection_name}", tags=["collection"], tags=["collection"])
 def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONResponse:
     """Create a new collection in the vector database.
 
@@ -107,14 +108,9 @@ def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONRe
     """
     qdrant_client, _ = load_vec_db_conn()
 
-    if llm_provider == LLMProvider.ALEPH_ALPHA:
-        generate_collection_aleph_alpha(qdrant_client=qdrant_client, collection_name=collection_name, embeddings_size=5120)
-    elif llm_provider == LLMProvider.OPENAI:
-        generate_collection_openai(qdrant_client=qdrant_client, collection_name=collection_name)
-    elif llm_provider == LLMProvider.GPT4ALL:
-        generate_collection_gpt4all(qdrant_client=qdrant_client, collection_name=collection_name)
-    else:
-        raise HTTPException(status_code=400, detail=f"Unsupported LLM provider: {llm_provider}")
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_provider, token="", collection_name=collection_name))
+
+    service.create_collection(name=collection_name)
 
     # return a success message
     return JSONResponse(content={"message": f"Collection {collection_name} created."})
@@ -277,7 +273,9 @@ def search(request: SearchRequest) -> list[SearchResponse]:
         token=request.llm_backend.token, llm_backend=request.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
     )
 
-    DOCS = search_database(request)
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=request.search.llm_backend.llm_provider, token=request.search.llm_backend.token, collection_name=request.search.collection_name))
+
+    DOCS = service.search(search_request=request)
 
     if not DOCS:
         logger.info("No Documents found.")
@@ -302,8 +300,8 @@ def search(request: SearchRequest) -> list[SearchResponse]:
 
     return response
 
-
-@app.post("/qa")
+# TODO alias qa
+@app.post("/rag", tags=["rag"])
 def question_answer(request: RAGRequest) -> QAResponse:
     """Answer a question based on the documents in the database.
 
@@ -329,6 +327,7 @@ def question_answer(request: RAGRequest) -> QAResponse:
         token=request.search.llm_backend.token, llm_backend=request.search.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
     )
 
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=request.search.llm_backend.llm_provider, token=request.search.llm_backend.token, collection_name=request.search.collection_name))
     # if the history flag is activated and the history is not provided, raise an error
     if request.history and request.history_list is None:
         msg = "Please provide a HistoryList."
@@ -338,55 +337,22 @@ def question_answer(request: RAGRequest) -> QAResponse:
     if request.history:
         # combine the texts
         text = combine_text_from_list(request.history_list)
-        if request.search.llm_backend == LLMProvider.ALEPH_ALPHA:
-            # summarize the text
-            summary = summarize_text_aleph_alpha(text=text, token=request.search.llm_backend.token)
-            # combine the history and the query
-            request.search.query = f"{summary}\n{request.search.query}"
+        summary = service.summarize_text(text=text, token="")
 
-        elif request.search.llm_backend == LLMProvider.OPENAI:
-            pass
-
-        elif request.search.llm_backend == LLMProvider.GPT4ALL:
-            # summarize the text
-            summary = summarize_text_gpt4all(text=text)
-            # combine the history and the query
-            request.search.query = f"{summary}\n{request.search.query}"
-        else:
-            msg = f"Unsupported LLM provider: {request.search.llm_backend.llm_provider}"
-            raise ValueError(msg)
-
-    documents = search_database(request.search)
-
-    # call the qa function
-    if request.search.llm_backend.llm_provider == LLMProvider.ALEPH_ALPHA:
-        answer, prompt, meta_data = qa_aleph_alpha(query=request.search.query, documents=documents, aleph_alpha_token=request.search.llm_backend.token)
-    elif request.search.llm_backend.llm_provider == LLMProvider.OPENAI:
-        # TODO: Implement
-        msg = f"Unsupported LLM provider: {request.search.llm_backend.llm_provider}"
-        raise ValueError(msg)
-    elif request.search.llm_backend.llm_provider == LLMProvider.GPT4ALL:
-        answer, prompt, meta_data = qa_gpt4all(documents=documents, query=request.search.query, summarization=request.summarization, language=request.language)
-    else:
-        msg = f"Unsupported LLM provider: {request.search.llm_backend.llm_provider}"
-        raise ValueError(msg)
+    answer, prompt, meta_data = service.rag(request)
 
     return QAResponse(answer=answer, prompt=prompt, meta_data=meta_data)
 
 
 @app.post("/explanation/explain-qa")
 def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQAResponse:
-    # query: Optional[str] = None, llm_backend: str = "aa", token: Optional[str] = None, amount: int = 1, threshold: float = 0.0
     """Answer a question & explains it based on the documents in the database. This only works with Aleph Alpha.
 
     This uses the normal qa but combines it with the explain function.
 
     Args:
     ----
-        query (str, optional): _description_. Defaults to None.
-        aa_or_openai (str, optional): _description_. Defaults to "openai".
-        token (str, optional): _description_. Defaults to None.
-        amount (int, optional): _description_. Defaults to 1.
+        explain_request (ExplainQARequest): The Explain Requesat
 
     Raises:
     ------
@@ -395,6 +361,7 @@ def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQARespo
     Returns:
     -------
         Tuple: Answer, Prompt and Meta Data
+
     """
     logger.info("Answering Question and Explaining it.")
     # if the query is not provided, raise an error

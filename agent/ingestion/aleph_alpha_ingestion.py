@@ -152,15 +152,15 @@ def parse_txts(text: str, file_name: str, seperator: str, vector_db: Qdrant) -> 
     vector_db.add_texts(texts=text_list, metadatas=metadata_list)
 
 
-def parse_pdf(dir: str, vector_db: Qdrant) -> None:
+def parse_pdf(directory: str, vector_db: Qdrant) -> None:
     """Parse the pdfs and add them to the vector db.
 
     Args:
     ----
-        dir (str): The directory to parse
+        directory (str): The directory to parse
         vector_db (Qdrant): The vector db
     """
-    loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFium2Loader)
+    loader = DirectoryLoader(directory, glob="*.pdf", loader_cls=PyPDFium2Loader)
 
     docs = loader.load_and_split(splitter)
 
@@ -173,16 +173,17 @@ def parse_pdf(dir: str, vector_db: Qdrant) -> None:
     logger.info("SUCCESS: Texts added to Qdrant DB.")
 
 
-def parse_json(dir: str, vector_db: Qdrant) -> None:
+def parse_json(directory: str, vector_db: Qdrant) -> None:
     """Parse the json and add them to the vector db.
 
     Args:
     ----
-        dir (str): The directory to parse
+        directory (str): The directory to parse
         vector_db (Qdrant): The vector db
+
     """
     # open json file
-    with open(dir) as file:
+    with Path(directory).open() as file:
         json_file = json.load(file)
 
     token_list = []
@@ -206,9 +207,9 @@ def parse_json(dir: str, vector_db: Qdrant) -> None:
             for s in tqdm(splits):
                 # print(f"Number of tokens: {count_tokens(s)}")
                 token_list.append(count_tokens(s))
-                s = re.sub(r"\n", " ", s)
+                se = re.sub(r"\n", " ", s)
                 # add to embedding list
-                text_result_list.append(s)
+                text_result_list.append(se)
                 enriched_text_list.append(f"Author: {metadata['author']}, Title: {metadata['title']}, Chapter: {metadata['chapter']} Text: {s}")
                 metadata_list.append(
                     {
@@ -253,7 +254,7 @@ def main() -> None:
     initialize_aleph_alpha_vector_db()
     vector_db = setup_connection_vector_db()
 
-    parse_pdf(dir=Path("data/"), vector_db=vector_db)
+    parse_pdf(directory=Path("data/"), vector_db=vector_db)
     txt_dir = Path("data/txt")
     for file_name in txt_dir.iterdir():
         with file_name.open() as f:

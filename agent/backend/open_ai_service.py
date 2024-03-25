@@ -128,7 +128,7 @@ class OpenAIService(LLMBase):
         logger.info("SUCCESS: Documents found.")
         return docs
 
-    def summarize_text(self, text: str, token: str) -> str:
+    def summarize_text(self, text: str) -> str:
         """Summarizes the given text using the OpenAI API.
 
         Args:

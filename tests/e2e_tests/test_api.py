@@ -27,7 +27,7 @@ def test_read_root() -> None:
 def test_create_tmp_folder() -> None:
     """Test the create folder method."""
     tmp_dir = create_tmp_folder()
-    assert os.path.exists(tmp_dir)
+    assert Path(tmp_dir).exits()
     shutil.rmtree(tmp_dir)
 
 
@@ -36,10 +36,8 @@ def test_create_tmp_folder() -> None:
 async def test_upload_documents(provider: str) -> None:
     """Testing the upload of multiple documents."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
-        files = [
-            Path("tests/resources/1706.03762v5.pdf").open("rb"),
-            Path("tests/resources/1912.01703v1.pdf").open("rb"),
-        ]
+        with Path("tests/resources/1706.03762v5.pdf").open("rb") as file1, Path("tests/resources/1912.01703v1.pdf").open("rb") as file2:
+            files = [file1, file2]
         if provider == "openai":
             logger.warning("Using OpenAI API")
             response: Response = await ac.post(

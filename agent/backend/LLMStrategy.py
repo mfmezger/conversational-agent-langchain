@@ -43,11 +43,11 @@ class LLMStrategyFactory:
         -------
             LLMBase: _description_
         """
-        Strategy = LLMStrategyFactory._strategies.get(strategy_type)
-        if Strategy is None:
+        strategy = LLMStrategyFactory._strategies.get(strategy_type)
+        if strategy is None:
             msg = "Unknown Strategy Type"
             raise ValueError(msg)
-        return Strategy(token, collection_name)
+        return strategy(token, collection_name)
 
 
 class LLMContext:

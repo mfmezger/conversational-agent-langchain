@@ -1,4 +1,4 @@
-# """The page to upload  a pdf."""
+"""The page to upload  a pdf."""
 
 # import streamlit as st
 # from loguru import logger
