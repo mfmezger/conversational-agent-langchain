@@ -3,10 +3,8 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, UploadFile
 from fastapi.openapi.utils import get_openapi
-from langchain.docstore.document import Document as LangchainDocument
-from langchain_community.vectorstores import Qdrant
 from loguru import logger
 from qdrant_client import models
 from qdrant_client.http.models.models import UpdateResult
@@ -18,6 +16,8 @@ from agent.data_model.request_data_model import (
     EmbeddTextFilesRequest,
     EmbeddTextRequest,
     ExplainQARequest,
+    Filtering,
+    LLMBackend,
     LLMProvider,
     RAGRequest,
     SearchRequest,
@@ -31,9 +31,11 @@ from agent.data_model.response_data_model import (
 from agent.utils.utility import (
     combine_text_from_list,
     create_tmp_folder,
+    initialize_aleph_alpha_vector_db,
+    initialize_gpt4all_vector_db,
+    initialize_open_ai_vector_db,
     validate_token,
 )
-from agent.utils.vdb import load_vec_db_conn
 
 # add file logger for loguru
 # logger.add("logs/file_{time}.log", backtrace=False, diagnose=False)
@@ -50,7 +52,7 @@ def my_schema() -> dict:
     openapi_schema = get_openapi(
         title="Conversational AI API",
         version="1.0",
-        description="Chat with your Documents using Conversational AI by Aleph Alpha and OpenAI.",
+        description="Chat with your Documents using Conversational AI by Aleph Alpha, GPT4ALL and OpenAI.",
         routes=app.routes,
     )
     app.openapi_schema = openapi_schema
@@ -97,7 +99,7 @@ def embedd_documents_wrapper(folder_name: str, service: LLMContext) -> None:
     service.embed_documents(directory=folder_name, file_ending="*.pdf")
 
 
-@app.post("/collection/create/{llm_provider}/{collection_name}", tags=["collection"], tags=["collection"])
+@app.post("/collection/create/{llm_provider}/{collection_name}", tags=["collection"])
 def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONResponse:
     """Create a new collection in the vector database.
 
@@ -106,8 +108,6 @@ def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONRe
         llm_provider (LLMProvider): Name of the LLM Provider
         collection_name (str): Name of the Collection
     """
-    qdrant_client, _ = load_vec_db_conn()
-
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_provider, token="", collection_name=collection_name))
 
     service.create_collection(name=collection_name)
@@ -165,12 +165,13 @@ async def post_embedd_documents(
 
 
 @app.post("/embeddings/text/", tags=["embeddings"])
-async def embedd_text(request: EmbeddTextRequest) -> EmbeddingResponse:
+async def embedd_text(request: EmbeddTextRequest, llm_backend: LLMBackend) -> EmbeddingResponse:
     """Embeds text in the database.
 
     Args:
     ----
         request (EmbeddTextRequest): The request parameters.
+        llm_backend (LLMBackend): The LLM Backend.
 
     Raises:
     ------
@@ -181,36 +182,23 @@ async def embedd_text(request: EmbeddTextRequest) -> EmbeddingResponse:
         JSONResponse: A response indicating that the text was received and saved, along with the name of the file it was saved to.
     """
     logger.info("Embedding Text")
-    token = validate_token(token=request.llm_backend.token, llm_backend=request.llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    token = validate_token(token=llm_backend.token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
-    logger.info(f"Requested Backend is: {request.llm_backend}")
-    if request.llm_backend.llm_provider in {"aleph-alpha", "aleph_alpha", "aa"}:
-        # Embedd the documents with Aleph Alpha
-        embedd_text_aleph_alpha(text=request.text, file_name=request.file_name, aleph_alpha_token=token, seperator=request.seperator)
-        # return a success notificaton
-        return JSONResponse(content={"message": "Text received and saved.", "filenames": request.file_name})
-    elif request.llm_backend.llm_provider == "openai":
-        # Embedd the documents with OpenAI
-        # TODO: Implement
-        msg = "Not implemented yet."
-        raise ValueError(msg)
-    elif request.llm_backend.llm_provider == "gpt4all":
-        embedd_text_gpt4all(text=request.text, file_name=request.file_name, seperator=request.seperator)
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=token, collection_name=llm_backend.collection_name))
 
-    else:
-        msg = "Please provide either 'aleph-alpha', 'gpt4all' or 'openai' as a parameter. Other backends are not implemented yet."
-        raise ValueError(msg)
+    service.embed_documents(text=request.text, file_name=request.file_name, seperator=request.seperator)
 
     return EmbeddingResponse(status="success", files=[request.file_name])
 
 
 @app.post("/embeddings/texts/files", tags=["embeddings"])
-async def embedd_text_files(request: EmbeddTextFilesRequest) -> EmbeddingResponse:
+async def embedd_text_files(request: EmbeddTextFilesRequest, llm_backend: LLMBackend) -> EmbeddingResponse:
     """Embeds text files in the database.
 
     Args:
     ----
         request (EmbeddTextFilesRequest): The request parameters.
+        llm_backend (LLMBackend): The LLM Backend.
 
     Raises:
     ------
@@ -241,24 +229,24 @@ async def embedd_text_files(request: EmbeddTextFilesRequest) -> EmbeddingRespons
         with Path(tmp_dir / file_name).open("wb") as f:
             f.write(await file.read())
 
-    token = validate_token(token=request.token, llm_backend=request.search.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    token = validate_token(token=request.token, llm_backend=llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
-    if request.search.llm_backend is None:
-        msg = "Please provide a LLM Provider of choice."
-        raise ValueError(msg)
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=token, collection_name=llm_backend.collection_name))
 
-    embedd_text_files_aleph_alpha(folder=tmp_dir, aleph_alpha_token=token, seperator=request.seperator)
+    service.embed_documents(folder=tmp_dir, aleph_alpha_token=token, seperator=request.seperator)
 
     return EmbeddingResponse(status="success", files=file_names)
 
 
 @app.post("/semantic/search", tags=["search"])
-def search(request: SearchRequest) -> list[SearchResponse]:
+def search(request: SearchRequest, llm_backend: LLMBackend, filtering: Filtering) -> list[SearchResponse]:
     """Searches for a query in the vector database.
 
     Args:
     ----
         request (SearchRequest): The search request.
+        llm_backend (LLMBackend): The LLM Backend.
+        filtering (Filtering): The Filtering Parameters.
 
     Raises:
     ------
@@ -270,10 +258,10 @@ def search(request: SearchRequest) -> list[SearchResponse]:
     """
     logger.info("Searching for Documents")
     request.llm_backend.token = validate_token(
-        token=request.llm_backend.token, llm_backend=request.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
+        token=llm_backend.token, llm_backend=llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
     )
 
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=request.search.llm_backend.llm_provider, token=request.search.llm_backend.token, collection_name=request.search.collection_name))
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=llm_backend.token, collection_name=request.search.collection_name))
 
     DOCS = service.search(search_request=request)
 
@@ -284,24 +272,17 @@ def search(request: SearchRequest) -> list[SearchResponse]:
     logger.info(f"Found {len(DOCS)} documents.")
 
     response = []
-    try:
-        for d in DOCS:
-            score = d[1]
-            text = d[0].page_content
-            page = d[0].metadata["page"]
-            source = d[0].metadata["source"]
-            response.append(SearchResponse(text=text, page=page, source=source, score=score))
-    except ValueError:
-        for d in DOCS:
-            score = d[1]
-            text = d[0].page_content
-            source = d[0].metadata["source"]
-            response.append(SearchResponse(text=text, page=0, source=source, score=score))
+    for d in DOCS:
+        score = d[1]
+        text = d[0].page_content
+        page = d[0].metadata["page"]
+        source = d[0].metadata["source"]
+        response.append(SearchResponse(text=text, page=page, source=source, score=score))
 
     return response
 
-# TODO alias qa
-@app.post("/rag", tags=["rag"])
+
+@app.post("/rag", tags=["rag"], alias="qa")
 def question_answer(request: RAGRequest) -> QAResponse:
     """Answer a question based on the documents in the database.
 
@@ -327,7 +308,11 @@ def question_answer(request: RAGRequest) -> QAResponse:
         token=request.search.llm_backend.token, llm_backend=request.search.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
     )
 
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=request.search.llm_backend.llm_provider, token=request.search.llm_backend.token, collection_name=request.search.collection_name))
+    service = LLMContext(
+        LLMStrategyFactory.get_strategy(
+            strategy_type=request.search.llm_backend.llm_provider, token=request.search.llm_backend.token, collection_name=request.search.collection_name
+        )
+    )
     # if the history flag is activated and the history is not provided, raise an error
     if request.history and request.history_list is None:
         msg = "Please provide a HistoryList."
@@ -337,7 +322,7 @@ def question_answer(request: RAGRequest) -> QAResponse:
     if request.history:
         # combine the texts
         text = combine_text_from_list(request.history_list)
-        summary = service.summarize_text(text=text, token="")
+        service.summarize_text(text=text, token="")
 
     answer, prompt, meta_data = service.rag(request)
 
@@ -376,7 +361,11 @@ def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQARespo
         openai_key=OPENAI_API_KEY,
     )
 
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=request.search.llm_backend.llm_provider, token=request.search.llm_backend.token, collection_name=request.search.collection_name))
+    service = LLMContext(
+        LLMStrategyFactory.get_strategy(
+            strategy_type=request.search.llm_backend.llm_provider, token=request.search.llm_backend.token, collection_name=request.search.collection_name
+        )
+    )
 
     documents = service.search(explain_request.rag_request.search)
 
@@ -450,10 +439,13 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
     """
     logger.info("Sending Custom Completion Request")
 
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=request.search.llm_backend.llm_provider, token=request.search.llm_backend.token, collection_name=request.search.collection_name))
+    service = LLMContext(
+        LLMStrategyFactory.get_strategy(
+            strategy_type=request.search.llm_backend.llm_provider, token=request.search.llm_backend.token, collection_name=request.search.collection_name
+        )
+    )
 
-    answer = service.generate(request.text)
-    return answer
+    return service.generate(request.text)
 
 
 @app.delete("/embeddings/delete/{llm_provider}/{page}/{source}")
@@ -504,99 +496,6 @@ def delete(
 
     logger.info("Deleted Point from Database via Metadata.")
     return result
-
-
-def initialize_aleph_alpha_vector_db() -> None:
-    """Initializes the Aleph Alpha vector db.
-
-    Args:
-    ----
-        cfg (DictConfig): Configuration from the file
-    """
-    qdrant_client, cfg = load_vec_db_conn()
-    try:
-        qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_aa)
-        logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_aa} already exists.")
-    except Exception:
-        generate_collection_aleph_alpha(qdrant_client, collection_name=cfg.qdrant.collection_name_aa, embeddings_size=cfg.aleph_alpha_embeddings.size)
-
-
-def generate_collection_aleph_alpha(qdrant_client: Qdrant, collection_name: str, embeddings_size: int) -> None:
-    """Generate a collection for the Aleph Alpha Backend.
-
-    Args:
-    ----
-        qdrant_client (_type_): _description_
-        collection_name (_type_): _description_
-        embeddings_size (_type_): _description_
-    """
-    qdrant_client.recreate_collection(
-        collection_name=collection_name,
-        vectors_config=models.VectorParams(size=embeddings_size, distance=models.Distance.COSINE),
-    )
-    logger.info(f"SUCCESS: Collection {collection_name} created.")
-
-
-def initialize_open_ai_vector_db() -> None:
-    """Initializes the OpenAI vector db.
-
-    Args:
-    ----
-        cfg (DictConfig): Configuration from the file
-    """
-    qdrant_client, cfg = load_vec_db_conn()
-
-    try:
-        qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_openai)
-        logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_openai} already exists.")
-    except Exception:
-        generate_collection_openai(qdrant_client, collection_name=cfg.qdrant.collection_name_openai)
-
-
-def generate_collection_openai(qdrant_client: Qdrant, collection_name: str) -> None:
-    """Generate a collection for the OpenAI Backend.
-
-    Args:
-    ----
-        qdrant_client (_type_): Qdrant Client Langchain.
-        collection_name (_type_): Name of the Collection
-    """
-    qdrant_client.recreate_collection(
-        collection_name=collection_name,
-        vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
-    )
-    logger.info(f"SUCCESS: Collection {collection_name} created.")
-
-
-def initialize_gpt4all_vector_db() -> None:
-    """Initializes the GPT4ALL vector db.
-
-    Args:
-    ----
-        cfg (DictConfig): Configuration from the file
-    """
-    qdrant_client, cfg = load_vec_db_conn()
-
-    try:
-        qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_gpt4all)
-        logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_gpt4all} already exists.")
-    except Exception:
-        generate_collection_gpt4all(qdrant_client, collection_name=cfg.qdrant.collection_name_gpt4all)
-
-
-def generate_collection_gpt4all(qdrant_client: Qdrant, collection_name: str) -> None:
-    """Generate a collection for the GPT4ALL Backend.
-
-    Args:
-    ----
-        qdrant_client (Qdrant): Qdrant Client
-        collection_name (str): Name of the Collection
-    """
-    qdrant_client.recreate_collection(
-        collection_name=collection_name,
-        vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
-    )
-    logger.info(f"SUCCESS: Collection {collection_name} created.")
 
 
 # initialize the databases

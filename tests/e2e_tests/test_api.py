@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from loguru import logger
 
-from agent.api import app, create_tmp_folder
+from agent.api import app
 
 if TYPE_CHECKING:
     from httpx._models import Response
@@ -24,11 +24,42 @@ def test_read_root() -> None:
     assert response.json() == "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
-def test_create_tmp_folder() -> None:
-    """Test the create folder method."""
-    tmp_dir = create_tmp_folder()
-    assert Path(tmp_dir).exits()
-    shutil.rmtree(tmp_dir)
+@pytest.mark.parametrize("provider", ["aa", "gpt4all", "openai"])
+def test_semantic_search(provider: str) -> None:
+    response: Response = client.post(
+        "/semantic/search",
+        json={
+            "query": "What is Attention",
+            "llm_backend": {"llm_provider": provider},
+            "filtering": {
+                "threshold": 0,
+                "collection_name": "",
+                "filter": {},
+            },
+            "collection_name": "string",
+            "filter": {},
+            "amount": 3,
+            "threshold": 0,
+        },
+    )
+    assert response.status_code == http_ok
+    assert response.json() is not None
+
+
+def test_embeddings_text() -> None:
+    """Test the embedd_text function."""
+    # load text
+    with Path("tests/resources/file1.txt").open() as f:
+        text = f.read()
+
+    response: Response = client.post(
+        "/embeddings/text/",
+        json={"text": text, "llm_backend": {"llm_provider": "aa", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, "file_name": "file", "seperator": "###"},
+    )
+    logger.info(response)
+    assert response.status_code == http_ok
+    logger.info(response.json())
+    assert response.json() == {"message": "Text received and saved.", "filenames": "file"}
 
 
 @pytest.mark.asyncio()
@@ -95,41 +126,3 @@ async def test_embedd_one_document(provider: str) -> None:
     for entry in os.scandir():
         if entry.name.startswith("tmp_") and entry.is_dir():
             shutil.rmtree(entry.path)
-
-
-def test_search_route() -> None:
-    """Testing with wrong backend."""
-    response: Response = client.post(
-        "/semantic/search",
-        json={
-            "query": "Was ist Vanilin",
-            "llm_backend": {"llm_provider": "aa"},
-            "filtering": {
-                "threshold": 0,
-                "collection_name": "aleph_alpha",
-                "filter": {},
-            },
-            "collection_name": "string",
-            "filter": {},
-            "amount": 3,
-            "threshold": 0,
-        },
-    )
-    assert response.status_code == http_ok
-    assert response.json() is not None
-
-
-def test_embedd_text() -> None:
-    """Test the embedd_text function."""
-    # load text
-    with Path("tests/resources/file1.txt").open() as f:
-        text = f.read()
-
-    response: Response = client.post(
-        "/embeddings/text/",
-        json={"text": text, "llm_backend": {"llm_provider": "aa", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, "file_name": "file", "seperator": "###"},
-    )
-    logger.info(response)
-    assert response.status_code == http_ok
-    logger.info(response.json())
-    assert response.json() == {"message": "Text received and saved.", "filenames": "file"}

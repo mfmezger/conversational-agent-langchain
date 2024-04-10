@@ -43,6 +43,7 @@ class LLMBackend(BaseModel):
 
     llm_provider: LLMProvider = Field(LLMProvider.ALEPH_ALPHA, description="The LLM provider to use for embedding.")
     token: str | None = Field(None, description="The API token for the LLM provider.")
+    collection_name: str | None = Field(None, description="The name of the Qdrant Collection.")
 
 
 class Filtering(BaseModel):
@@ -59,7 +60,6 @@ class EmbeddTextFilesRequest(BaseModel):
     """The request for the Embedd Text Files endpoint."""
 
     files: list[UploadFile] = Field(..., description="The list of text files to embed.")
-    llm_backend: LLMBackend
     seperator: str = Field("###", description="The seperator to use between embedded texts.")
 
 
@@ -68,8 +68,6 @@ class SearchRequest(BaseModel):
     """The request parameters for searching the database."""
 
     query: str = Field(..., title="Query", description="The search query.")
-    llm_backend: LLMBackend
-    filtering: Filtering
     amount: int = Field(3, title="Amount", description="The number of search results to return.")
 
 
@@ -79,7 +77,6 @@ class EmbeddTextRequest(BaseModel):
 
     text: str = Field(..., title="Text", description="The text to embed.")
     file_name: str = Field(..., title="File Name", description="The name of the file to save the embedded text to.")
-    llm_backend: LLMBackend
     seperator: str = Field("###", title="seperator", description="The seperator to use between embedded texts.")
 
 
@@ -89,7 +86,6 @@ class CustomPromptCompletion(BaseModel):
 
     token: str = Field(..., title="Token", description="The API token for the LLM provider.")
     prompt: str = Field(..., title="Prompt", description="The prompt to use for the completion.")
-    llm_backend: LLMBackend
     model: str = Field(..., title="Model", description="The model to use for the completion.")
     max_tokens: int = Field(256, title="Max Tokens", description="The maximum number of tokens to generate.")
     temperature: float = Field(..., title="Temperature", description="The temperature to use for the completion.")
@@ -100,10 +96,8 @@ class RAGRequest(BaseModel):
 
     """Request for the QA endpoint."""
 
-    search: SearchRequest
     language: Language | None = Field(Language.DETECT, title="Language", description="The language to use for the answer.")
-    history: int | None = Field(0, title="History", description="The number of previous questions to include in the context.")
-    history_list: list[str] | None = Field([], title="History List", description="A list of previous questions to include in the context.")
+    history: dict[str, str] | None = Field([], title="History", description="A list of previous questions and answers to include in the context.")
 
 
 class ExplainQARequest(BaseModel):
