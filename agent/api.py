@@ -376,7 +376,9 @@ def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQARespo
         openai_key=OPENAI_API_KEY,
     )
 
-    documents = search_database(explain_request.rag_request.search)
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=request.search.llm_backend.llm_provider, token=request.search.llm_backend.token, collection_name=request.search.collection_name))
+
+    documents = service.search(explain_request.rag_request.search)
 
     # call the qa function
     explanation, score, text, answer, meta_data = explain_qa(
@@ -430,52 +432,6 @@ async def process_document(files: list[UploadFile] = File(...), llm_backend: str
 
     process_documents_aleph_alpha(folder=tmp_dir, token=token, type=document_type)
 
-
-def search_database(request: SearchRequest) -> list[tuple[LangchainDocument, float]]:
-    """Searches the database for a query.
-
-    Args:
-    ----
-        request (SearchRequest): The request parameters.
-
-    Raises:
-    ------
-        ValueError: If the LLM provider is not implemented yet.
-
-    Returns:
-    -------
-        JSON List of Documents consisting of the text, page, source and score.
-    """
-    logger.info("Searching for Documents")
-
-    if request.llm_backend.llm_provider == LLMProvider.ALEPH_ALPHA:
-        # Embedd the documents with Aleph Alpha
-        documents = search_documents_aleph_alpha(
-            aleph_alpha_token=request.llm_backend.token,
-            query=request.query,
-            amount=request.amount,
-            threshold=request.filtering.threshold,
-            collection_name=request.filtering.collection_name,
-        )
-    elif request.llm_backend.llm_provider == LLMProvider.OPENAI:
-        documents = search_documents_openai(
-            open_ai_token=request.llm_backend.token,
-            query=request.query,
-            amount=request.amount,
-            threshold=request.filtering.threshold,
-            collection_name=request.filtering.collection_name,
-        )
-    elif request.llm_backend.llm_provider == LLMProvider.GPT4ALL:
-        documents = search_documents_gpt4all(
-            query=request.query,
-            amount=request.amount,
-            threshold=request.filtering.threshold,
-            collection_name=request.filtering.collection_name,
-        )
-    else:
-        msg = f"Unsupported LLM provider: {request.llm_backend}"
-        raise ValueError(msg)
-
     logger.info(f"Found {len(documents)} documents.")
     return documents
 
@@ -493,37 +449,10 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
         ValueError: If the LLM provider is not implemented yet.
     """
     logger.info("Sending Custom Completion Request")
-    if request.search.llm_backend == LLMProvider.ALEPH_ALPHA:
-        # sent a completion
-        answer = custom_completion_prompt_aleph_alpha(
-            prompt=request.prompt,
-            token=request.token,
-            model=request.model,
-            stop_sequences=request.stop_sequences,
-            temperature=request.temperature,
-            max_tokens=request.max_tokens,
-        )
-    elif request.search.llm_backend == LLMProvider.OPENAI:
-        answer = send_custom_completion_openai(
-            prompt=request.prompt,
-            token=request.token,
-            model=request.model,
-            stop_sequences=request.stop_sequences,
-            temperature=request.temperature,
-            max_tokens=request.max_tokens,
-        )
-    elif request.search.llm_backend == LLMProvider.GPT4ALL:
-        answer = custom_completion_prompt_gpt4all(
-            prompt=request.prompt,
-            model=request.model,
-            temperature=request.temperature,
-            max_tokens=request.max_tokens,
-        )
 
-    else:
-        msg = f"Unsupported LLM provider: {request.search.llm_backend}"
-        raise ValueError(msg)
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=request.search.llm_backend.llm_provider, token=request.search.llm_backend.token, collection_name=request.search.collection_name))
 
+    answer = service.generate(request.text)
     return answer
 
 
