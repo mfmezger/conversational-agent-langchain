@@ -14,8 +14,8 @@ aleph_alpha_embeddings:
   model_name: "luminous-base"
 
 openai_embeddings:
-  azure: True
-  embedding_model_name: embedding-ada
+  azure: False
+  embedding_model_name: text-embedding-ada-002
   openai_api_version: 2024-02-15-preview
 
 aleph_alpha_completion:
