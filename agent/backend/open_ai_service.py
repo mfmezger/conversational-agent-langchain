@@ -1,6 +1,5 @@
 """Script is used to initialize the Qdrant db backend with Azure OpenAI."""
 import os
-from typing import Any
 
 import openai
 from dotenv import load_dotenv
@@ -123,7 +122,7 @@ class OpenAIService(LLMBase):
             List[Tuple[Document, float]]: A list of search results, where each result is a tuple
             containing a Document object and a float score.
         """
-        docs = self.vector_db.similarity_search_with_score(search.query, k=search.amount, score_threshold=filtering.threshold, filtering=filtering.filter)
+        docs = self.vector_db.similarity_search_with_score(search.query, k=search.amount, score_threshold=filtering.threshold, filter=filtering.filter)
         logger.info("SUCCESS: Documents found.")
         return docs
 
@@ -180,9 +179,9 @@ class OpenAIService(LLMBase):
             stream=False,
         )
 
-        return response.choices[0].messages.content
+        return response.choices[0].message.content
 
-    def rag(self, rag_request: RAGRequest, search: SearchRequest, filtering: Filtering) -> tuple[Any, str, dict[Any, Any]]:
+    def rag(self, rag_request: RAGRequest, search: SearchRequest, filtering: Filtering) -> tuple:
         """QA Function for OpenAI LLMs.
 
         Args:
@@ -196,10 +195,10 @@ class OpenAIService(LLMBase):
             tuple: answer, prompt, meta_data
         """
         documents = self.search(search=search, filtering=filtering)
-        if search.amount == 0:
+        if len(documents) == 0:
             msg = "No documents found."
             raise ValueError(msg)
-        text = "\n".join([doc.document for doc in documents]) if len(documents) > 1 else documents[0].document
+        text = "\n".join([doc[0].page_content for doc in documents]) if len(documents) > 1 else documents[0].document
 
         prompt = generate_prompt(prompt_name="openai-qa.j2", text=text, query=search.query, language=rag_request.language)
 
@@ -212,7 +211,7 @@ if __name__ == "__main__":
     token = os.getenv("OPENAI_API_KEY")
     logger.info(f"Token: {token}")
 
-    from agent.data_model.request_data_model import Filtering, LLMBackend, LLMProvider, SearchRequest
+    from agent.data_model.request_data_model import Filtering, SearchRequest
 
     if not token:
         msg = "OPENAI_API_KEY is not set."
@@ -223,12 +222,9 @@ if __name__ == "__main__":
     openai_service.embed_documents(directory="tests/resources/")
 
     answer, prompt, meta_data = openai_service.rag(
-        RAGRequest(
-            query="Was ist Attention?",
-            amount=3,
-        ),
+        RAGRequest(language="detect", filter={}),
+        SearchRequest(query="Was ist Attention", amount=3),
         Filtering(threshold=0.0, collection_name="openai"),
-        LLMBackend(token=token, provider=LLMProvider.OPENAI),
     )
 
     logger.info(f"Answer: {answer}")
