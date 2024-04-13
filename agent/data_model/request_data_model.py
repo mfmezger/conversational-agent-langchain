@@ -51,7 +51,6 @@ class Filtering(BaseModel):
     """The Filtering Model."""
 
     threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
-    collection_name: str | None = Field("aleph_alpha", title="Name of the Collection", description="Name of the Qdrant Collection.")
     filter: dict | None = Field(None, title="Filter", description="Filter for the database search with metadata.")
 
 

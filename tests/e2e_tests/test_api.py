@@ -29,24 +29,17 @@ def test_semantic_search(provider: str) -> None:
     response: Response = client.post(
         "/semantic/search",
         json={
-            "query": "What is Attention",
-            "llm_backend": {"llm_provider": provider},
-            "filtering": {
-                "threshold": 0,
-                "collection_name": "",
-                "filter": {},
-            },
-            "collection_name": "string",
-            "filter": {},
-            "amount": 3,
-            "threshold": 0,
+            "request": {"query": "What is Attention?", "amount": 3},
+            "llm_backend": {"llm_provider": "aa", "token": "", "collection_name": ""},
+            "filtering": {"threshold": 0, "collection_name": "aleph_alpha", "filter": {}},
         },
     )
     assert response.status_code == http_ok
     assert response.json() is not None
 
 
-def test_embeddings_text() -> None:
+@pytest.mark.parametrize("provider", ["aa", "gpt4all", "openai"])
+def test_embeddings_text(provider: str) -> None:
     """Test the embedd_text function."""
     # load text
     with Path("tests/resources/file1.txt").open() as f:
@@ -54,34 +47,22 @@ def test_embeddings_text() -> None:
 
     response: Response = client.post(
         "/embeddings/text/",
-        json={"text": text, "llm_backend": {"llm_provider": "aa", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, "file_name": "file", "seperator": "###"},
+        json={"text": text, "llm_backend": {"llm_provider": provider, "token": "", "collection_name": ""}, "file_name": "file", "seperator": "###"},
     )
-    logger.info(response)
     assert response.status_code == http_ok
-    logger.info(response.json())
     assert response.json() == {"message": "Text received and saved.", "filenames": "file"}
 
 
 @pytest.mark.asyncio()
-@pytest.mark.parametrize("provider", ["aa", "gpt4all"])  # TODO: if i get access again maybe also "openai",
+@pytest.mark.parametrize("provider", ["aa", "openai", "gpt4all"])
 async def test_upload_documents(provider: str) -> None:
     """Testing the upload of multiple documents."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
         with Path("tests/resources/1706.03762v5.pdf").open("rb") as file1, Path("tests/resources/1912.01703v1.pdf").open("rb") as file2:
             files = [file1, file2]
-        if provider == "openai":
             logger.warning("Using OpenAI API")
             response: Response = await ac.post(
-                "/embeddings/documents", params={"llm_backend": "openai", "token": os.getenv("OPENAI_API_KEY")}, files=[("files", file) for file in files]
-            )
-        elif provider == "aa":
-            logger.warning("Using Aleph Alpha API")
-            response: Response = await ac.post(
-                "/embeddings/documents", params={"llm_backend": "aa", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
-            )
-        elif provider == "gpt4all":
-            response: Response = await ac.post(
-                "/embeddings/documents", params={"llm_backend": "gpt4all", "token": os.getenv("ALEPH_ALPHA_API_KEY")}, files=[("files", file) for file in files]
+                "/embeddings/documents", params={"llm_backend": provider, "token": "", "collection_name": ""}, files=[("files", file) for file in files]
             )
 
     assert response.status_code == http_ok
@@ -97,25 +78,17 @@ async def test_upload_documents(provider: str) -> None:
 
 
 @pytest.mark.asyncio()
-@pytest.mark.parametrize("provider", ["aa", "gpt4all"])
+@pytest.mark.parametrize("provider", ["aa", "openai", "gpt4all"])
 async def test_embedd_one_document(provider: str) -> None:
     """Testing the upload of one document."""
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
         with Path("tests/resources/1706.03762v5.pdf").open("rb") as tmp_file:
             # Use tmp_file here
-            if provider == "aa":
-                logger.warning("Using Aleph Alpha API")
-                response: Response = await ac.post(
-                    "/embeddings/documents",
-                    params={"llm_backend": "aa", "token": os.getenv("ALEPH_ALPHA_API_KEY")},
-                    files=[("files", tmp_file)],
-                )
-            elif provider == "gpt4all":
-                response: Response = await ac.post(
-                    "/embeddings/documents",
-                    params={"llm_backend": "gpt4all", "token": os.getenv("ALEPH_ALPHA_API_KEY")},
-                    files=[("files", tmp_file)],
-                )
+            response: Response = await ac.post(
+                "/embeddings/documents",
+                params={"llm_backend": provider, "token": "", "collection_name": ""},
+                files=[("files", tmp_file)],
+            )
         assert response.status_code == http_ok
         assert response.json() == {
             "status": "success",

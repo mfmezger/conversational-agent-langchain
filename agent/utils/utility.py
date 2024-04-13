@@ -3,6 +3,7 @@ import uuid
 from pathlib import Path
 
 from langchain.prompts import PromptTemplate
+from langchain_community.vectorstores.qdrant import Qdrant
 from lingua import Language, LanguageDetectorBuilder
 from loguru import logger
 from qdrant_client import models
@@ -192,12 +193,7 @@ def create_tmp_folder() -> str:
 
 
 def initialize_aleph_alpha_vector_db() -> None:
-    """Initializes the Aleph Alpha vector db.
-
-    Args:
-    ----
-        cfg (DictConfig): Configuration from the file
-    """
+    """Initializes the Aleph Alpha vector db."""
     qdrant_client, cfg = load_vec_db_conn()
     try:
         qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_aa)

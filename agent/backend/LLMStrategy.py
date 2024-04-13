@@ -47,7 +47,7 @@ class LLMStrategyFactory:
         if strategy is None:
             msg = "Unknown Strategy Type"
             raise ValueError(msg)
-        return strategy(token, collection_name)
+        return strategy(token=token, collection_name=collection_name)
 
 
 class LLMContext:

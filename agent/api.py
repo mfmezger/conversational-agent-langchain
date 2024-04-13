@@ -71,7 +71,7 @@ ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
 logger.info("Loading REST API Finished.")
 
 
-@app.get("/")
+@app.get("/", tags=["root"])
 def read_root() -> str:
     """Returns the welcome message.
 
@@ -79,7 +79,7 @@ def read_root() -> str:
     -------
         str: The welcome message.
     """
-    return "Welcome to the Simple Aleph Alpha FastAPI Backend!"
+    return "Welcome to the RAG Backend. Please navigate to /docs for the OpenAPI!"
 
 
 def embedd_documents_wrapper(folder_name: str, service: LLMContext) -> None:
@@ -117,9 +117,7 @@ def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONRe
 
 
 @app.post("/embeddings/documents", tags=["embeddings"])
-async def post_embedd_documents(
-    files: list[UploadFile] = File(...), llm_provider: str = "aa", token: str | None = None, collection_name: str | None = None
-) -> EmbeddingResponse:
+async def post_embedd_documents(llm_backend: LLMBackend, files: list[UploadFile] = File(...)) -> EmbeddingResponse:
     """Uploads multiple documents to the backend.
 
     Args:
@@ -134,12 +132,12 @@ async def post_embedd_documents(
         JSONResponse: The response as JSON.
     """
     logger.info("Embedding Multiple Documents")
-    llm_provider = LLMProvider.normalize(llm_provider)
+    LLMProvider.normalize(llm_provider)
 
-    token = validate_token(token=token, llm_backend=llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
     tmp_dir = create_tmp_folder()
 
-    llm_context = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=LLMProvider.ALEPH_ALPHA, token=token, collection_name=collection_name))
+    llm_context = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=LLMProvider.ALEPH_ALPHA, token=token, collection_name=llm_backend.collection_name))
 
     file_names = []
 
@@ -165,7 +163,7 @@ async def post_embedd_documents(
 
 
 @app.post("/embeddings/text/", tags=["embeddings"])
-async def embedd_text(request: EmbeddTextRequest, llm_backend: LLMBackend) -> EmbeddingResponse:
+async def embedd_text(embedding: EmbeddTextRequest, llm_backend: LLMBackend) -> EmbeddingResponse:
     """Embeds text in the database.
 
     Args:
@@ -186,13 +184,13 @@ async def embedd_text(request: EmbeddTextRequest, llm_backend: LLMBackend) -> Em
 
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=token, collection_name=llm_backend.collection_name))
 
-    service.embed_documents(text=request.text, file_name=request.file_name, seperator=request.seperator)
+    service.embed_documents(text=embedding.text, file_name=embedding.file_name, seperator=embedding.seperator)
 
-    return EmbeddingResponse(status="success", files=[request.file_name])
+    return EmbeddingResponse(status="success", files=[embedding.file_name])
 
 
 @app.post("/embeddings/texts/files", tags=["embeddings"])
-async def embedd_text_files(request: EmbeddTextFilesRequest, llm_backend: LLMBackend) -> EmbeddingResponse:
+async def embedd_text_files(embedding: EmbeddTextFilesRequest, llm_backend: LLMBackend) -> EmbeddingResponse:
     """Embeds text files in the database.
 
     Args:
@@ -213,7 +211,7 @@ async def embedd_text_files(request: EmbeddTextFilesRequest, llm_backend: LLMBac
 
     file_names = []
 
-    for file in request.files:
+    for file in embedding.files:
         file_name = file.filename
         file_names.append(file_name)
 
@@ -229,17 +227,17 @@ async def embedd_text_files(request: EmbeddTextFilesRequest, llm_backend: LLMBac
         with Path(tmp_dir / file_name).open("wb") as f:
             f.write(await file.read())
 
-    token = validate_token(token=request.token, llm_backend=llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    token = validate_token(token=llm_backend.token, llm_backend=llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=token, collection_name=llm_backend.collection_name))
 
-    service.embed_documents(folder=tmp_dir, aleph_alpha_token=token, seperator=request.seperator)
+    service.embed_documents(folder=tmp_dir, aleph_alpha_token=token, seperator=embedding.seperator)
 
     return EmbeddingResponse(status="success", files=file_names)
 
 
 @app.post("/semantic/search", tags=["search"])
-def search(request: SearchRequest, llm_backend: LLMBackend, filtering: Filtering) -> list[SearchResponse]:
+def search(search: SearchRequest, llm_backend: LLMBackend, filtering: Filtering) -> list[SearchResponse]:
     """Searches for a query in the vector database.
 
     Args:
@@ -257,13 +255,11 @@ def search(request: SearchRequest, llm_backend: LLMBackend, filtering: Filtering
         List[str]: A list of matching documents.
     """
     logger.info("Searching for Documents")
-    request.llm_backend.token = validate_token(
-        token=llm_backend.token, llm_backend=llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
-    )
+    llm_backend.token = validate_token(token=llm_backend.token, llm_backend=llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=llm_backend.token, collection_name=request.search.collection_name))
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=llm_backend.token, collection_name=llm_backend.collection_name))
 
-    DOCS = service.search(search_request=request)
+    DOCS = service.search(search_request=search)
 
     if not DOCS:
         logger.info("No Documents found.")
@@ -282,8 +278,8 @@ def search(request: SearchRequest, llm_backend: LLMBackend, filtering: Filtering
     return response
 
 
-@app.post("/rag", tags=["rag"], alias="qa")
-def question_answer(request: RAGRequest) -> QAResponse:
+@app.post("/rag", tags=["rag"])
+def question_answer(rag: RAGRequest, llm_backend: LLMBackend, filtering: Filtering) -> QAResponse:
     """Answer a question based on the documents in the database.
 
     Args:
@@ -300,36 +296,26 @@ def question_answer(request: RAGRequest) -> QAResponse:
     """
     logger.info("Answering Question")
     # if the query is not provided, raise an error
-    if request.search.query is None:
+    if rag.search.query is None:
         msg = "Please provide a Question."
         raise ValueError(msg)
 
-    request.search.llm_backend.token = validate_token(
-        token=request.search.llm_backend.token, llm_backend=request.search.llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY
-    )
+    token = validate_token(token=llm_backend.token, llm_backend=llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
-    service = LLMContext(
-        LLMStrategyFactory.get_strategy(
-            strategy_type=request.search.llm_backend.llm_provider, token=request.search.llm_backend.token, collection_name=request.search.collection_name
-        )
-    )
-    # if the history flag is activated and the history is not provided, raise an error
-    if request.history and request.history_list is None:
-        msg = "Please provide a HistoryList."
-        raise ValueError(msg)
-
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=token, collection_name=llm_backend.collection_name))
     # summarize the history
-    if request.history:
+    if rag.history:
         # combine the texts
-        text = combine_text_from_list(request.history_list)
+        # TODO: adopt to dict
+        text = combine_text_from_list(rag.history)
         service.summarize_text(text=text, token="")
 
-    answer, prompt, meta_data = service.rag(request)
+    answer, prompt, meta_data = service.rag(rag)
 
     return QAResponse(answer=answer, prompt=prompt, meta_data=meta_data)
 
 
-@app.post("/explanation/explain-qa")
+@app.post("/explanation/explain-qa", tags=["explanation"])
 def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQAResponse:
     """Answer a question & explains it based on the documents in the database. This only works with Aleph Alpha.
 
@@ -380,7 +366,7 @@ def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQARespo
     return ExplainQAResponse(explanation=explanation, score=score, text=text, answer=answer, meta_data=meta_data)
 
 
-@app.post("/process_document")
+@app.post("/process_document", tags=["custom"])
 async def process_document(files: list[UploadFile] = File(...), llm_backend: str = "aa", token: str | None = None, document_type: str = "invoice") -> None:
     """Process a document.
 
@@ -425,7 +411,7 @@ async def process_document(files: list[UploadFile] = File(...), llm_backend: str
     return documents
 
 
-@app.post("/llm/completion/custom")
+@app.post("/llm/completion/custom", tags=["custom"])
 async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
     """This method sents a custom completion request to the LLM Provider.
 
@@ -448,7 +434,7 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
     return service.generate(request.text)
 
 
-@app.delete("/embeddings/delete/{llm_provider}/{page}/{source}")
+@app.delete("/embeddings/delete/{llm_provider}/{page}/{source}", tags=["embeddings"])
 def delete(
     page: int,
     source: str,
