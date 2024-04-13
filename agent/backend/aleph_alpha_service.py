@@ -21,18 +21,16 @@ from langchain_community.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
-from agent.utils.utility import generate_collection_aleph_alpha
 
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import (
     Filtering,
-    LLMBackend,
-    LLMProvider,
     RAGRequest,
     SearchRequest,
 )
 from agent.utils.utility import (
     convert_qdrant_result_to_retrieval_results,
+    generate_collection_aleph_alpha,
     generate_prompt,
 )
 from agent.utils.vdb import init_vdb
@@ -248,7 +246,7 @@ class AlephAlphaService(LLMBase):
         Args:
         ----
             rag (RAGRequest): The request for the RAG endpoint.
-            llm_backend (LLMBackend): The LLM Backend.
+            search (SearchRequest): The search request object.
             filtering (Filtering): The filtering object.
 
         Returns:
@@ -261,7 +259,7 @@ class AlephAlphaService(LLMBase):
             raise ValueError(msg)
         text = "\n".join([doc.document for doc in documents]) if len(documents) > 1 else documents[0].document
 
-        prompt = generate_prompt(prompt_name="aleph_alpha_qa.j2", text=text, query=search.query)
+        prompt = generate_prompt(prompt_name="aleph_alpha_qa.j2", text=text, query=search.query, language=rag.language)
 
         answer = self.generate(prompt)
 
@@ -369,28 +367,17 @@ if __name__ == "__main__":
 
     aa_service.embed_documents("tests/resources/")
     # open the text file and read the text
-    docs = aa_service.search(
-        SearchRequest(
-            query="Was ist Attention?",
-            amount=3,
-            filtering=Filtering(threshold=0.0, collection_name="gpt4all"),
-            llm_backend=LLMBackend(token=token, provider=LLMProvider.ALEPH_ALPHA),
-        )
-    )
+    docs = aa_service.search(SearchRequest(query="Was ist Attention?", amount=3), Filtering(threshold=0.0, collection_name="aleph_alpha"))
 
     logger.info(f"Documents: {docs}")
 
     answer, prompt, meta_data = aa_service.rag(
-        RAGRequest(
-            search=SearchRequest(
-                query="Was ist Attention?",
-                amount=3,
-                filtering=Filtering(threshold=0.0, collection_name="gpt4all"),
-                llm_backend=LLMBackend(token=token, provider=LLMProvider.ALEPH_ALPHA),
-            ),
-            documents=docs,
-            query="Was ist das?",
-        )
+        RAGRequest(language="detect", history={}),
+        SearchRequest(
+            query="Was ist Attention?",
+            amount=3,
+        ),
+        Filtering(threshold=0.0, collection_name="aleph_alpha"),
     )
 
     logger.info(f"Answer: {answer}")

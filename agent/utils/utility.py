@@ -72,7 +72,7 @@ def detect_language(text: str) -> str:
     return language
 
 
-def generate_prompt(prompt_name: str, text: str, query: str = "", language: str = "detect") -> str:
+def generate_prompt(prompt_name: str, text: str, query: str, language: str = "detect") -> str:
     """Generates a prompt for the Luminous API using a Jinja template.
 
     Args:
@@ -90,7 +90,7 @@ def generate_prompt(prompt_name: str, text: str, query: str = "", language: str 
     ------
         FileNotFoundError: If the specified prompt file cannot be found.
     """
-    try:
+    try:  # TODO: Adding the history to the prompt
         if language == "detect":
             language = detect_language(text)
         if language not in {"en", "de"}:
@@ -186,7 +186,7 @@ def create_tmp_folder() -> str:
     try:
         tmp_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"Created new folder {tmp_dir}.")
-    except Exception as e:
+    except ValueError as e:
         logger.error(f"Failed to create directory {tmp_dir}. Error: {e}")
         raise
     return str(tmp_dir)
@@ -198,7 +198,7 @@ def initialize_aleph_alpha_vector_db() -> None:
     try:
         qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_aa)
         logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_aa} already exists.")
-    except Exception:
+    except ValueError:
         generate_collection_aleph_alpha(qdrant_client, collection_name=cfg.qdrant.collection_name_aa, embeddings_size=cfg.aleph_alpha_embeddings.size)
 
 
@@ -230,7 +230,7 @@ def initialize_open_ai_vector_db() -> None:
     try:
         qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_openai)
         logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_openai} already exists.")
-    except Exception:
+    except ValueError:
         generate_collection_openai(qdrant_client, collection_name=cfg.qdrant.collection_name_openai)
 
 
@@ -261,7 +261,7 @@ def initialize_gpt4all_vector_db() -> None:
     try:
         qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_gpt4all)
         logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_gpt4all} already exists.")
-    except Exception:
+    except ValueError:
         generate_collection_gpt4all(qdrant_client, collection_name=cfg.qdrant.collection_name_gpt4all)
 
 

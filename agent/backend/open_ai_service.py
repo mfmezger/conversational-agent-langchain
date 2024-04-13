@@ -14,8 +14,8 @@ from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
-from agent.data_model.request_data_model import RAGRequest, SearchRequest
-from agent.utils.utility import generate_prompt
+from agent.data_model.request_data_model import Filtering, RAGRequest, SearchRequest
+from agent.utils.utility import generate_prompt, initialize_open_ai_vector_db
 from agent.utils.vdb import init_vdb
 
 load_dotenv()
@@ -34,7 +34,7 @@ class OpenAIService(LLMBase):
         if token:
             self.openai_token = token
         else:
-            self.openai_token = os.getenv("AZURE_OPENAI_API_KEY")
+            self.openai_token = os.getenv("OPENAI_API_KEY")
 
         if not self.openai_token:
             msg = "API Token not provided!"
@@ -56,7 +56,7 @@ class OpenAIService(LLMBase):
         ----
             name (str): The name of the new collection.
         """
-        raise NotImplementedError
+        initialize_open_ai_vector_db(self.cfg, name, self.openai_token)
 
     def get_db_connection(self) -> Qdrant:
         """Initializes a connection to the Qdrant DB.
@@ -112,19 +112,20 @@ class OpenAIService(LLMBase):
 
         logger.info("SUCCESS: Texts embedded.")
 
-    def search(self, search: SearchRequest) -> list[tuple[Document, float]]:
+    def search(self, search: SearchRequest, filtering: Filtering) -> list[tuple[Document, float]]:
         """Searches the documents in the Qdrant DB with a specific query.
 
         Args:
         ----
             search (SearchRequest): The search request object.
+            filtering (Filtering): The filtering object.
 
         Returns:
         -------
             List[Tuple[Document, float]]: A list of search results, where each result is a tuple
             containing a Document object and a float score.
         """
-        docs = self.vector_db.similarity_search_with_score(search.query, k=search.amount, score_threshold=search.filtering.threshold)
+        docs = self.vector_db.similarity_search_with_score(search.query, k=search.amount, score_threshold=filtering.threshold, filtering=filtering.filter)
         logger.info("SUCCESS: Documents found.")
         return docs
 
@@ -183,28 +184,26 @@ class OpenAIService(LLMBase):
 
         return response.choices[0].messages.content
 
-    def rag(self, rag_request: RAGRequest) -> tuple[Any, str, dict[Any, Any]]:
+    def rag(self, rag_request: RAGRequest, search: SearchRequest, filtering: Filtering) -> tuple[Any, str, dict[Any, Any]]:
         """QA Function for OpenAI LLMs.
 
         Args:
         ----
             rag_request (RAGRequest): The RAG Request Object.
+            search (SearchRequest): The search request object.
+            filtering (Filtering): The filtering object.
 
         Returns:
         -------
             tuple: answer, prompt, meta_data
         """
-        documents = self.search(rag_request.search)
-        if rag_request.search.amount == 0:
+        documents = self.search(search=search, filtering=filtering)
+        if search.amount == 0:
             msg = "No documents found."
             raise ValueError(msg)
-        if rag_request.search.amount > 1:
-            # extract all documents
-            text = "\n".join([doc[0].page_content for doc in documents])
-        else:
-            text = documents[0].page_content
+        text = "\n".join([doc.document for doc in documents]) if len(documents) > 1 else documents[0].document
 
-        prompt = generate_prompt(prompt_name="openai-qa.j2", text=text, query=rag_request.search.query)
+        prompt = generate_prompt(prompt_name="openai-qa.j2", text=text, query=search.query, language=rag_request.language)
 
         answer = self.generate(prompt)
 
@@ -212,7 +211,8 @@ class OpenAIService(LLMBase):
 
 
 if __name__ == "__main__":
-    token = os.getenv("AZURE_OPENAI_API_KEY")
+    token = os.getenv("OPENAI_API_KEY")
+    logger.info(f"Token: {token}")
 
     from agent.data_model.request_data_model import Filtering, LLMBackend, LLMProvider, SearchRequest
 
@@ -226,13 +226,11 @@ if __name__ == "__main__":
 
     answer, prompt, meta_data = openai_service.rag(
         RAGRequest(
-            search=SearchRequest(
-                query="Was ist Attention?",
-                amount=3,
-                filtering=Filtering(threshold=0.0, collection_name="openai"),
-                llm_backend=LLMBackend(token=token, provider=LLMProvider.OPENAI),
-            )
-        )
+            query="Was ist Attention?",
+            amount=3,
+        ),
+        Filtering(threshold=0.0, collection_name="openai"),
+        LLMBackend(token=token, provider=LLMProvider.OPENAI),
     )
 
     logger.info(f"Answer: {answer}")
