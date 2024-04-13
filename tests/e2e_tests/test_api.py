@@ -26,8 +26,13 @@ def test_read_root() -> None:
 
 
 @pytest.mark.parametrize("provider", ["aa", "gpt4all", "openai"])
-def test_create_collection(provider) -> None:
-    """Test the create_collection function."""
+def test_create_collection(provider: str) -> None:
+    """Test the create_collection function.
+
+    Args:
+    ----
+        provider (str): The provider to use.
+    """
     response: Response = client.post(
         f"/collection/create/{provider}/{uuid.uuid4()!s}",
     )
@@ -37,6 +42,7 @@ def test_create_collection(provider) -> None:
 
 @pytest.mark.parametrize("provider", ["aa", "gpt4all", "openai"])
 def test_semantic_search(provider: str) -> None:
+    """Test the semantic_search function."""
     response: Response = client.post(
         "/semantic/search",
         json={

@@ -22,7 +22,7 @@ collection_name = "aleph_alpha_collection"
 
 
 @load_config(location="config/main.yml")
-def setup_tokenizer_client(cfg: DictConfig):
+def setup_tokenizer_client(cfg: DictConfig) -> tuple:
     """Set up the tokenizer and the aleph alpha client.
 
     Args:
@@ -33,7 +33,7 @@ def setup_tokenizer_client(cfg: DictConfig):
     -------
         client, tokenizer: the aleph alpha client and the tokenizer
     """
-    client = Client(token=aleph_alpha_token)
+    client = Client(token=os.getenv("ALEPH_ALPHA_API_KEY"))
     tokenizer = client.tokenizer(cfg.aleph_alpha_embeddings.model_name)
     return client, tokenizer
 
@@ -88,7 +88,7 @@ def initialize_aleph_alpha_vector_db(cfg: DictConfig) -> None:
     try:
         qdrant_client.get_collection(collection_name=collection_name)
         logger.info(f"SUCCESS: Collection {collection_name} already exists.")
-    except Exception:
+    except ValueError:
         qdrant_client.recreate_collection(
             collection_name=collection_name,
             vectors_config=models.VectorParams(size=5120, distance=models.Distance.COSINE),
@@ -109,7 +109,10 @@ def setup_connection_vector_db(cfg: DictConfig) -> Qdrant:
         Qdrant: The vector db
     """
     embedding = AlephAlphaAsymmetricSemanticEmbedding(
-        model=cfg.aleph_alpha_embeddings.model_name, aleph_alpha_api_key=aleph_alpha_token, normalize=cfg.aleph_alpha_embeddings.normalize, compress_to_size=None
+        model=cfg.aleph_alpha_embeddings.model_name,
+        aleph_alpha_api_key=os.getenv("ALEPH_ALPH_API_KEY"),
+        normalize=cfg.aleph_alpha_embeddings.normalize,
+        compress_to_size=None,
     )
     qdrant_client = QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc)
 
@@ -145,9 +148,7 @@ def parse_txts(text: str, file_name: str, seperator: str, vector_db: Qdrant) -> 
         text_list.pop(-1)
 
     # meta data is a list of dicts including the "file_name" and the "link"
-    metadata_list: list = []
-    for _i in range(len(text_list)):
-        metadata_list.append({"file_name": file_name, "link": link})
+    metadata_list = [{"file_name": file_name, "link": link} for _i in range(len(text_list))]
 
     vector_db.add_texts(texts=text_list, metadatas=metadata_list)
 

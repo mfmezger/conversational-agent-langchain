@@ -23,9 +23,8 @@ class LLMProvider(str, Enum):
             return cls.OPENAI
         elif normalized_value == "gpt4all":
             return cls.GPT4ALL
-        else:
-            msg = f"Unsupported LLM provider: {value}"
-            raise ValueError(msg)
+        msg = f"Unsupported LLM provider: {value}"
+        raise ValueError(msg)
 
 
 class Language(str, Enum):

@@ -30,7 +30,7 @@ def main(cfg: DictConfig) -> None:
     try:
         qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_gpt4all)
         logger.info("SUCCESS: Collection already exists.")
-    except Exception:
+    except ValueError:
         qdrant_client.recreate_collection(
             collection_name=cfg.qdrant.collection_name_gpt4all,
             vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),

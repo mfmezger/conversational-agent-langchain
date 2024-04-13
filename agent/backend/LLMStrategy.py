@@ -1,4 +1,6 @@
 """The Strategy Pattern for the LLM Backend."""
+from typing import ClassVar
+
 from agent.backend.aleph_alpha_service import AlephAlphaService
 from agent.backend.gpt4all_service import GPT4AllService
 from agent.backend.LLMBase import LLMBase
@@ -19,7 +21,7 @@ class LLMStrategyFactory:
         Strategy: The correct strategy.
     """
 
-    _strategies: dict[str, type[LLMBase]] = {
+    _strategies: ClassVar = {
         LLMProvider.ALEPH_ALPHA: AlephAlphaService,
         LLMProvider.OPENAI: OpenAIService,
         LLMProvider.GPT4ALL: GPT4AllService,

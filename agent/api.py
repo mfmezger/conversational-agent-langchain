@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, UploadFile
 from fastapi.openapi.utils import get_openapi
 from loguru import logger
 from qdrant_client import models
@@ -36,6 +36,7 @@ from agent.utils.utility import (
     initialize_open_ai_vector_db,
     validate_token,
 )
+from agent.utils.vdb import load_vec_db_conn
 
 # add file logger for loguru
 # logger.add("logs/file_{time}.log", backtrace=False, diagnose=False)
@@ -117,15 +118,13 @@ def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONRe
 
 
 @app.post("/embeddings/documents", tags=["embeddings"])
-async def post_embedd_documents(llm_backend: LLMBackend, files: list[UploadFile] = File(...)) -> EmbeddingResponse:
+async def post_embedd_documents(llm_backend: LLMBackend, files: list[UploadFile]) -> EmbeddingResponse:
     """Uploads multiple documents to the backend.
 
     Args:
     ----
+        llm_backend (LLMBackend): The LLM Backend.
         files (List[UploadFile], optional): Uploaded files. Defaults to File(...).
-        llm_provider (str, optional): The LLM Provider. Defaults to "aa".
-        token (str, optional): The token for the LLM Provider. Defaults to None.
-        collection_name (str, optional): The name of the collection. Defaults to None.
 
     Returns:
     -------
@@ -133,7 +132,7 @@ async def post_embedd_documents(llm_backend: LLMBackend, files: list[UploadFile]
     """
     logger.info("Embedding Multiple Documents")
 
-    token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    token = validate_token(token=llm_backend.token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
     tmp_dir = create_tmp_folder()
 
     llm_context = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=LLMProvider.ALEPH_ALPHA, token=token, collection_name=llm_backend.collection_name))
@@ -167,7 +166,7 @@ async def embedd_text(embedding: EmbeddTextRequest, llm_backend: LLMBackend) -> 
 
     Args:
     ----
-        request (EmbeddTextRequest): The request parameters.
+        embedding (EmbeddTextRequest): The request parameters.
         llm_backend (LLMBackend): The LLM Backend.
 
     Raises:
@@ -194,7 +193,7 @@ async def embedd_text_files(embedding: EmbeddTextFilesRequest, llm_backend: LLMB
 
     Args:
     ----
-        request (EmbeddTextFilesRequest): The request parameters.
+        embedding (EmbeddTextFilesRequest): The request parameters.
         llm_backend (LLMBackend): The LLM Backend.
 
     Raises:
@@ -241,7 +240,7 @@ def search(search: SearchRequest, llm_backend: LLMBackend, filtering: Filtering)
 
     Args:
     ----
-        request (SearchRequest): The search request.
+        search (SearchRequest): The search request.
         llm_backend (LLMBackend): The LLM Backend.
         filtering (Filtering): The Filtering Parameters.
 
@@ -258,16 +257,16 @@ def search(search: SearchRequest, llm_backend: LLMBackend, filtering: Filtering)
 
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=llm_backend.token, collection_name=llm_backend.collection_name))
 
-    DOCS = service.search(search=search, llm_backend=llm_backend, filtering=filtering)
+    docs = service.search(search=search, llm_backend=llm_backend, filtering=filtering)
 
-    if not DOCS:
+    if not docs:
         logger.info("No Documents found.")
         return JSONResponse(content={"message": "No documents found."})
 
-    logger.info(f"Found {len(DOCS)} documents.")
+    logger.info(f"Found {len(docs)} documents.")
 
     response = []
-    for d in DOCS:
+    for d in docs:
         score = d[1]
         text = d[0].page_content
         page = d[0].metadata["page"]
@@ -283,7 +282,9 @@ def question_answer(rag: RAGRequest, llm_backend: LLMBackend, filtering: Filteri
 
     Args:
     ----
-        request (QARequest): The request parameters.
+        rag (RAGRequest): The request parameters.
+        llm_backend (LLMBackend): The LLM Backend.
+        filtering (Filtering): The Filtering Parameters.
 
     Raises:
     ------
@@ -323,6 +324,7 @@ def explain_question_answer(explain_request: ExplainQARequest, llm_backend: LLMB
     Args:
     ----
         explain_request (ExplainQARequest): The Explain Requesat
+        llm_backend (LLMBackend): The LLM Backend.
 
     Raises:
     ------
@@ -353,7 +355,7 @@ def explain_question_answer(explain_request: ExplainQARequest, llm_backend: LLMB
     documents = service.search(explain_request.rag_request.search)
 
     # call the qa function
-    explanation, score, text, answer, meta_data = explain_qa(
+    explanation, score, text, answer, meta_data = service.explain_qa(
         query=explain_request.rag_request.search.query,
         explain_threshold=explain_request.explain_threshold,
         document=documents,
@@ -363,54 +365,54 @@ def explain_question_answer(explain_request: ExplainQARequest, llm_backend: LLMB
     return ExplainQAResponse(explanation=explanation, score=score, text=text, answer=answer, meta_data=meta_data)
 
 
-@app.post("/process_document", tags=["custom"])
-async def process_document(files: list[UploadFile] = File(...), llm_backend: str = "aa", token: str | None = None, document_type: str = "invoice") -> None:
-    """Process a document.
+# @app.post("/process_document", tags=["custom"])
+# async def process_document(files: list[UploadFile] = File(...), llm_backend: str = "aa", token: str | None = None, document_type: str = "invoice") -> None:
+#     """Process a document.
 
-    Args:
-    ----
-        files (UploadFile): _description_
-        llm_backend (str, optional): _description_. Defaults to "openai".
-        token (Optional[str], optional): _description_. Defaults to None.
-        type (str, optional): _description_. Defaults to "invoice".
+#     Args:
+#     ----
+#         files (UploadFile): _description_
+#         llm_backend (str, optional): _description_. Defaults to "openai".
+#         token (Optional[str], optional): _description_. Defaults to None.
+#         type (str, optional): _description_. Defaults to "invoice".
 
-    Returns:
-    -------
-        JSONResponse: _description_
-    """
-    logger.info("Processing Document")
-    token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+#     Returns:
+#     -------
+#         JSONResponse: _description_
+#     """
+#     logger.info("Processing Document")
+#     token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
-    # Create a temporary folder to save the files
-    tmp_dir = create_tmp_folder()
+#     # Create a temporary folder to save the files
+#     tmp_dir = create_tmp_folder()
 
-    file_names = []
+#     file_names = []
 
-    for file in files:
-        file_name = file.filename
-        file_names.append(file_name)
+#     for file in files:
+#         file_name = file.filename
+#         file_names.append(file_name)
 
-        # Save the file to the temporary folder
-        if tmp_dir is None or not Path(tmp_dir).exists():
-            msg = "Please provide a temporary folder to save the files."
-            raise ValueError(msg)
+#         # Save the file to the temporary folder
+#         if tmp_dir is None or not Path(tmp_dir).exists():
+#             msg = "Please provide a temporary folder to save the files."
+#             raise ValueError(msg)
 
-        if file_name is None:
-            msg = "Please provide a file to save."
-            raise ValueError(msg)
+#         if file_name is None:
+#             msg = "Please provide a file to save."
+#             raise ValueError(msg)
 
-        with Path(tmp_dir / file_name).open() as f:
-            f.write(await file.read())
+#         with Path(tmp_dir / file_name).open() as f:
+#             f.write(await file.read())
 
-    process_documents_aleph_alpha(folder=tmp_dir, token=token, type=document_type)
+#     process_documents_aleph_alpha(folder=tmp_dir, token=token, type=document_type)
 
-    logger.info(f"Found {len(documents)} documents.")
-    return documents
+#     logger.info(f"Found {len(documents)} documents.")
+#     return documents
 
 
 @app.post("/llm/completion/custom", tags=["custom"])
 async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
-    """This method sents a custom completion request to the LLM Provider.
+    """The method sents a custom completion request to the LLM Provider.
 
     Args:
     ----
