@@ -108,7 +108,7 @@ class AlephAlphaService(LLMBase):
 
         return init_vdb(self.cfg, collection_name, embedding)
 
-    def create_collection(self, name: str) -> None:
+    def create_collection(self, name: str) -> bool:
         """Create a new collection in the Qdrant DB.
 
         Args:
@@ -117,6 +117,7 @@ class AlephAlphaService(LLMBase):
 
         """
         generate_collection_aleph_alpha(self.vector_db.client, name, self.cfg.aleph_alpha_embeddings.size)
+        return True
 
     def summarize_text(self, text: str) -> str:
         """Summarizes the given text using the Luminous API.

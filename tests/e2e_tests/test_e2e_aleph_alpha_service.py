@@ -3,60 +3,67 @@ import os
 import uuid
 from pathlib import Path
 
+import pytest
+
 from agent.backend.aleph_alpha_service import AlephAlphaService
+from agent.data_model.request_data_model import (
+    Filtering,
+    RAGRequest,
+    SearchRequest,
+)
 
 
 # for every test load the service with the token
-def prepare_service() -> AlephAlphaService:
+@pytest.fixture()
+def service() -> AlephAlphaService:
     """Prepare the service."""
     token = os.getenv("ALEPH_ALPHA_API_KEY")
     assert token is not None
-    return AlephAlphaService(token)
+    return AlephAlphaService(collection_name="aleph_alpha", token=token)
 
 
-def test_create_collection() -> None:
+def test_create_collection(service: AlephAlphaService) -> None:
     """Test the create_collection function."""
-    service = prepare_service()
     response = service.create_collection(str(uuid.uuid4()))
-    assert response is not None
-    assert response["message"] == "Collection invoice created with embeddings size 512."
+    assert response is True
 
 
-def test_summarize_text() -> None:
+def test_summarize_text(service: AlephAlphaService) -> None:
     """Test the summarize_text function."""
-    service = prepare_service()
-
     with Path("tests/resources/albert.txt").open() as f:
         text = f.read()
     response = service.summarize_text(text)
     assert response is not None
 
 
-def test_generation() -> None:
+def test_generation(service: AlephAlphaService) -> None:
     """Test the generation function."""
-    service = prepare_service()
     response = service.generate("What is the meaning of life?")
     assert response is not None
 
 
-def test_embedd_documents() -> None:
+def test_embedd_documents(service: AlephAlphaService) -> None:
     """Test the embedd_documents function."""
-    service = prepare_service()
     response = service.embedd_documents(folder="tests/resources")
     assert response is not None
 
 
-def test_search() -> None:
+def test_search(service: AlephAlphaService) -> None:
     """Test the search function."""
-    service = prepare_service()
-    response = service.search("What is the meaning of life?")
+    response = service.search(SearchRequest(query="Was ist Attention?", amount=3), Filtering(threshold=0.0, collection_name="aleph_alpha"))
     assert response is not None
     assert len(response) > 0
 
 
-def test_rag() -> None:
+def test_rag(service: AlephAlphaService) -> None:
     """Test the rag function."""
-    service = prepare_service()
-    response = service.rag("What is the meaning of life?")
+    response = service.rag(
+        RAGRequest(language="detect", history={}),
+        SearchRequest(
+            query="Was ist Attention?",
+            amount=3,
+        ),
+        Filtering(threshold=0.0, collection_name="aleph_alpha"),
+    )
     assert response is not None
     assert len(response) > 0

@@ -48,7 +48,7 @@ class OpenAIService(LLMBase):
 
         self.vector_db = self.get_db_connection()
 
-    def create_collection(self, name: str) -> None:
+    def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database.
 
         Args:
@@ -56,6 +56,7 @@ class OpenAIService(LLMBase):
             name (str): The name of the new collection.
         """
         initialize_open_ai_vector_db(self.cfg, name, self.openai_token)
+        return True
 
     def get_db_connection(self) -> Qdrant:
         """Initializes a connection to the Qdrant DB.

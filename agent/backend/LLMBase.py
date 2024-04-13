@@ -19,7 +19,7 @@ class LLMBase(ABC):
         """Embedd new docments in the Qdrant DB."""
 
     @abstractmethod
-    def create_collection(self, name: str) -> None:
+    def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database."""
 
     @abstractmethod

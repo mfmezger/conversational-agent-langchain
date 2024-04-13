@@ -59,9 +59,10 @@ class GPT4AllService(LLMBase):
 
         return init_vdb(self.cfg, self.collection_name, embedding)
 
-    def create_collection(self, name: str) -> None:
+    def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database."""
         generate_collection_gpt4all(self.vector_db.client, name)
+        return True
 
     def embed_documents(self, directory: str, file_ending: str = "*.pdf") -> None:
         """Embeds the documents in the given directory.
