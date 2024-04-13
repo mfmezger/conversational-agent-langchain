@@ -225,40 +225,44 @@ class AlephAlphaService(LLMBase):
 
         logger.info("SUCCESS: Texts embedded.")
 
-    def search(self, search: SearchRequest) -> list[tuple[LangchainDocument, float]]:
+    def search(self, search: SearchRequest, filtering: Filtering) -> list[tuple[LangchainDocument, float]]:
         """Searches the Aleph Alpha service for similar documents.
 
         Args:
         ----
             search (SearchRequest): Search  Request
+            llm_backend (LLMBackend): The LLM Backend.
+            filtering (Filtering): The filtering object.
 
         Returns:
         -------
             List[Tuple[Document, float]]: A list of tuples containing the documents and their similarity scores.
         """
-        docs = self.vector_db.similarity_search_with_score(query=search.query, k=search.amount, score_threshold=search.filtering.threshold)
+        docs = self.vector_db.similarity_search_with_score(query=search.query, k=search.amount, score_threshold=filtering.threshold)
         logger.info(f"SUCCESS: {len(docs)} Documents found.")
 
         return convert_qdrant_result_to_retrieval_results(docs)
 
-    def rag(self, rag_request: RAGRequest) -> tuple:
+    def rag(self, rag: RAGRequest, search: SearchRequest, filtering: Filtering) -> tuple:
         """QA takes a list of documents and returns a list of answers.
 
         Args:
         ----
-            rag_request (RAGRequest): The request for the RAG endpoint.
+            rag (RAGRequest): The request for the RAG endpoint.
+            llm_backend (LLMBackend): The LLM Backend.
+            filtering (Filtering): The filtering object.
 
         Returns:
         -------
             Tuple[str, str, List[RetrievalResults]]: The answer, the prompt and the metadata.
         """
-        documents = self.search(rag_request.search)
-        if rag_request.search.amount == 0:
+        documents = self.search(search=search, filtering=filtering)
+        if search.amount == 0:
             msg = "No documents found."
             raise ValueError(msg)
         text = "\n".join([doc.document for doc in documents]) if len(documents) > 1 else documents[0].document
 
-        prompt = generate_prompt(prompt_name="aleph_alpha_qa.j2", text=text, query=rag_request.search.query)
+        prompt = generate_prompt(prompt_name="aleph_alpha_qa.j2", text=text, query=search.query)
 
         answer = self.generate(prompt)
 

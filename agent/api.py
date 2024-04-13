@@ -132,7 +132,6 @@ async def post_embedd_documents(llm_backend: LLMBackend, files: list[UploadFile]
         JSONResponse: The response as JSON.
     """
     logger.info("Embedding Multiple Documents")
-    LLMProvider.normalize(llm_provider)
 
     token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
     tmp_dir = create_tmp_folder()
@@ -259,7 +258,7 @@ def search(search: SearchRequest, llm_backend: LLMBackend, filtering: Filtering)
 
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=llm_backend.token, collection_name=llm_backend.collection_name))
 
-    DOCS = service.search(search_request=search)
+    DOCS = service.search(search=search, llm_backend=llm_backend, filtering=filtering)
 
     if not DOCS:
         logger.info("No Documents found.")
@@ -310,13 +309,13 @@ def question_answer(rag: RAGRequest, llm_backend: LLMBackend, filtering: Filteri
         text = combine_text_from_list(rag.history)
         service.summarize_text(text=text, token="")
 
-    answer, prompt, meta_data = service.rag(rag)
+    answer, prompt, meta_data = service.rag(rag=rag, llm_backend=llm_backend, filtering=filtering)
 
     return QAResponse(answer=answer, prompt=prompt, meta_data=meta_data)
 
 
 @app.post("/explanation/explain-qa", tags=["explanation"])
-def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQAResponse:
+def explain_question_answer(explain_request: ExplainQARequest, llm_backend: LLMBackend) -> ExplainQAResponse:
     """Answer a question & explains it based on the documents in the database. This only works with Aleph Alpha.
 
     This uses the normal qa but combines it with the explain function.
@@ -348,9 +347,7 @@ def explain_question_answer(explain_request: ExplainQARequest) -> ExplainQARespo
     )
 
     service = LLMContext(
-        LLMStrategyFactory.get_strategy(
-            strategy_type=request.search.llm_backend.llm_provider, token=request.search.llm_backend.token, collection_name=request.search.collection_name
-        )
+        LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=search.llm_backend.token, collection_name=llm_backend.collection_name)
     )
 
     documents = service.search(explain_request.rag_request.search)

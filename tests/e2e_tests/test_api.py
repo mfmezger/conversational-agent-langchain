@@ -1,6 +1,7 @@
 """API Tests."""
 import os
 import shutil
+import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -25,12 +26,22 @@ def test_read_root() -> None:
 
 
 @pytest.mark.parametrize("provider", ["aa", "gpt4all", "openai"])
+def test_create_collection(provider) -> None:
+    """Test the create_collection function."""
+    response: Response = client.post(
+        f"/collection/create/{provider}/{uuid.uuid4()!s}",
+    )
+    assert response.status_code == http_ok
+    assert response.json() == {"message": "Collection aleph_alpha created with embeddings size 512."}
+
+
+@pytest.mark.parametrize("provider", ["aa", "gpt4all", "openai"])
 def test_semantic_search(provider: str) -> None:
     response: Response = client.post(
         "/semantic/search",
         json={
             "request": {"query": "What is Attention?", "amount": 3},
-            "llm_backend": {"llm_provider": "aa", "token": "", "collection_name": ""},
+            "llm_backend": {"llm_provider": provider, "token": "", "collection_name": ""},
             "filtering": {"threshold": 0, "collection_name": "aleph_alpha", "filter": {}},
         },
     )

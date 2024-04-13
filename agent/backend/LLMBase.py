@@ -1,7 +1,7 @@
 """Strategy Pattern."""
 from abc import ABC, abstractmethod
 
-from agent.data_model.request_data_model import RAGRequest, SearchRequest
+from agent.data_model.request_data_model import Filtering, LLMBackend, RAGRequest, SearchRequest
 
 
 class LLMBase(ABC):
@@ -15,7 +15,7 @@ class LLMBase(ABC):
         self.collection_name = collection_name
 
     @abstractmethod
-    def embed_documents(self, directory: str) -> None:
+    def embed_documents(self, directory: str, llm_backend: LLMBackend) -> None:
         """Embedd new docments in the Qdrant DB."""
 
     @abstractmethod
@@ -23,7 +23,7 @@ class LLMBase(ABC):
         """Create a new collection in the Vector Database."""
 
     @abstractmethod
-    def search(self, search_request: SearchRequest) -> list:
+    def search(self, search: SearchRequest, filtering: Filtering) -> list:
         """Searches the documents in the Qdrant DB with semantic search."""
 
     @abstractmethod
@@ -31,7 +31,7 @@ class LLMBase(ABC):
         """Generate text from a prompt."""
 
     @abstractmethod
-    def rag(self, rag_request: RAGRequest) -> tuple:
+    def rag(self, rag: RAGRequest, search: SearchRequest, filtering: Filtering) -> tuple:
         """Retrieval Augmented Generation."""
 
     @abstractmethod
