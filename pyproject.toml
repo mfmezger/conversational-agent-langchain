@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "agent"
-version = "2.2.6"
+version = "3.0.0"
 description = ""
 authors = ["Marc Mezger <marc.mezger@gmail.com>"]
 readme = "README.md"
