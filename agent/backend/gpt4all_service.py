@@ -4,7 +4,7 @@ from gpt4all import GPT4All
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_community.embeddings import GPT4AllEmbeddings
-from langchain_community.vectorstores import Qdrant
+from langchain_community.vectorstores.qdrant import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
@@ -21,6 +21,7 @@ from agent.data_model.request_data_model import (
 from agent.utils.utility import (
     convert_qdrant_result_to_retrieval_results,
     generate_prompt,
+    generate_collection_gpt4all,
 )
 from agent.utils.vdb import init_vdb
 
@@ -62,6 +63,7 @@ class GPT4AllService(LLMBase):
 
     def create_collection(self, name: str) -> None:
         """Create a new collection in the Vector Database."""
+        generate_collection_gpt4all(self.vector_db.client, name)
 
     def embed_documents(self, directory: str, file_ending: str = "*.pdf") -> None:
         """Embeds the documents in the given directory.
@@ -132,7 +134,7 @@ class GPT4AllService(LLMBase):
 
         return model.generate(prompt, max_tokens=250)
 
-    def search(self, search: SearchRequest) -> list[RetrievalResults]:
+    def search(self, search: SearchRequest, filtering: Filtering) -> list[RetrievalResults]:
         """Searches the documents in the Qdrant DB with a specific query.
 
         Args:
@@ -144,7 +146,7 @@ class GPT4AllService(LLMBase):
             List[Tuple[Document, float]]: A list of search results, where each result is a tuple
             containing a Document object and a float score.
         """
-        docs = self.vector_db.similarity_search_with_score(query=search.query, k=search.amount, score_threshold=search.filtering.threshold)
+        docs = self.vector_db.similarity_search_with_score(query=search.query, k=search.amount, score_threshold=filtering.threshold, filter=filtering.filter)
         logger.info(f"SUCCESS: {len(docs)} Documents found.")
 
         return convert_qdrant_result_to_retrieval_results(docs)

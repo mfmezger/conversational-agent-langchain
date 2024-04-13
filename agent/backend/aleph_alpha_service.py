@@ -21,6 +21,7 @@ from langchain_community.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
+from agent.utils.utility import generate_collection_aleph_alpha
 
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import (
@@ -117,8 +118,6 @@ class AlephAlphaService(LLMBase):
             name (str): The name of the new collection.
 
         """
-        from agent.utils.utility import generate_collection_aleph_alpha
-
         generate_collection_aleph_alpha(self.vector_db.client, name, self.cfg.aleph_alpha_embeddings.size)
 
     def summarize_text(self, text: str) -> str:
