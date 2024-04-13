@@ -78,14 +78,12 @@ class OpenAIService(LLMBase):
         return init_vdb(self.cfg, self.collection_name, embedding)
 
     def embed_documents(self, directory: str, file_ending: str = "*.pdf") -> None:
-        """embedd_documents embedds the documents in the given directory.
+        """Embeds the documents in the given directory.
 
-        :param cfg: Configuration from the file
-        :type cfg: DictConfig
-        :param dir: PDF Directory
-        :type dir: str
-        :param open_ai_token: OpenAI API Token
-        :type open_ai_token: str
+        Args:
+        ----
+            directory (str): PDF Directory.
+            file_ending (str): File ending of the documents.
         """
         if file_ending == "*.pdf":
             loader = DirectoryLoader(directory, glob=file_ending, loader_cls=PyPDFium2Loader)
