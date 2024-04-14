@@ -41,8 +41,8 @@ class LLMBackend(BaseModel):
     """The LLM Backend Model."""
 
     llm_provider: LLMProvider = Field(LLMProvider.ALEPH_ALPHA, description="The LLM provider to use for embedding.")
-    token: str | None = Field(None, description="The API token for the LLM provider.")
-    collection_name: str | None = Field(None, description="The name of the Qdrant Collection.")
+    token: str | None = Field("", description="The API token for the LLM provider.")
+    collection_name: str | None = Field("", description="The name of the Qdrant Collection.")
 
 
 class Filtering(BaseModel):

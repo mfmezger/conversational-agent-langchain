@@ -74,7 +74,10 @@ async def test_upload_documents(provider: str) -> None:
         with Path("tests/resources/1706.03762v5.pdf").open("rb") as file1, Path("tests/resources/1912.01703v1.pdf").open("rb") as file2:
             files = [file1, file2]
             response: Response = await ac.post(
-                "/embeddings/documents", json={"llm_backend": {"llm_provider": provider, "token": "", "collection_name": ""}}, files=[("files", file) for file in files]
+                "/embeddings/documents",
+                json={"llm_backend": {"llm_provider": provider, "token": "", "collection_name": ""}},
+                params={"file_ending": ".pdf"},
+                files=[("files", file) for file in files],
             )
 
     assert response.status_code == http_ok

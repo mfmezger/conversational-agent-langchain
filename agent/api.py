@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, File, UploadFile
 from fastapi.openapi.utils import get_openapi
 from loguru import logger
 from qdrant_client import models
@@ -100,7 +100,7 @@ def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONRe
 
 
 @app.post("/embeddings/documents", tags=["embeddings"])
-async def post_embedd_documents(llm_backend: LLMBackend, files: list[UploadFile], file_ending: str = ".pdf") -> EmbeddingResponse:
+async def post_embedd_documents(llm_backend: LLMBackend, files: list[UploadFile] = File(...), file_ending: str = ".pdf") -> EmbeddingResponse:
     """Uploads multiple documents to the backend. Can be.
 
     Args:

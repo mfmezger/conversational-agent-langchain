@@ -31,6 +31,7 @@ aiohttp = "^3.9.4" # security issue
 ultra-simple-config = "^0.1.0"
 gitpython = "^3.1.42" # https://github.com/advisories/GHSA-wfm5-v35h-vwf4
 jinja2 = "^3.1.3"
+langchain-openai = "^0.1.3"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -144,7 +145,7 @@ target-version = "py311"
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
 select = ["ALL"]
-ignore = ["S101", "ERA001", "COM812", "ISC001", "D213", "D211", "TD002", "TD003", "FIX002", "D401", "ANN101", "S105", "ANN002", "ANN003", "INP001", "S104", "S108", "FBT001", "FBT002", "PLW0603", "S106", "PLR2004", "RET505"]
+ignore = ["S101", "ERA001", "COM812", "ISC001", "D213", "D211", "TD002", "TD003", "FIX002", "D401", "ANN101", "S105", "ANN002", "ANN003", "INP001", "S104", "S108", "FBT001", "FBT002", "PLW0603", "S106", "PLR2004", "B008", "RET505"]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]

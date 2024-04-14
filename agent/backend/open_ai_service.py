@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 from langchain.docstore.document import Document
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
-from langchain_community.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
-from langchain_community.vectorstores import Qdrant
+from langchain_community.vectorstores.qdrant import Qdrant
+from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
