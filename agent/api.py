@@ -13,7 +13,6 @@ from starlette.responses import JSONResponse
 from agent.backend.LLMStrategy import LLMContext, LLMStrategyFactory
 from agent.data_model.request_data_model import (
     CustomPromptCompletion,
-    EmbeddTextFilesRequest,
     EmbeddTextRequest,
     ExplainQARequest,
     Filtering,
@@ -83,23 +82,6 @@ def read_root() -> str:
     return "Welcome to the RAG Backend. Please navigate to /docs for the OpenAPI!"
 
 
-def embedd_documents_wrapper(folder_name: str, service: LLMContext) -> None:
-    """Call the right embedding function for the chosen backend.
-
-    Args:
-    ----
-        folder_name (str): Name of the temporary folder.
-        service (LLMContext): The llm context.
-
-    Raises:
-    ------
-        ValueError: If an invalid LLM Provider is set.
-
-    """
-    # TODO: make file ending dynamic
-    service.embed_documents(directory=folder_name, file_ending="*.pdf")
-
-
 @app.post("/collection/create/{llm_provider}/{collection_name}", tags=["collection"])
 def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONResponse:
     """Create a new collection in the vector database.
@@ -118,13 +100,14 @@ def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONRe
 
 
 @app.post("/embeddings/documents", tags=["embeddings"])
-async def post_embedd_documents(llm_backend: LLMBackend, files: list[UploadFile]) -> EmbeddingResponse:
-    """Uploads multiple documents to the backend.
+async def post_embedd_documents(llm_backend: LLMBackend, files: list[UploadFile], file_ending: str = ".pdf") -> EmbeddingResponse:
+    """Uploads multiple documents to the backend. Can be.
 
     Args:
     ----
         llm_backend (LLMBackend): The LLM Backend.
         files (List[UploadFile], optional): Uploaded files. Defaults to File(...).
+        file_ending (str, optional): The file ending of the documents. Defaults to ".pdf". Can also be ".txt".
 
     Returns:
     -------
@@ -135,7 +118,7 @@ async def post_embedd_documents(llm_backend: LLMBackend, files: list[UploadFile]
     token = validate_token(token=llm_backend.token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
     tmp_dir = create_tmp_folder()
 
-    llm_context = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=LLMProvider.ALEPH_ALPHA, token=token, collection_name=llm_backend.collection_name))
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=LLMProvider.ALEPH_ALPHA, token=token, collection_name=llm_backend.collection_name))
 
     file_names = []
 
@@ -155,14 +138,14 @@ async def post_embedd_documents(llm_backend: LLMBackend, files: list[UploadFile]
         with Path(tmp_dir / file_name).open("wb") as f:
             f.write(await file.read())
 
-    embedd_documents_wrapper(folder_name=tmp_dir, service=llm_context)
+    service.embed_documents(folder=tmp_dir, file_ending=file_ending)
 
     return EmbeddingResponse(status="success", files=file_names)
 
 
-@app.post("/embeddings/text/", tags=["embeddings"])
+@app.post("/embeddings/string/", tags=["embeddings"])
 async def embedd_text(embedding: EmbeddTextRequest, llm_backend: LLMBackend) -> EmbeddingResponse:
-    """Embeds text in the database.
+    """Embeds a string in the database.
 
     Args:
     ----
@@ -182,56 +165,13 @@ async def embedd_text(embedding: EmbeddTextRequest, llm_backend: LLMBackend) -> 
 
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=token, collection_name=llm_backend.collection_name))
 
-    service.embed_documents(text=embedding.text, file_name=embedding.file_name, seperator=embedding.seperator)
+    # save the string to a txt file in a uuid directory
+    tmp_dir = create_tmp_folder()
+    with (Path(tmp_dir) / (embedding.file_name + ".txt")).open("w") as f:
+        f.write(embedding.text)
+    service.embed_documents(directory=tmp_dir, file_ending=".txt")
 
     return EmbeddingResponse(status="success", files=[embedding.file_name])
-
-
-@app.post("/embeddings/texts/files", tags=["embeddings"])
-async def embedd_text_files(embedding: EmbeddTextFilesRequest, llm_backend: LLMBackend) -> EmbeddingResponse:
-    """Embeds text files in the database.
-
-    Args:
-    ----
-        embedding (EmbeddTextFilesRequest): The request parameters.
-        llm_backend (LLMBackend): The LLM Backend.
-
-    Raises:
-    ------
-        ValueError: If a file does not have a valid name, if no temporary folder is provided, or if no token or LLM provider is specified.
-
-    Returns:
-    -------
-        JSONResponse: A response indicating that the files were received and saved, along with the names of the files they were saved to.
-    """
-    logger.info("Embedding Text Files")
-    tmp_dir = create_tmp_folder()
-
-    file_names = []
-
-    for file in embedding.files:
-        file_name = file.filename
-        file_names.append(file_name)
-
-        if file_name is None:
-            msg = "File does not have a valid name."
-            raise ValueError(msg)
-
-        # Save the files to the temporary folder
-        if tmp_dir is None or not Path(tmp_dir).exists():
-            msg = "Please provide a temporary folder to save the files."
-            raise ValueError(msg)
-
-        with Path(tmp_dir / file_name).open("wb") as f:
-            f.write(await file.read())
-
-    token = validate_token(token=llm_backend.token, llm_backend=llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
-
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=token, collection_name=llm_backend.collection_name))
-
-    service.embed_documents(folder=tmp_dir, aleph_alpha_token=token, seperator=embedding.seperator)
-
-    return EmbeddingResponse(status="success", files=file_names)
 
 
 @app.post("/semantic/search", tags=["search"])

@@ -68,9 +68,9 @@ class LLMContext:
         """Wrapper for the search."""
         return self.llm.search(search=search, filtering=filtering)
 
-    def embed_documents(self, directory: str) -> None:
+    def embed_documents(self, directory: str, file_ending: str) -> None:
         """Wrapper for the Embedding of Documents."""
-        return self.llm.embed_documents(directory)
+        return self.llm.embed_documents(directory=directory, file_ending=file_ending)
 
     def create_collection(self, name: str) -> None:
         """Wrapper for creating a collection."""

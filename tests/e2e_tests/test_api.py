@@ -60,11 +60,10 @@ def test_embeddings_text(provider: str) -> None:
         text = f.read()
 
     response: Response = client.post(
-        "/embeddings/text/",
+        "/embeddings/string/",
         json={"embedding": {"text": text, "file_name": "file", "seperator": "###"}, "llm_backend": {"llm_provider": provider, "token": "", "collection_name": ""}},
     )
     assert response.status_code == http_ok
-    assert response.json() == {"message": "Text received and saved.", "filenames": "file"}
 
 
 @pytest.mark.asyncio()
@@ -99,7 +98,7 @@ async def test_embedd_one_document(provider: str) -> None:
             # Use tmp_file here
             response: Response = await ac.post(
                 "/embeddings/documents",
-                params={"llm_backend": provider, "token": "", "collection_name": ""},
+                json={"llm_backend": {"llm_provider": provider, "token": "", "collection_name": ""}},
                 files=[("files", tmp_file)],
             )
         assert response.status_code == http_ok

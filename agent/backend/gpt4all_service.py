@@ -76,9 +76,9 @@ class GPT4AllService(LLMBase):
         -------
             None
         """
-        if file_ending == "*.pdf":
+        if file_ending == ".pdf":
             loader = DirectoryLoader(directory, glob=file_ending, loader_cls=PyPDFium2Loader)
-        elif file_ending == "*.txt":
+        elif file_ending == ".txt":
             loader = DirectoryLoader(directory, glob=file_ending, loader_cls=TextLoader)
         else:
             msg = "File ending not supported."

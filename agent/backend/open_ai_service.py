@@ -77,7 +77,7 @@ class OpenAIService(LLMBase):
 
         return init_vdb(self.cfg, self.collection_name, embedding)
 
-    def embed_documents(self, directory: str, file_ending: str = "*.pdf") -> None:
+    def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:
         """Embeds the documents in the given directory.
 
         Args:
@@ -85,9 +85,9 @@ class OpenAIService(LLMBase):
             directory (str): PDF Directory.
             file_ending (str): File ending of the documents.
         """
-        if file_ending == "*.pdf":
+        if file_ending == ".pdf":
             loader = DirectoryLoader(directory, glob=file_ending, loader_cls=PyPDFium2Loader)
-        elif file_ending == "*.txt":
+        elif file_ending == ".txt":
             loader = DirectoryLoader(directory, glob=file_ending, loader_cls=TextLoader)
         else:
             msg = "File ending not supported."

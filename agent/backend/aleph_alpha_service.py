@@ -181,7 +181,7 @@ class AlephAlphaService(LLMBase):
 
         return str(response.completions[0].completion)
 
-    def embed_documents(self, directory: str, file_ending: str = "*.pdf") -> None:
+    def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:
         """Embeds the documents in the given directory in the Aleph Alpha database.
 
         This method uses the Directory Loader for PDFs and the PyPDFium2Loader to load the documents.
@@ -197,9 +197,9 @@ class AlephAlphaService(LLMBase):
         -------
             None
         """
-        if file_ending == "*.pdf":
+        if file_ending == ".pdf":
             loader = DirectoryLoader(directory, glob=file_ending, loader_cls=PyPDFium2Loader)
-        elif file_ending == "*.txt":
+        elif file_ending == ".txt":
             loader = DirectoryLoader(directory, glob=file_ending, loader_cls=TextLoader)
         else:
             msg = "File ending not supported."

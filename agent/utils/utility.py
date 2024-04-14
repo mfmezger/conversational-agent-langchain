@@ -158,7 +158,7 @@ def validate_token(token: str | None, llm_backend: str | LLMProvider, aleph_alph
     -------
         str: Token
     """
-    return get_token(token, llm_backend, aleph_alpha_key, openai_key) if llm_backend != "gpt4all" else "gpt4all"
+    return get_token(token, llm_backend.llm_provider, aleph_alpha_key, openai_key) if llm_backend != "gpt4all" else "gpt4all"
 
 
 def convert_qdrant_result_to_retrieval_results(docs: list) -> list[RetrievalResults]:
