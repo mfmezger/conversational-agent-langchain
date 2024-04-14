@@ -50,7 +50,7 @@ def main(cfg: DictConfig) -> None:
 
 def ingest_text_files(directory: str, vector_db: Qdrant, file_ending: str = "*.txt") -> None:
     """Ingests text files from a directory."""
-    loader = DirectoryLoader(directory, glob=file_ending, loader_cls=TextLoader)
+    loader = DirectoryLoader(directory, glob="*" + file_ending, loader_cls=TextLoader)
     docs = loader.load()
 
     logger.info(f"Loaded {len(docs)} documents.")

@@ -193,7 +193,7 @@ def search(search: SearchRequest, llm_backend: LLMBackend, filtering: Filtering)
         List[str]: A list of matching documents.
     """
     logger.info("Searching for Documents")
-    llm_backend.token = validate_token(token=llm_backend.token, llm_backend=llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    llm_backend.token = validate_token(token=llm_backend.token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=llm_backend.token, collection_name=llm_backend.collection_name))
 
@@ -240,7 +240,7 @@ def question_answer(rag: RAGRequest, llm_backend: LLMBackend, filtering: Filteri
         msg = "Please provide a Question."
         raise ValueError(msg)
 
-    token = validate_token(token=llm_backend.token, llm_backend=llm_backend.llm_provider, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
+    token = validate_token(token=llm_backend.token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=token, collection_name=llm_backend.collection_name))
     # summarize the history

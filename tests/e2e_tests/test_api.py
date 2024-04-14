@@ -56,7 +56,7 @@ def test_semantic_search(provider: str) -> None:
 def test_embeddings_text(provider: str) -> None:
     """Test the embedd_text function."""
     # load text
-    with Path("tests/resources/file1.txt").open() as f:
+    with Path("tests/resources/albert.txt").open() as f:
         text = f.read()
 
     response: Response = client.post(
