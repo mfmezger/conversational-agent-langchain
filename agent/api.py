@@ -257,7 +257,7 @@ def search(search: SearchRequest, llm_backend: LLMBackend, filtering: Filtering)
 
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=llm_backend.token, collection_name=llm_backend.collection_name))
 
-    docs = service.search(search=search, llm_backend=llm_backend, filtering=filtering)
+    docs = service.search(search=search, filtering=filtering)
 
     if not docs:
         logger.info("No Documents found.")

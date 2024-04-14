@@ -14,7 +14,7 @@ from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import Filtering, RAGRequest, SearchRequest
-from agent.utils.utility import generate_prompt, initialize_open_ai_vector_db
+from agent.utils.utility import generate_collection_openai, generate_prompt
 from agent.utils.vdb import init_vdb
 
 load_dotenv()
@@ -55,7 +55,7 @@ class OpenAIService(LLMBase):
         ----
             name (str): The name of the new collection.
         """
-        initialize_open_ai_vector_db(self.cfg, name, self.openai_token)
+        generate_collection_openai(self.cfg, name, self.openai_token)
         return True
 
     def get_db_connection(self) -> Qdrant:
@@ -182,12 +182,12 @@ class OpenAIService(LLMBase):
 
         return response.choices[0].message.content
 
-    def rag(self, rag_request: RAGRequest, search: SearchRequest, filtering: Filtering) -> tuple:
+    def rag(self, rag: RAGRequest, search: SearchRequest, filtering: Filtering) -> tuple:
         """QA Function for OpenAI LLMs.
 
         Args:
         ----
-            rag_request (RAGRequest): The RAG Request Object.
+            rag (RAGRequest): The RAG Request Object.
             search (SearchRequest): The search request object.
             filtering (Filtering): The filtering object.
 
@@ -201,7 +201,7 @@ class OpenAIService(LLMBase):
             raise ValueError(msg)
         text = "\n".join([doc[0].page_content for doc in documents]) if len(documents) > 1 else documents[0].document
 
-        prompt = generate_prompt(prompt_name="openai-qa.j2", text=text, query=search.query, language=rag_request.language)
+        prompt = generate_prompt(prompt_name="openai-qa.j2", text=text, query=search.query, language=rag.language)
 
         answer = self.generate(prompt)
 

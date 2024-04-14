@@ -7,6 +7,7 @@ from langchain_community.vectorstores.qdrant import Qdrant
 from lingua import Language, LanguageDetectorBuilder
 from loguru import logger
 from qdrant_client import models
+from qdrant_client.http.exceptions import UnexpectedResponse
 
 from agent.data_model.internal_model import RetrievalResults
 from agent.data_model.request_data_model import LLMProvider
@@ -72,7 +73,7 @@ def detect_language(text: str) -> str:
     return language
 
 
-def generate_prompt(prompt_name: str, text: str, query: str, language: str = "detect") -> str:
+def generate_prompt(prompt_name: str, text: str, query: str = "", language: str = "detect") -> str:
     """Generates a prompt for the Luminous API using a Jinja template.
 
     Args:
@@ -198,7 +199,7 @@ def initialize_aleph_alpha_vector_db() -> None:
     try:
         qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_aa)
         logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_aa} already exists.")
-    except ValueError:
+    except UnexpectedResponse:
         generate_collection_aleph_alpha(qdrant_client, collection_name=cfg.qdrant.collection_name_aa, embeddings_size=cfg.aleph_alpha_embeddings.size)
 
 
@@ -230,7 +231,7 @@ def initialize_open_ai_vector_db() -> None:
     try:
         qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_openai)
         logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_openai} already exists.")
-    except ValueError:
+    except UnexpectedResponse:
         generate_collection_openai(qdrant_client, collection_name=cfg.qdrant.collection_name_openai)
 
 
@@ -261,7 +262,7 @@ def initialize_gpt4all_vector_db() -> None:
     try:
         qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_gpt4all)
         logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_gpt4all} already exists.")
-    except ValueError:
+    except UnexpectedResponse:
         generate_collection_gpt4all(qdrant_client, collection_name=cfg.qdrant.collection_name_gpt4all)
 
 

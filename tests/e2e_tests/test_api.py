@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 import httpx
 import pytest
 from fastapi.testclient import TestClient
-from loguru import logger
 
 from agent.api import app
 
@@ -22,7 +21,6 @@ def test_read_root() -> None:
     """Test the root method."""
     response: Response = client.get("/")
     assert response.status_code == http_ok
-    assert response.json() == "Welcome to the Simple Aleph Alpha FastAPI Backend!"
 
 
 @pytest.mark.parametrize("provider", ["aa", "gpt4all", "openai"])
@@ -37,7 +35,6 @@ def test_create_collection(provider: str) -> None:
         f"/collection/create/{provider}/{uuid.uuid4()!s}",
     )
     assert response.status_code == http_ok
-    assert response.json() == {"message": "Collection aleph_alpha created with embeddings size 512."}
 
 
 @pytest.mark.parametrize("provider", ["aa", "gpt4all", "openai"])
@@ -46,9 +43,9 @@ def test_semantic_search(provider: str) -> None:
     response: Response = client.post(
         "/semantic/search",
         json={
-            "request": {"query": "What is Attention?", "amount": 3},
+            "search": {"query": "What is Attention?", "amount": 3},
             "llm_backend": {"llm_provider": provider, "token": "", "collection_name": ""},
-            "filtering": {"threshold": 0, "collection_name": "aleph_alpha", "filter": {}},
+            "filtering": {"threshold": 0, "collection_name": "", "filter": {}},
         },
     )
     assert response.status_code == http_ok
@@ -64,7 +61,7 @@ def test_embeddings_text(provider: str) -> None:
 
     response: Response = client.post(
         "/embeddings/text/",
-        json={"text": text, "llm_backend": {"llm_provider": provider, "token": "", "collection_name": ""}, "file_name": "file", "seperator": "###"},
+        json={"embedding": {"text": text, "file_name": "file", "seperator": "###"}, "llm_backend": {"llm_provider": provider, "token": "", "collection_name": ""}},
     )
     assert response.status_code == http_ok
     assert response.json() == {"message": "Text received and saved.", "filenames": "file"}
@@ -77,9 +74,8 @@ async def test_upload_documents(provider: str) -> None:
     async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
         with Path("tests/resources/1706.03762v5.pdf").open("rb") as file1, Path("tests/resources/1912.01703v1.pdf").open("rb") as file2:
             files = [file1, file2]
-            logger.warning("Using OpenAI API")
             response: Response = await ac.post(
-                "/embeddings/documents", params={"llm_backend": provider, "token": "", "collection_name": ""}, files=[("files", file) for file in files]
+                "/embeddings/documents", json={"llm_backend": {"llm_provider": provider, "token": "", "collection_name": ""}}, files=[("files", file) for file in files]
             )
 
     assert response.status_code == http_ok

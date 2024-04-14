@@ -42,9 +42,9 @@ def test_generation(service: AlephAlphaService) -> None:
     assert response is not None
 
 
-def test_embedd_documents(service: AlephAlphaService) -> None:
+def test_embed_documents(service: AlephAlphaService) -> None:
     """Test the embedd_documents function."""
-    response = service.embedd_documents(folder="tests/resources")
+    response = service.embed_documents(folder="tests/resources")
     assert response is not None
 
 

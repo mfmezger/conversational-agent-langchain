@@ -132,7 +132,7 @@ class AlephAlphaService(LLMBase):
             str: The summary of the text.
         """
         # TODO: rewrite because deprecated.
-        client = Client(token=token)
+        client = Client(token=self.aleph_alpha_token)
         document = Document.from_text(text=text)
         request = SummarizationRequest(document=document)
         response = client.summarize(request=request)
