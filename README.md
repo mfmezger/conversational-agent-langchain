@@ -19,6 +19,7 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
   - [Vector Database](#vector-database)
   - [Qdrant API Key](#qdrant-api-key)
   - [Bulk Ingestion](#bulk-ingestion)
+  - [Update all dependencies](#update-all-dependencies)
   - [Star History](#star-history)
 
 
@@ -143,6 +144,12 @@ And you need to change it in the qdrant.yaml file in the config folder.
 
 If you want to ingest large amount of data i would recommend you use the scripts located in agent/ingestion.
 
+
+## Update all dependencies
+
+```
+poetry add langchain@latest loguru@latest omegaconf@latest aleph-alpha-client@latest tiktoken@latest python-dotenv@latest httpx@latest python-multipart@latest fastapi@latest openai@latest grpcio@latest grpcio-tools@latest uvicorn@latest gpt4all@latest nltk@latest pypdfium2@latest lingua-language-detector@latest pyarrow@latest aiohttp@latest gitpython@latest jinja2@latest langchain-openai@latest
+```
 
 
 ## Star History

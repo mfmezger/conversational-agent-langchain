@@ -1,9 +1,7 @@
 """The page to upload  a pdf."""
 
 # import streamlit as st
-# from loguru import logger
-
-# from agent.backend.aleph_alpha_service import embedd_documents_aleph_alpha
+# from pathlib import Path
 
 
 # def upload_files(save_path_input: str) -> list[tuple[str, bytes]]:
@@ -18,7 +16,7 @@
 #     return files
 
 
-# def start_embedding(file_path: str, token: str) -> None:
+# # def start_embedding(file_path: str, token: str) -> None:
 #     """Start the embedding process."""
 #     embedd_documents_aleph_alpha(dir=file_path, aleph_alpha_token=token)
 

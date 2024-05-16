@@ -27,15 +27,15 @@ from agent.data_model.response_data_model import (
     QAResponse,
     SearchResponse,
 )
-from agent.utils.utility import (
+from agent.utils.vdb import (
     combine_text_from_list,
     create_tmp_folder,
     initialize_aleph_alpha_vector_db,
     initialize_gpt4all_vector_db,
     initialize_open_ai_vector_db,
+    load_vec_db_conn,
     validate_token,
 )
-from agent.utils.vdb import load_vec_db_conn
 
 # add file logger for loguru
 # logger.add("logs/file_{time}.log", backtrace=False, diagnose=False)

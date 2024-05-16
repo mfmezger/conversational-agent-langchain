@@ -7,31 +7,30 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
-langchain = "^0.1.16"
-streamlit = "^1.33.0"
+langchain = "^0.1.20"
 loguru = "^0.7.2"
 omegaconf = "^2.3.0"
-aleph-alpha-client = "^7.0.1"
-tiktoken = "^0.6.0"
+aleph-alpha-client = "^7.1.0"
+tiktoken = "^0.7.0"
 python-dotenv = "^1.0.1"
 httpx = "^0.27.0"
 python-multipart = "^0.0.9"
-fastapi = "^0.110.1"
-openai = "^1.14.1"
-grpcio = "^1.62.1"
-grpcio-tools = "^1.62.1" # for qdrant
+fastapi = "^0.111.0"
+openai = "^1.30.1"
+grpcio = "^1.63.0"
+grpcio-tools = "^1.63.0" # for qdrant
 qdrant-client = "^1.8.2" # for qdrant
 uvicorn = "^0.29.0"
-gpt4all = "^2.2.1.post1"
+gpt4all = "^2.6.0"
 nltk = "^3.8.1"
-pypdfium2 = "^4.29.0"
+pypdfium2 = "^4.30.0"
 lingua-language-detector = "^2.0.2"
-pyarrow = "^15.0.2" # security issue with < 14.0.1
-aiohttp = "^3.9.4" # security issue
+pyarrow = "^16.1.0" # security issue with < 14.0.1
+aiohttp = "^3.9.5" # security issue
 ultra-simple-config = "^0.1.0"
-gitpython = "^3.1.42" # https://github.com/advisories/GHSA-wfm5-v35h-vwf4
-jinja2 = "^3.1.3"
-langchain-openai = "^0.1.3"
+gitpython = "^3.1.43" # https://github.com/advisories/GHSA-wfm5-v35h-vwf4
+jinja2 = "^3.1.4"
+langchain-openai = "^0.1.7"
 
 
 [tool.poetry.group.dev.dependencies]
