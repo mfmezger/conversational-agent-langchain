@@ -1,4 +1,5 @@
 """GPT4ALL Backend Service."""
+
 from dotenv import load_dotenv
 from gpt4all import GPT4All
 from langchain.text_splitter import NLTKTextSplitter
@@ -54,6 +55,7 @@ class GPT4AllService(LLMBase):
         Returns:
         -------
             Qdrant: The Qdrant DB connection.
+
         """
         embedding = GPT4AllEmbeddings()
 
@@ -75,6 +77,7 @@ class GPT4AllService(LLMBase):
         Returns:
         -------
             None
+
         """
         if file_ending == ".pdf":
             loader = DirectoryLoader(directory, glob="*" + file_ending, loader_cls=PyPDFium2Loader)
@@ -111,6 +114,7 @@ class GPT4AllService(LLMBase):
         Returns:
         -------
             str: The summarized text.
+
         """
         prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text)
 
@@ -128,6 +132,7 @@ class GPT4AllService(LLMBase):
         Returns:
         -------
             str: The completed text.
+
         """
         model = GPT4All(self.cfg.gpt4all_completion.completion_model)
 
@@ -145,6 +150,7 @@ class GPT4AllService(LLMBase):
         -------
             List[Tuple[Document, float]]: A list of search results, where each result is a tuple
             containing a Document object and a float score.
+
         """
         docs = self.vector_db.similarity_search_with_score(query=search.query, k=search.amount, score_threshold=filtering.threshold, filter=filtering.filter)
         logger.info(f"SUCCESS: {len(docs)} Documents found.")
@@ -163,6 +169,7 @@ class GPT4AllService(LLMBase):
         Returns:
         -------
             Tuple[str, str, List[RetrievalResults]]: The answer, the prompt and the metadata.
+
         """
         documents = self.search(search=search, filtering=filtering)
         if search.amount == 0:

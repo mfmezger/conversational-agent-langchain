@@ -54,6 +54,7 @@ class OpenAIService(LLMBase):
         Args:
         ----
             name (str): The name of the new collection.
+
         """
         generate_collection_openai(self.cfg, name, self.openai_token)
         return True
@@ -84,6 +85,7 @@ class OpenAIService(LLMBase):
         ----
             directory (str): PDF Directory.
             file_ending (str): File ending of the documents.
+
         """
         if file_ending == ".pdf":
             loader = DirectoryLoader(directory, glob="*" + file_ending, loader_cls=PyPDFium2Loader)
@@ -122,6 +124,7 @@ class OpenAIService(LLMBase):
         -------
             List[Tuple[Document, float]]: A list of search results, where each result is a tuple
             containing a Document object and a float score.
+
         """
         docs = self.vector_db.similarity_search_with_score(search.query, k=search.amount, score_threshold=filtering.threshold, filter=filtering.filter)
         logger.info("SUCCESS: Documents found.")
@@ -138,6 +141,7 @@ class OpenAIService(LLMBase):
         Returns:
         -------
             str: The summary of the text.
+
         """
         prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, language="de")
 
@@ -166,6 +170,7 @@ class OpenAIService(LLMBase):
         Returns:
         -------
             str: Response from the OpenAI API.
+
         """
         openai.api_key = self.token
         response = openai.chat.completions.create(
@@ -194,6 +199,7 @@ class OpenAIService(LLMBase):
         Returns:
         -------
             tuple: answer, prompt, meta_data
+
         """
         documents = self.search(search=search, filtering=filtering)
         if len(documents) == 0:

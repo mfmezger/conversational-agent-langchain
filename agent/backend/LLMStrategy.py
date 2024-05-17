@@ -19,6 +19,7 @@ class LLMStrategyFactory:
     Returns
     -------
         Strategy: The correct strategy.
+
     """
 
     _strategies: ClassVar = {
@@ -44,6 +45,7 @@ class LLMStrategyFactory:
         Returns:
         -------
             LLMBase: _description_
+
         """
         strategy = LLMStrategyFactory._strategies.get(strategy_type)
         if strategy is None:
@@ -87,9 +89,3 @@ class LLMContext:
     def summarize_text(self, text: str) -> str:
         """Wrapper for the summarization of text."""
         return self.llm.summarize_text(text)
-
-
-# Usage
-# rag = LLMContext(LLMStrategyFactory.get_strategy(LLMProvider.ALEPH_ALPHA))
-
-# rag.change_strategy(LLMProvider.GPT4ALL)
