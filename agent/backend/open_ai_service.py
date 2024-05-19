@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from langchain.docstore.document import Document
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
-from langchain_community.vectorstores.qdrant import Qdrant
 from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
 from loguru import logger
 from omegaconf import DictConfig
@@ -46,7 +45,17 @@ class OpenAIService(LLMBase):
         else:
             self.collection_name = self.cfg.qdrant.collection_name_openai
 
-        self.vector_db = self.get_db_connection()
+        if self.cfg.openai_embeddings.azure:
+            embedding = AzureOpenAIEmbeddings(
+                azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+                deployment=self.cfg.openai_embeddings.embedding_model_name,
+                openai_api_version=self.cfg.openai_embeddings.openai_api_version,
+                openai_api_key=self.openai_token,
+            )
+        else:
+            embedding = OpenAIEmbeddings(model=self.cfg.openai_embeddings.embedding_model_name, openai_api_key=self.openai_token)
+
+        self.vector_db = init_vdb(self.cfg, self.collection_name, embedding=embedding)
 
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database.
@@ -58,25 +67,6 @@ class OpenAIService(LLMBase):
         """
         generate_collection_openai(self.cfg, name, self.openai_token)
         return True
-
-    def get_db_connection(self) -> Qdrant:
-        """Initializes a connection to the Qdrant DB.
-
-        Returns
-        -------
-            Qdrant: An Langchain Instance of the Qdrant DB.
-        """
-        if self.cfg.openai_embeddings.azure:
-            embedding = AzureOpenAIEmbeddings(
-                azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-                deployment=self.cfg.openai_embeddings.embedding_model_name,
-                openai_api_version=self.cfg.openai_embeddings.openai_api_version,
-                openai_api_key=self.openai_token,
-            )
-        else:
-            embedding = OpenAIEmbeddings(model=self.cfg.openai_embeddings.embedding_model_name, openai_api_key=self.openai_token)
-
-        return init_vdb(self.cfg, self.collection_name, embedding)
 
     def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:
         """Embeds the documents in the given directory.

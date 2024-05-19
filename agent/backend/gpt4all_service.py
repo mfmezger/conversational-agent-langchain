@@ -5,7 +5,6 @@ from gpt4all import GPT4All
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_community.embeddings import GPT4AllEmbeddings
-from langchain_community.vectorstores.qdrant import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
@@ -42,24 +41,8 @@ class GPT4AllService(LLMBase):
         else:
             self.collection_name = self.cfg.qdrant.collection_name_gpt4all
 
-        self.vector_db = self.get_db_connection()
-
-    def get_db_connection(self) -> Qdrant:
-        """Initializes a connection to the Qdrant DB.
-
-        Args:
-        ----
-            cfg (DictConfig): The configuration file loaded via OmegaConf.
-            aleph_alpha_token (str): The Aleph Alpha API token.
-
-        Returns:
-        -------
-            Qdrant: The Qdrant DB connection.
-
-        """
         embedding = GPT4AllEmbeddings()
-
-        return init_vdb(self.cfg, self.collection_name, embedding)
+        self.vector_db = init_vdb(cfg=self.cfg, collection_name=collection_name, embedding=embedding)
 
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database."""

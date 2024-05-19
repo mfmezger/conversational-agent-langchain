@@ -17,7 +17,6 @@ from langchain.docstore.document import Document as LangchainDocument
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_community.embeddings import AlephAlphaAsymmetricSemanticEmbedding
-from langchain_community.vectorstores import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
@@ -67,7 +66,13 @@ class AlephAlphaService(LLMBase):
         else:
             self.collection_name = self.cfg.qdrant.collection_name_aa
 
-        self.vector_db = self.get_db_connection(self.collection_name)
+        embedding = AlephAlphaAsymmetricSemanticEmbedding(
+            model=self.cfg.aleph_alpha_embeddings.model_name,
+            aleph_alpha_api_key=self.aleph_alpha_token,
+            normalize=self.cfg.aleph_alpha_embeddings.normalize,
+            compress_to_size=self.cfg.aleph_alpha_embeddings.compress_to_size,
+        )
+        self.vector_db = init_vdb(cfg=self.cfg, collection_name=collection_name, embedding=embedding)
 
     def get_tokenizer(self) -> None:
         """Initialize the tokenizer."""
@@ -84,29 +89,10 @@ class AlephAlphaService(LLMBase):
         Returns:
         -------
             int: Number of tokens.
+
         """
         tokens = self.tokenizer.encode(text)
         return len(tokens)
-
-    def get_db_connection(self, collection_name: str) -> Qdrant:
-        """Initializes a connection to the Qdrant DB.
-
-        Args:
-        ----
-            collection_name (str): The name of the collection in the Qdrant DB.
-
-        Returns:
-        -------
-            Qdrant: The Qdrant DB connection.
-        """
-        embedding = AlephAlphaAsymmetricSemanticEmbedding(
-            model=self.cfg.aleph_alpha_embeddings.model_name,
-            aleph_alpha_api_key=self.aleph_alpha_token,
-            normalize=self.cfg.aleph_alpha_embeddings.normalize,
-            compress_to_size=self.cfg.aleph_alpha_embeddings.compress_to_size,
-        )
-
-        return init_vdb(self.cfg, collection_name, embedding)
 
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Qdrant DB.
@@ -130,6 +116,7 @@ class AlephAlphaService(LLMBase):
         Returns:
         -------
             str: The summary of the text.
+
         """
         # TODO: rewrite because deprecated.
         client = Client(token=self.aleph_alpha_token)
@@ -154,6 +141,7 @@ class AlephAlphaService(LLMBase):
         Raises:
         ------
             ValueError: If the text or token is None or empty, or if the response or completion is empty.
+
         """
         if not text:
             msg = "Text cannot be None or empty."
@@ -196,6 +184,7 @@ class AlephAlphaService(LLMBase):
         Returns:
         -------
             None
+
         """
         if file_ending == ".pdf":
             loader = DirectoryLoader(directory, glob="*" + file_ending, loader_cls=PyPDFium2Loader)
@@ -235,6 +224,7 @@ class AlephAlphaService(LLMBase):
         Returns:
         -------
             List[Tuple[Document, float]]: A list of tuples containing the documents and their similarity scores.
+
         """
         docs = self.vector_db.similarity_search_with_score(query=search.query, k=search.amount, score_threshold=filtering.threshold)
         logger.info(f"SUCCESS: {len(docs)} Documents found.")
@@ -253,6 +243,7 @@ class AlephAlphaService(LLMBase):
         Returns:
         -------
             Tuple[str, str, List[RetrievalResults]]: The answer, the prompt and the metadata.
+
         """
         documents = self.search(search=search, filtering=filtering)
         if search.amount == 0:
@@ -323,6 +314,7 @@ class AlephAlphaService(LLMBase):
         Raises:
         ------
             ValueError: If the type is not one of 'qa', 'summarization', or 'invoice'.
+
         """
         # load the documents
         loader = DirectoryLoader(folder, glob="*.pdf", loader_cls=PyPDFium2Loader)
