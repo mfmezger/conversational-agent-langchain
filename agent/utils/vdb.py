@@ -55,9 +55,9 @@ def generate_collection_aleph_alpha(qdrant_client: Qdrant, collection_name: str,
 
     Args:
     ----
-        qdrant_client (Qdrant): _description_
-        collection_name (str): _description_
-        embeddings_size (int): _description_
+        qdrant_client (Qdrant): Qdrant Connection Client.
+        collection_name (str): Name of the Collection in the VDB.
+        embeddings_size (int): SIze of the Embeddings
 
     """
     qdrant_client.recreate_collection(
@@ -89,8 +89,8 @@ def generate_collection_openai(qdrant_client: Qdrant, collection_name: str) -> N
 
     Args:
     ----
-        qdrant_client (_type_): Qdrant Client Langchain.
-        collection_name (_type_): Name of the Collection
+        qdrant_client (Qdrant): Qdrant Client Langchain.
+        collection_name (str): Name of the Collection
 
     """
     qdrant_client.recreate_collection(

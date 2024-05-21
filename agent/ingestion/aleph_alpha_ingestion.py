@@ -66,6 +66,7 @@ def count_tokens(text: str) -> int:
     Returns:
     -------
         int: Number of tokens.
+
     """
     tokens = tokenizer.encode(text)
     return len(tokens)
@@ -107,6 +108,7 @@ def setup_connection_vector_db(cfg: DictConfig) -> Qdrant:
     Returns:
     -------
         Qdrant: The vector db
+
     """
     embedding = AlephAlphaAsymmetricSemanticEmbedding(
         model=cfg.aleph_alpha_embeddings.model_name,
