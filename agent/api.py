@@ -159,6 +159,7 @@ async def embedd_text(embedding: EmbeddTextRequest, llm_backend: LLMBackend) -> 
     Returns:
     -------
         JSONResponse: A response indicating that the text was received and saved, along with the name of the file it was saved to.
+
     """
     logger.info("Embedding Text")
     token = validate_token(token=llm_backend.token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
