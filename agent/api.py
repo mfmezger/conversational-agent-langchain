@@ -78,6 +78,7 @@ def read_root() -> str:
     Returns
     -------
         str: The welcome message.
+
     """
     return "Welcome to the RAG Backend. Please navigate to /docs for the OpenAPI!"
 
@@ -90,6 +91,7 @@ def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONRe
     ----
         llm_provider (LLMProvider): Name of the LLM Provider
         collection_name (str): Name of the Collection
+
     """
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_provider, token="", collection_name=collection_name))
 
@@ -112,6 +114,7 @@ async def post_embedd_documents(llm_backend: LLMBackend, files: list[UploadFile]
     Returns:
     -------
         JSONResponse: The response as JSON.
+
     """
     logger.info("Embedding Multiple Documents")
 
@@ -159,6 +162,7 @@ async def embedd_text(embedding: EmbeddTextRequest, llm_backend: LLMBackend) -> 
     Returns:
     -------
         JSONResponse: A response indicating that the text was received and saved, along with the name of the file it was saved to.
+
     """
     logger.info("Embedding Text")
     token = validate_token(token=llm_backend.token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
@@ -191,6 +195,7 @@ def search(search: SearchRequest, llm_backend: LLMBackend, filtering: Filtering)
     Returns:
     -------
         List[str]: A list of matching documents.
+
     """
     logger.info("Searching for Documents")
     llm_backend.token = validate_token(token=llm_backend.token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
@@ -233,6 +238,7 @@ def question_answer(rag: RAGRequest, llm_backend: LLMBackend, filtering: Filteri
     Returns:
     -------
         Tuple: Answer, Prompt and Meta Data
+
     """
     logger.info("Answering Question")
     # if the query is not provided, raise an error
@@ -361,6 +367,7 @@ async def custom_prompt_llm(request: CustomPromptCompletion) -> str:
     Raises:
     ------
         ValueError: If the LLM provider is not implemented yet.
+
     """
     logger.info("Sending Custom Completion Request")
 
