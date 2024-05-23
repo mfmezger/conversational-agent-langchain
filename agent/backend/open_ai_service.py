@@ -6,6 +6,10 @@ from dotenv import load_dotenv
 from langchain.docstore.document import Document
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_openai import ChatOpenAI
 from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
 from loguru import logger
 from omegaconf import DictConfig
@@ -13,8 +17,8 @@ from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import Filtering, RAGRequest, SearchRequest
-from agent.utils.utility import generate_collection_openai, generate_prompt
-from agent.utils.vdb import init_vdb
+from agent.utils.utility import generate_prompt
+from agent.utils.vdb import generate_collection_openai, init_vdb
 
 load_dotenv()
 
@@ -56,6 +60,26 @@ class OpenAIService(LLMBase):
             embedding = OpenAIEmbeddings(model=self.cfg.openai_embeddings.embedding_model_name, openai_api_key=self.openai_token)
 
         self.vector_db = init_vdb(self.cfg, self.collection_name, embedding=embedding)
+
+    def create_search_chain(self, search_kwargs: dict[str, any] | None = None):
+        if search_kwargs is None:
+            search_kwargs = {}
+        return self.vector_db.as_retriever(search_kwargs=search_kwargs)
+
+    def create_rag_chain(self, search_chain):
+        template = """Answer the question based only on the following context:
+        {context}
+
+        Question: {question}
+        """
+        prompt = ChatPromptTemplate.from_template(template=template)
+
+        def format_docs(docs):
+            return "\n\n".join(doc.page_content for doc in docs)
+
+        return (
+            {"context": search_chain | format_docs, "question": RunnablePassthrough()} | prompt | ChatOpenAI(model=self.cfg.openai_completion.model) | StrOutputParser()
+        )
 
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database.
@@ -206,6 +230,7 @@ class OpenAIService(LLMBase):
 
 if __name__ == "__main__":
     token = os.getenv("OPENAI_API_KEY")
+    query = "Was ist Attention?"
     logger.info(f"Token: {token}")
 
     from agent.data_model.request_data_model import Filtering, SearchRequest
@@ -216,14 +241,24 @@ if __name__ == "__main__":
 
     openai_service = OpenAIService(collection_name="openai", token=token)
 
-    openai_service.embed_documents(directory="tests/resources/")
+    # openai_service.embed_documents(directory="tests/resources/")
 
-    answer, prompt, meta_data = openai_service.rag(
-        RAGRequest(language="detect", filter={}),
-        SearchRequest(query="Was ist Attention", amount=3),
-        Filtering(threshold=0.0, collection_name="openai"),
-    )
+    retriever = openai_service.create_search_chain(search_kwargs={"k": 3})
 
-    logger.info(f"Answer: {answer}")
-    logger.info(f"Prompt: {prompt}")
-    logger.info(f"Metadata: {meta_data}")
+    results = (retriever.invoke(query),)  # config={'callbacks': [ConsoleCallbackHandler()]})
+
+    rag_chain = openai_service.create_rag_chain(search_chain=retriever)
+
+    answer = rag_chain.invoke(query)
+
+    logger.info("Answer: {answer}")
+
+    # answer, prompt, meta_data = openai_service.rag(
+    #     RAGRequest(language="detect", filter={}),
+    #     SearchRequest(query="Was ist Attention", amount=3),
+    #     Filtering(threshold=0.0, collection_name="openai"),
+    # )
+
+    # logger.info(f"Answer: {answer}")
+    # logger.info(f"Prompt: {prompt}")
+    # logger.info(f"Metadata: {meta_data}")

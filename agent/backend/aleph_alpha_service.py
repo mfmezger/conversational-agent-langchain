@@ -27,12 +27,8 @@ from agent.data_model.request_data_model import (
     RAGRequest,
     SearchRequest,
 )
-from agent.utils.utility import (
-    convert_qdrant_result_to_retrieval_results,
-    generate_collection_aleph_alpha,
-    generate_prompt,
-)
-from agent.utils.vdb import init_vdb
+from agent.utils.utility import convert_qdrant_result_to_retrieval_results, generate_prompt
+from agent.utils.vdb import generate_collection_aleph_alpha, init_vdb
 
 nltk.download("punkt")  # This needs to be installed for the tokenizer to work.
 load_dotenv()
