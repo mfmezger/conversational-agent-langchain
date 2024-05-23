@@ -5,7 +5,6 @@ from gpt4all import GPT4All
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_community.embeddings import GPT4AllEmbeddings
-from langchain_community.vectorstores.qdrant import Qdrant
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
@@ -17,12 +16,10 @@ from agent.data_model.request_data_model import (
     RAGRequest,
     SearchRequest,
 )
-from agent.utils.utility import (
-    convert_qdrant_result_to_retrieval_results,
-    generate_collection_gpt4all,
-    generate_prompt,
-)
-from agent.utils.vdb import init_vdb
+from agent.utils.utility import convert_qdrant_result_to_retrieval_results, generate_prompt
+from agent.utils.vdb import generate_collection_gpt4all, init_vdb
+
+# nltk.download("punkt")
 
 load_dotenv()
 
@@ -42,24 +39,24 @@ class GPT4AllService(LLMBase):
         else:
             self.collection_name = self.cfg.qdrant.collection_name_gpt4all
 
-        self.vector_db = self.get_db_connection()
-
-    def get_db_connection(self) -> Qdrant:
-        """Initializes a connection to the Qdrant DB.
-
-        Args:
-        ----
-            cfg (DictConfig): The configuration file loaded via OmegaConf.
-            aleph_alpha_token (str): The Aleph Alpha API token.
-
-        Returns:
-        -------
-            Qdrant: The Qdrant DB connection.
-
-        """
         embedding = GPT4AllEmbeddings()
+        self.vector_db = init_vdb(cfg=self.cfg, collection_name=collection_name, embedding=embedding)
 
-        return init_vdb(self.cfg, self.collection_name, embedding)
+        # create retriever from the vector database
+
+        # query = "Was ist Attention?"
+        # results = retriever.invoke(query=query)
+        # print(results)
+        # self.chain =
+
+    def create_search_chain(self, search_kwargs: dict[str, any] | None = None):
+        if search_kwargs is None:
+            search_kwargs = {}
+        return self.vector_db.as_retriever(search_kwargs=search_kwargs)
+
+    def create_rag_chain(self, search_chain):
+        llm = GPT4All(self.cfg.gpt4all_completion.completion_model)
+        return search_chain | llm
 
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database."""
@@ -186,23 +183,31 @@ class GPT4AllService(LLMBase):
 
 
 if __name__ == "__main__":
+    query = "Was ist Attention?"
+
     gpt4all_service = GPT4AllService(collection_name="gpt4all", token="")
 
-    gpt4all_service.embed_documents(directory="tests/resources/")
+    # gpt4all_service.embed_documents(directory="tests/resources/")
 
-    docs = gpt4all_service.search(SearchRequest(query="Was ist Attention?", amount=3), Filtering(threshold=0.0, collection_name="gpt4all"))
+    retriever = gpt4all_service.create_search_chain(search_kwargs={"k": 3})
 
-    logger.info(f"Documents: {docs}")
+    results = (retriever.invoke(query),)  # config={'callbacks': [ConsoleCallbackHandler()]})
 
-    answer, prompt, meta_data = gpt4all_service.rag(
-        RAGRequest(language="detect", history={}),
-        SearchRequest(
-            query="Was ist Attention?",
-            amount=3,
-        ),
-        Filtering(threshold=0.0, collection_name="gpt4all"),
-    )
+    rag_chain = gpt4all_service.create_rag_chain(search_chain=retriever)
 
-    logger.info(f"Answer: {answer}")
-    logger.info(f"Prompt: {prompt}")
-    logger.info(f"Metadata: {meta_data}")
+    # docs = gpt4all_service.search(SearchRequest(query, amount=3), Filtering(threshold=0.0, collection_name="gpt4all"))
+
+    # logger.info(f"Documents: {docs}")
+
+    # answer, prompt, meta_data = gpt4all_service.rag(
+    #     RAGRequest(language="detect", history={}),
+    #     SearchRequest(
+    #         query=query,
+    #         amount=3,
+    #     ),
+    #     Filtering(threshold=0.0, collection_name="gpt4all"),
+    # )
+
+    # logger.info(f"Answer: {answer}")
+    # logger.info(f"Prompt: {prompt}")
+    # logger.info(f"Metadata: {meta_data}")

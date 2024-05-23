@@ -28,6 +28,7 @@ def combine_text_from_list(input_list: list) -> str:
     Returns:
     -------
         str: Combined string
+
     """
     # iterate through list and combine all strings to one
     combined_text = ""
@@ -57,6 +58,7 @@ def detect_language(text: str) -> str:
     Returns:
     -------
         str: The language which was detected.
+
     """
     detected_lang = detector.detect_language_of(text)
     if detected_lang == "Language.ENGLISH":
@@ -86,6 +88,7 @@ def generate_prompt(prompt_name: str, text: str, query: str = "", language: str 
     Raises:
     ------
         FileNotFoundError: If the specified prompt file cannot be found.
+
     """
     try:  # TODO: Adding the history to the prompt
         if language == "detect":
@@ -119,6 +122,7 @@ def get_token(token: str | None, llm_provider: str | LLMProvider | None, aleph_a
     Raises:
     ------
         ValueError: If no token is provided.
+
     """
     if isinstance(llm_provider, str):
         llm_provider = LLMProvider.normalize(llm_provider)
@@ -153,6 +157,7 @@ def validate_token(token: str | None, llm_backend: str | LLMProvider, aleph_alph
     Returns:
     -------
         str: Token
+
     """
     return get_token(token, llm_backend.llm_provider, aleph_alpha_key, openai_key) if llm_backend != "gpt4all" else "gpt4all"
 
@@ -167,6 +172,7 @@ def convert_qdrant_result_to_retrieval_results(docs: list) -> list[RetrievalResu
     Returns:
     -------
         list: The list of tuples.
+
     """
     return [RetrievalResults(document=doc[0].page_content, score=doc[1], metadata=doc[0].metadata) for doc in docs]
 
@@ -177,6 +183,7 @@ def create_tmp_folder() -> str:
     Returns
     -------
         str: The directory name.
+
     """
     # Create a temporary folder to save the files
     tmp_dir = Path.cwd() / f"tmp_{uuid.uuid4()}"
