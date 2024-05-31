@@ -33,7 +33,9 @@ from agent.utils.utility import (
     validate_token,
 )
 from agent.utils.vdb import initialize_aleph_alpha_vector_db, initialize_gpt4all_vector_db, initialize_open_ai_vector_db, load_vec_db_conn
+import nltk
 
+nltk.download("punkt")
 # add file logger for loguru
 # logger.add("logs/file_{time}.log", backtrace=False, diagnose=False)
 logger.info("Startup.")

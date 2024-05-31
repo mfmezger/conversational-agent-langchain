@@ -19,7 +19,7 @@ from agent.data_model.request_data_model import (
 from agent.utils.utility import convert_qdrant_result_to_retrieval_results, generate_prompt
 from agent.utils.vdb import generate_collection_gpt4all, init_vdb
 
-# nltk.download("punkt")
+
 
 load_dotenv()
 

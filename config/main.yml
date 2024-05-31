@@ -6,6 +6,7 @@ qdrant:
   collection_name_aa: aleph_alpha
   collection_name_gpt4all: gpt4all
   collection_name_openai: openai
+  collection_name_cohere: cohere
 
 aleph_alpha_embeddings:
   normalize: True
@@ -41,3 +42,8 @@ openai_completion:
   frequency_penalty: 0
   presence_penalty: 0
   stop: None
+
+# COHERE
+
+cohere_embeddings:
+  model_name: "embed-multilingual-v3.0"
