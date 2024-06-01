@@ -2,9 +2,12 @@
 import os
 
 from dotenv import load_dotenv
-from langchain.text_splitter import NLTKTextSplitter
-from langchain_cohere import CohereEmbeddings
+from langchain_cohere import ChatCohere, CohereEmbeddings
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_text_splitters import NLTKTextSplitter
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
@@ -15,6 +18,7 @@ from agent.data_model.request_data_model import (
     RAGRequest,
     SearchRequest,
 )
+from agent.utils.utility import extract_text_from_langchain_documents, load_prompt_template
 from agent.utils.vdb import init_vdb
 
 load_dotenv()
@@ -25,11 +29,10 @@ class CohereService(LLMBase):
     """Wrapper for cohere llms."""
 
     @load_config(location="config/main.yml")
-    def __init__(self, cfg: DictConfig, collection_name: str, token: str) -> None:
-        """Init the OpenAI Service."""
+    def __init__(self, cfg: DictConfig, collection_name: str | None, token: str | None) -> None:
+        """Init the Cohere Service."""
         super().__init__(token=token, collection_name=collection_name)
 
-        """Openai Service."""
         if token:
             os.environ["COHERE_API_KEY"] = token
 
@@ -41,6 +44,9 @@ class CohereService(LLMBase):
             self.collection_name = self.cfg.qdrant.collection_name_cohere
 
         embedding = CohereEmbeddings(model=self.cfg.cohere_embeddings.embedding_model_name)
+
+        template = load_prompt_template(prompt_name="cohere_chat.j2", task="chat")
+        self.prompt = ChatPromptTemplate.from_template(template=template, template_format="jinja2")
 
         self.vector_db = init_vdb(self.cfg, self.collection_name, embedding=embedding)
 
@@ -83,18 +89,33 @@ class CohereService(LLMBase):
 
     def search(self, search: SearchRequest, filtering: Filtering) -> list:
         """Searches the documents in the Qdrant DB with semantic search."""
+        search = dict(search)
+        filtering = dict(filtering)
 
-    def generate(self, prompt: str) -> str:
-        """Generate text from a prompt."""
+        search.update(filtering)
+
+        search.pop("query")
+
+        return self.vector_db.as_retriever(search_kwargs=search)
 
     def rag(self, rag: RAGRequest, search: SearchRequest, filtering: Filtering) -> tuple:
         """Retrieval Augmented Generation."""
+        search_chain = self.search(search=search, filtering=filtering)
+        return {"context": search_chain | extract_text_from_langchain_documents, "question": RunnablePassthrough()} | self.prompt | ChatCohere() | StrOutputParser()
 
     def summarize_text(self, text: str) -> str:
         """Summarize text."""
 
 
 if __name__ == "__main__":
-    cohere_service = CohereService()
+    query = "Was ist Attention?"
 
-    cohere_service.embed_documents(directory="data/")
+    cohere_service = CohereService(collection_name="", token="")
+
+    # cohere_service.embed_documents(directory="tests/resources/")
+
+    search_chain = cohere_service.search(search=SearchRequest(query=query, amount=3), filtering=Filtering())
+
+    chain = cohere_service.generate(search_chain=search_chain)
+
+    chain = cohere_service.rag(rag=RAGRequest(), search=SearchRequest(query=query, amount=3), filtering=Filtering())

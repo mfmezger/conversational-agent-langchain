@@ -131,3 +131,36 @@ def generate_collection_gpt4all(qdrant_client: Qdrant, collection_name: str) -> 
         vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
     )
     logger.info(f"SUCCESS: Collection {collection_name} created.")
+
+
+def initialize_cohere_vector_db() -> None:
+    """Initializes the Cohere vector db.
+
+    Args:
+    ----
+        cfg (DictConfig): Configuration from the file
+
+    """
+    qdrant_client, cfg = load_vec_db_conn()
+
+    try:
+        qdrant_client.get_collection(collection_name=cfg.qdrant.collection_name_cohere)
+        logger.info(f"SUCCESS: Collection {cfg.qdrant.collection_name_cohere} already exists.")
+    except UnexpectedResponse:
+        generate_collection_cohere(qdrant_client, collection_name=cfg.qdrant.collection_name_cohere)
+
+
+def generate_collection_cohere(qdrant_client: Qdrant, collection_name: str) -> None:
+    """Generate a collection for the OpenAI Backend.
+
+    Args:
+    ----
+        qdrant_client (Qdrant): Qdrant Client Langchain.
+        collection_name (str): Name of the Collection
+
+    """
+    qdrant_client.recreate_collection(
+        collection_name=collection_name,
+        vectors_config=models.VectorParams(size=1024, distance=models.Distance.COSINE),
+    )
+    logger.info(f"SUCCESS: Collection {collection_name} created.")

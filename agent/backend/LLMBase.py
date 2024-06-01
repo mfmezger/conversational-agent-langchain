@@ -9,7 +9,7 @@ class LLMBase(ABC):
     """The LLM Base Strategy."""
 
     @abstractmethod
-    def __init__(self, token: str, collection_name: str) -> None:
+    def __init__(self, token: str | None, collection_name: str | None) -> None:
         """Init the LLM Base."""
         self.token = token
         self.collection_name = collection_name

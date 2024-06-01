@@ -67,15 +67,7 @@ class OpenAIService(LLMBase):
         return self.vector_db.as_retriever(search_kwargs=search_kwargs)
 
     def create_rag_chain(self, search_chain):
-        template = """Answer the question based only on the following context:
-        {context}
-
-        Question: {question}
-        """
         prompt = ChatPromptTemplate.from_template(template=template)
-
-        def format_docs(docs):
-            return "\n\n".join(doc.page_content for doc in docs)
 
         return (
             {"context": search_chain | format_docs, "question": RunnablePassthrough()} | prompt | ChatOpenAI(model=self.cfg.openai_completion.model) | StrOutputParser()

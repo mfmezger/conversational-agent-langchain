@@ -49,7 +49,7 @@ class Filtering(BaseModel):
 
     """The Filtering Model."""
 
-    threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
+    score_threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
     filter: dict | None = Field(None, title="Filter", description="Filter for the database search with metadata.")
 
 
@@ -66,7 +66,7 @@ class SearchRequest(BaseModel):
     """The request parameters for searching the database."""
 
     query: str = Field(..., title="Query", description="The search query.")
-    amount: int = Field(3, title="Amount", description="The number of search results to return.")
+    k: int = Field(3, title="Amount", description="The number of search results to return.")
 
 
 class EmbeddTextRequest(BaseModel):

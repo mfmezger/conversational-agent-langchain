@@ -46,4 +46,4 @@ openai_completion:
 # COHERE
 
 cohere_embeddings:
-  model_name: "embed-multilingual-v3.0"
+  embedding_model_name: "embed-multilingual-v3.0"

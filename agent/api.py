@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 
+import nltk
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
 from fastapi.openapi.utils import get_openapi
@@ -32,8 +33,7 @@ from agent.utils.utility import (
     create_tmp_folder,
     validate_token,
 )
-from agent.utils.vdb import initialize_aleph_alpha_vector_db, initialize_gpt4all_vector_db, initialize_open_ai_vector_db, load_vec_db_conn
-import nltk
+from agent.utils.vdb import initialize_aleph_alpha_vector_db, initialize_cohere_vector_db, initialize_gpt4all_vector_db, initialize_open_ai_vector_db, load_vec_db_conn
 
 nltk.download("punkt")
 # add file logger for loguru
@@ -433,6 +433,7 @@ def delete(
 initialize_open_ai_vector_db()
 initialize_aleph_alpha_vector_db()
 initialize_gpt4all_vector_db()
+initialize_cohere_vector_db()
 
 # for debugging useful.
 if __name__ == "__main__":

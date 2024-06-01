@@ -105,6 +105,18 @@ def generate_prompt(prompt_name: str, text: str, query: str = "", language: str 
     return prompt.format(text=text, query=query) if query else prompt.format(text=text)
 
 
+def load_prompt_template(prompt_name: str, task: str) -> PromptTemplate:
+    try:
+        with Path(Path("prompts") / task / prompt_name).open(encoding="utf-8") as f:
+            # prompt_template = PromptTemplate.from_template(f.read(), template_format="jinja2")
+            prompt_template = f.read()
+    except FileNotFoundError as e:
+        msg = f"Prompt file '{prompt_name}' not found."
+        raise FileNotFoundError(msg) from e
+
+    return prompt_template
+
+
 def get_token(token: str | None, llm_provider: str | LLMProvider | None, aleph_alpha_key: str | None, openai_key: str | None) -> str:
     """Get the token from the environment variables or the parameter.
 
@@ -194,6 +206,10 @@ def create_tmp_folder() -> str:
         logger.error(f"Failed to create directory {tmp_dir}. Error: {e}")
         raise
     return str(tmp_dir)
+
+
+def extract_text_from_langchain_documents(docs):
+    return "\n\n".join(f"Context {i+1}:\n{doc.page_content}" for i, doc in enumerate(docs))
 
 
 if __name__ == "__main__":
