@@ -2,21 +2,20 @@
 import os
 
 from dotenv import load_dotenv
-from langchain_cohere import CohereEmbeddings
-from omegaconf import DictConfig
-from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain.text_splitter import NLTKTextSplitter
+from langchain_cohere import CohereEmbeddings
+from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
+from loguru import logger
+from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
-from agent.backend.LLMBase import LLMBackend, LLMBase
-from loguru import logger
+from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import (
     Filtering,
     RAGRequest,
     SearchRequest,
 )
 from agent.utils.vdb import init_vdb
-
 
 load_dotenv()
 
@@ -41,9 +40,7 @@ class CohereService(LLMBase):
         else:
             self.collection_name = self.cfg.qdrant.collection_name_cohere
 
-        embedding = CohereEmbeddings(
-            model=self.cfg.cohere_embeddings.embedding_model_name
-        )
+        embedding = CohereEmbeddings(model=self.cfg.cohere_embeddings.embedding_model_name)
 
         self.vector_db = init_vdb(self.cfg, self.collection_name, embedding=embedding)
 
@@ -96,5 +93,8 @@ class CohereService(LLMBase):
     def summarize_text(self, text: str) -> str:
         """Summarize text."""
 
+
 if __name__ == "__main__":
     cohere_service = CohereService()
+
+    cohere_service.embed_documents(directory="data/")
