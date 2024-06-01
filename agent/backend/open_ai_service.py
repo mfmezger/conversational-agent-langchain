@@ -16,7 +16,7 @@ from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
-from agent.data_model.request_data_model import Filtering, RAGRequest, SearchRequest
+from agent.data_model.request_data_model import Filtering, RAGRequest, SearchParams
 from agent.utils.utility import generate_prompt
 from agent.utils.vdb import generate_collection_openai, init_vdb
 
@@ -118,7 +118,7 @@ class OpenAIService(LLMBase):
 
         logger.info("SUCCESS: Texts embedded.")
 
-    def search(self, search: SearchRequest, filtering: Filtering) -> list[tuple[Document, float]]:
+    def search(self, search: SearchParams, filtering: Filtering) -> list[tuple[Document, float]]:
         """Searches the documents in the Qdrant DB with a specific query.
 
         Args:
@@ -193,7 +193,7 @@ class OpenAIService(LLMBase):
 
         return response.choices[0].message.content
 
-    def rag(self, rag: RAGRequest, search: SearchRequest, filtering: Filtering) -> tuple:
+    def rag(self, rag: RAGRequest, search: SearchParams, filtering: Filtering) -> tuple:
         """QA Function for OpenAI LLMs.
 
         Args:
@@ -225,7 +225,7 @@ if __name__ == "__main__":
     query = "Was ist Attention?"
     logger.info(f"Token: {token}")
 
-    from agent.data_model.request_data_model import Filtering, SearchRequest
+    from agent.data_model.request_data_model import Filtering, SearchParams
 
     if not token:
         msg = "OPENAI_API_KEY is not set."

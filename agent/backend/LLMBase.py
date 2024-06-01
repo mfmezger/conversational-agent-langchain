@@ -1,7 +1,7 @@
 """Strategy Pattern."""
 from abc import ABC, abstractmethod
 
-from agent.data_model.request_data_model import Filtering, LLMBackend, RAGRequest, SearchRequest
+from agent.data_model.request_data_model import Filtering, LLMBackend, RAGRequest, SearchParams
 
 
 class LLMBase(ABC):
@@ -23,7 +23,7 @@ class LLMBase(ABC):
         """Create a new collection in the Vector Database."""
 
     @abstractmethod
-    def search(self, search: SearchRequest, filtering: Filtering) -> list:
+    def search(self, search: SearchParams, filtering: Filtering) -> list:
         """Searches the documents in the Qdrant DB with semantic search."""
 
     @abstractmethod
@@ -31,7 +31,7 @@ class LLMBase(ABC):
         """Generate text from a prompt."""
 
     @abstractmethod
-    def rag(self, rag: RAGRequest, search: SearchRequest, filtering: Filtering) -> tuple:
+    def rag(self, rag: RAGRequest, search: SearchParams, filtering: Filtering) -> tuple:
         """Retrieval Augmented Generation."""
 
     @abstractmethod

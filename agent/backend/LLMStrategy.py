@@ -5,7 +5,7 @@ from agent.backend.aleph_alpha_service import AlephAlphaService
 from agent.backend.gpt4all_service import GPT4AllService
 from agent.backend.LLMBase import LLMBase
 from agent.backend.open_ai_service import OpenAIService
-from agent.data_model.request_data_model import Filtering, LLMProvider, RAGRequest, SearchRequest
+from agent.data_model.request_data_model import Filtering, LLMProvider, RAGRequest, SearchParams
 
 
 class LLMStrategyFactory:
@@ -66,7 +66,7 @@ class LLMContext:
         """Changes the strategy using the Factory."""
         self.llm = LLMStrategyFactory.get_strategy(strategy_type=strategy_type, token=token, collection_name=collection_name)
 
-    def search(self, search: SearchRequest, filtering: Filtering) -> list:
+    def search(self, search: SearchParams, filtering: Filtering) -> list:
         """Wrapper for the search."""
         return self.llm.search(search=search, filtering=filtering)
 
@@ -82,7 +82,7 @@ class LLMContext:
         """Wrapper for the generation of text."""
         return self.llm.generate(prompt)
 
-    def rag(self, rag: RAGRequest, search: SearchRequest, filtering: Filtering) -> tuple:
+    def rag(self, rag: RAGRequest, search: SearchParams, filtering: Filtering) -> tuple:
         """Wrapper for the RAG."""
         return self.llm.rag(rag=rag, search=search, filtering=filtering)
 

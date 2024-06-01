@@ -45,14 +45,6 @@ class LLMBackend(BaseModel):
     collection_name: str | None = Field("", description="The name of the Qdrant Collection.")
 
 
-class Filtering(BaseModel):
-
-    """The Filtering Model."""
-
-    score_threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
-    filter: dict | None = Field(None, title="Filter", description="Filter for the database search with metadata.")
-
-
 class EmbeddTextFilesRequest(BaseModel):
 
     """The request for the Embedd Text Files endpoint."""
@@ -61,12 +53,14 @@ class EmbeddTextFilesRequest(BaseModel):
     seperator: str = Field("###", description="The seperator to use between embedded texts.")
 
 
-class SearchRequest(BaseModel):
+class SearchParams(BaseModel):
 
     """The request parameters for searching the database."""
 
     query: str = Field(..., title="Query", description="The search query.")
     k: int = Field(3, title="Amount", description="The number of search results to return.")
+    score_threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
+    filter: dict | None = Field(None, title="Filter", description="Filter for the database search with metadata.")
 
 
 class EmbeddTextRequest(BaseModel):

@@ -25,7 +25,7 @@ from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import (
     Filtering,
     RAGRequest,
-    SearchRequest,
+    SearchParams,
 )
 from agent.utils.utility import convert_qdrant_result_to_retrieval_results, generate_prompt
 from agent.utils.vdb import generate_collection_aleph_alpha, init_vdb
@@ -208,7 +208,7 @@ class AlephAlphaService(LLMBase):
 
         logger.info("SUCCESS: Texts embedded.")
 
-    def search(self, search: SearchRequest, filtering: Filtering) -> list[tuple[LangchainDocument, float]]:
+    def search(self, search: SearchParams, filtering: Filtering) -> list[tuple[LangchainDocument, float]]:
         """Searches the Aleph Alpha service for similar documents.
 
         Args:
@@ -227,7 +227,7 @@ class AlephAlphaService(LLMBase):
 
         return convert_qdrant_result_to_retrieval_results(docs)
 
-    def rag(self, rag: RAGRequest, search: SearchRequest, filtering: Filtering) -> tuple:
+    def rag(self, rag: RAGRequest, search: SearchParams, filtering: Filtering) -> tuple:
         """QA takes a list of documents and returns a list of answers.
 
         Args:
@@ -356,13 +356,13 @@ if __name__ == "__main__":
 
     aa_service.embed_documents("tests/resources/")
     # open the text file and read the text
-    docs = aa_service.search(SearchRequest(query="Was ist Attention?", amount=3), Filtering(threshold=0.0, collection_name="aleph_alpha"))
+    docs = aa_service.search(SearchParams(query="Was ist Attention?", amount=3), Filtering(threshold=0.0, collection_name="aleph_alpha"))
 
     logger.info(f"Documents: {docs}")
 
     answer, prompt, meta_data = aa_service.rag(
         RAGRequest(language="detect", history={}),
-        SearchRequest(
+        SearchParams(
             query="Was ist Attention?",
             amount=3,
         ),

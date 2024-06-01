@@ -16,11 +16,10 @@ from agent.data_model.request_data_model import (
     CustomPromptCompletion,
     EmbeddTextRequest,
     ExplainQARequest,
-    Filtering,
     LLMBackend,
     LLMProvider,
     RAGRequest,
-    SearchRequest,
+    SearchParams,
 )
 from agent.data_model.response_data_model import (
     EmbeddingResponse,
@@ -178,14 +177,13 @@ async def embedd_text(embedding: EmbeddTextRequest, llm_backend: LLMBackend) -> 
 
 
 @app.post("/semantic/search", tags=["search"])
-def search(search: SearchRequest, llm_backend: LLMBackend, filtering: Filtering) -> list[SearchResponse]:
+def search(search: SearchParams, llm_backend: LLMBackend) -> list[SearchResponse]:
     """Searches for a query in the vector database.
 
     Args:
     ----
         search (SearchRequest): The search request.
         llm_backend (LLMBackend): The LLM Backend.
-        filtering (Filtering): The Filtering Parameters.
 
     Raises:
     ------
@@ -201,7 +199,7 @@ def search(search: SearchRequest, llm_backend: LLMBackend, filtering: Filtering)
 
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=llm_backend.token, collection_name=llm_backend.collection_name))
 
-    docs = service.search(search=search, filtering=filtering)
+    docs = service.search(search=search)
 
     if not docs:
         logger.info("No Documents found.")
@@ -221,14 +219,13 @@ def search(search: SearchRequest, llm_backend: LLMBackend, filtering: Filtering)
 
 
 @app.post("/rag", tags=["rag"])
-def question_answer(rag: RAGRequest, llm_backend: LLMBackend, filtering: Filtering) -> QAResponse:
+def question_answer(rag: RAGRequest, llm_backend: LLMBackend) -> QAResponse:
     """Answer a question based on the documents in the database.
 
     Args:
     ----
         rag (RAGRequest): The request parameters.
         llm_backend (LLMBackend): The LLM Backend.
-        filtering (Filtering): The Filtering Parameters.
 
     Raises:
     ------
@@ -255,7 +252,7 @@ def question_answer(rag: RAGRequest, llm_backend: LLMBackend, filtering: Filteri
         text = combine_text_from_list(rag.history)
         service.summarize_text(text=text, token="")
 
-    answer, prompt, meta_data = service.rag(rag=rag, llm_backend=llm_backend, filtering=filtering)
+    answer, prompt, meta_data = service.rag(rag=rag, llm_backend=llm_backend)
 
     return QAResponse(answer=answer, prompt=prompt, meta_data=meta_data)
 

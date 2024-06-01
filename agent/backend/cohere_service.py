@@ -14,9 +14,8 @@ from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import (
-    Filtering,
     RAGRequest,
-    SearchRequest,
+    SearchParams,
 )
 from agent.utils.utility import extract_text_from_langchain_documents, load_prompt_template
 from agent.utils.vdb import init_vdb
@@ -87,20 +86,16 @@ class CohereService(LLMBase):
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database."""
 
-    def search(self, search: SearchRequest, filtering: Filtering) -> list:
+    def search(self, search: SearchParams) -> list:
         """Searches the documents in the Qdrant DB with semantic search."""
         search = dict(search)
-        filtering = dict(filtering)
-
-        search.update(filtering)
-
         search.pop("query")
 
         return self.vector_db.as_retriever(search_kwargs=search)
 
-    def rag(self, rag: RAGRequest, search: SearchRequest, filtering: Filtering) -> tuple:
+    def rag(self, rag: RAGRequest, search: SearchParams) -> tuple:
         """Retrieval Augmented Generation."""
-        search_chain = self.search(search=search, filtering=filtering)
+        search_chain = self.search(search=search)
         return {"context": search_chain | extract_text_from_langchain_documents, "question": RunnablePassthrough()} | self.prompt | ChatCohere() | StrOutputParser()
 
     def summarize_text(self, text: str) -> str:
@@ -114,8 +109,8 @@ if __name__ == "__main__":
 
     # cohere_service.embed_documents(directory="tests/resources/")
 
-    search_chain = cohere_service.search(search=SearchRequest(query=query, amount=3), filtering=Filtering())
+    search_chain = cohere_service.search(search=SearchParams(query=query, amount=3))
 
     chain = cohere_service.generate(search_chain=search_chain)
 
-    chain = cohere_service.rag(rag=RAGRequest(), search=SearchRequest(query=query, amount=3), filtering=Filtering())
+    chain = cohere_service.rag(rag=RAGRequest(), search=SearchParams(query=query, amount=3))

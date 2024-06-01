@@ -14,12 +14,10 @@ from agent.data_model.internal_model import RetrievalResults
 from agent.data_model.request_data_model import (
     Filtering,
     RAGRequest,
-    SearchRequest,
+    SearchParams,
 )
 from agent.utils.utility import convert_qdrant_result_to_retrieval_results, generate_prompt
 from agent.utils.vdb import generate_collection_gpt4all, init_vdb
-
-
 
 load_dotenv()
 
@@ -135,7 +133,7 @@ class GPT4AllService(LLMBase):
 
         return model.generate(prompt, max_tokens=250)
 
-    def search(self, search: SearchRequest, filtering: Filtering) -> list[RetrievalResults]:
+    def search(self, search: SearchParams, filtering: Filtering) -> list[RetrievalResults]:
         """Searches the documents in the Qdrant DB with a specific query.
 
         Args:
@@ -154,7 +152,7 @@ class GPT4AllService(LLMBase):
 
         return convert_qdrant_result_to_retrieval_results(docs)
 
-    def rag(self, rag_request: RAGRequest, search: SearchRequest, filtering: Filtering) -> tuple:
+    def rag(self, rag_request: RAGRequest, search: SearchParams, filtering: Filtering) -> tuple:
         """RAG takes a Rag Request Object and performs a semantic search and then a generation.
 
         Args:

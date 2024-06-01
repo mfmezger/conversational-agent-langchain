@@ -9,7 +9,7 @@ from agent.backend.aleph_alpha_service import AlephAlphaService
 from agent.data_model.request_data_model import (
     Filtering,
     RAGRequest,
-    SearchRequest,
+    SearchParams,
 )
 
 
@@ -50,7 +50,7 @@ def test_embed_documents(service: AlephAlphaService) -> None:
 
 def test_search(service: AlephAlphaService) -> None:
     """Test the search function."""
-    response = service.search(SearchRequest(query="Was ist Attention?", amount=3), Filtering(threshold=0.0, collection_name="aleph_alpha"))
+    response = service.search(SearchParams(query="Was ist Attention?", amount=3), Filtering(threshold=0.0, collection_name="aleph_alpha"))
     assert response is not None
     assert len(response) > 0
 
@@ -59,7 +59,7 @@ def test_rag(service: AlephAlphaService) -> None:
     """Test the rag function."""
     response = service.rag(
         RAGRequest(language="detect", history={}),
-        SearchRequest(
+        SearchParams(
             query="Was ist Attention?",
             amount=3,
         ),
