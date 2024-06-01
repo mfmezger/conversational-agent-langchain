@@ -3,11 +3,11 @@ import os
 
 import openai
 from dotenv import load_dotenv
-from langchain.docstore.document import Document
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI
 from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
@@ -16,7 +16,7 @@ from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
-from agent.data_model.request_data_model import Filtering, RAGRequest, SearchParams
+from agent.data_model.request_data_model import RAGRequest, SearchParams
 from agent.utils.utility import generate_prompt
 from agent.utils.vdb import generate_collection_openai, init_vdb
 
@@ -49,6 +49,9 @@ class OpenAIService(LLMBase):
         else:
             self.collection_name = self.cfg.qdrant.collection_name_openai
 
+        template = load_prompt_template(prompt_name="cohere_chat.j2", task="chat")
+        self.prompt = ChatPromptTemplate.from_template(template=template, template_format="jinja2")
+
         if self.cfg.openai_embeddings.azure:
             embedding = AzureOpenAIEmbeddings(
                 azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
@@ -60,18 +63,6 @@ class OpenAIService(LLMBase):
             embedding = OpenAIEmbeddings(model=self.cfg.openai_embeddings.embedding_model_name, openai_api_key=self.openai_token)
 
         self.vector_db = init_vdb(self.cfg, self.collection_name, embedding=embedding)
-
-    def create_search_chain(self, search_kwargs: dict[str, any] | None = None):
-        if search_kwargs is None:
-            search_kwargs = {}
-        return self.vector_db.as_retriever(search_kwargs=search_kwargs)
-
-    def create_rag_chain(self, search_chain):
-        prompt = ChatPromptTemplate.from_template(template=template)
-
-        return (
-            {"context": search_chain | format_docs, "question": RunnablePassthrough()} | prompt | ChatOpenAI(model=self.cfg.openai_completion.model) | StrOutputParser()
-        )
 
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database.
@@ -118,7 +109,7 @@ class OpenAIService(LLMBase):
 
         logger.info("SUCCESS: Texts embedded.")
 
-    def search(self, search: SearchParams, filtering: Filtering) -> list[tuple[Document, float]]:
+    def search(self, search: SearchParams) -> BaseRetriever:
         """Searches the documents in the Qdrant DB with a specific query.
 
         Args:
@@ -132,9 +123,10 @@ class OpenAIService(LLMBase):
             containing a Document object and a float score.
 
         """
-        docs = self.vector_db.similarity_search_with_score(search.query, k=search.amount, score_threshold=filtering.threshold, filter=filtering.filter)
-        logger.info("SUCCESS: Documents found.")
-        return docs
+        search = dict(search)
+        search.pop("query")
+
+        return self.vector_db.as_retriever(search_kwargs=search)
 
     def summarize_text(self, text: str) -> str:
         """Summarizes the given text using the OpenAI API.
@@ -193,7 +185,7 @@ class OpenAIService(LLMBase):
 
         return response.choices[0].message.content
 
-    def rag(self, rag: RAGRequest, search: SearchParams, filtering: Filtering) -> tuple:
+    def rag(self, rag: RAGRequest, search: SearchParams) -> tuple:
         """QA Function for OpenAI LLMs.
 
         Args:
@@ -207,17 +199,10 @@ class OpenAIService(LLMBase):
             tuple: answer, prompt, meta_data
 
         """
-        documents = self.search(search=search, filtering=filtering)
-        if len(documents) == 0:
-            msg = "No documents found."
-            raise ValueError(msg)
-        text = "\n".join([doc[0].page_content for doc in documents]) if len(documents) > 1 else documents[0].document
-
-        prompt = generate_prompt(prompt_name="openai-qa.j2", text=text, query=search.query, language=rag.language)
-
-        answer = self.generate(prompt)
-
-        return answer, prompt, documents
+        search_chain = self.search(search=search)
+        return (
+            {"context": search_chain | format_docs, "question": RunnablePassthrough()} | prompt | ChatOpenAI(model=self.cfg.openai_completion.model) | StrOutputParser()
+        )
 
 
 if __name__ == "__main__":
@@ -225,7 +210,7 @@ if __name__ == "__main__":
     query = "Was ist Attention?"
     logger.info(f"Token: {token}")
 
-    from agent.data_model.request_data_model import Filtering, SearchParams
+    from agent.data_model.request_data_model import SearchParams
 
     if not token:
         msg = "OPENAI_API_KEY is not set."
@@ -233,24 +218,8 @@ if __name__ == "__main__":
 
     openai_service = OpenAIService(collection_name="openai", token=token)
 
-    # openai_service.embed_documents(directory="tests/resources/")
-
-    retriever = openai_service.create_search_chain(search_kwargs={"k": 3})
-
-    results = (retriever.invoke(query),)  # config={'callbacks': [ConsoleCallbackHandler()]})
-
     rag_chain = openai_service.create_rag_chain(search_chain=retriever)
 
     answer = rag_chain.invoke(query)
 
     logger.info("Answer: {answer}")
-
-    # answer, prompt, meta_data = openai_service.rag(
-    #     RAGRequest(language="detect", filter={}),
-    #     SearchRequest(query="Was ist Attention", amount=3),
-    #     Filtering(threshold=0.0, collection_name="openai"),
-    # )
-
-    # logger.info(f"Answer: {answer}")
-    # logger.info(f"Prompt: {prompt}")
-    # logger.info(f"Metadata: {meta_data}")

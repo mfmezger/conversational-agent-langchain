@@ -209,6 +209,7 @@ def create_tmp_folder() -> str:
 
 
 def extract_text_from_langchain_documents(docs):
+    logger.info(f"Loaded {len(docs)} documents.")
     return "\n\n".join(f"Context {i+1}:\n{doc.page_content}" for i, doc in enumerate(docs))
 
 

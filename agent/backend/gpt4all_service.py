@@ -40,22 +40,6 @@ class GPT4AllService(LLMBase):
         embedding = GPT4AllEmbeddings()
         self.vector_db = init_vdb(cfg=self.cfg, collection_name=collection_name, embedding=embedding)
 
-        # create retriever from the vector database
-
-        # query = "Was ist Attention?"
-        # results = retriever.invoke(query=query)
-        # print(results)
-        # self.chain =
-
-    def create_search_chain(self, search_kwargs: dict[str, any] | None = None):
-        if search_kwargs is None:
-            search_kwargs = {}
-        return self.vector_db.as_retriever(search_kwargs=search_kwargs)
-
-    def create_rag_chain(self, search_chain):
-        llm = GPT4All(self.cfg.gpt4all_completion.completion_model)
-        return search_chain | llm
-
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database."""
         generate_collection_gpt4all(self.vector_db.client, name)
@@ -166,18 +150,8 @@ class GPT4AllService(LLMBase):
             Tuple[str, str, List[RetrievalResults]]: The answer, the prompt and the metadata.
 
         """
-        documents = self.search(search=search, filtering=filtering)
-        if search.amount == 0:
-            msg = "No documents found."
-            raise ValueError(msg)
-        text = "\n".join([doc.document for doc in documents]) if search.amount > 1 else documents[0].document
-
-        # TODO: Add the history to the prompt
-        prompt = generate_prompt(prompt_name="gpt4all-completion.j2", text=text, query=search.query, language=rag_request.language)
-
-        answer = self.generate(prompt)
-
-        return answer, prompt, documents
+        llm = GPT4All(self.cfg.gpt4all_completion.completion_model)
+        return search_chain | llm
 
 
 if __name__ == "__main__":

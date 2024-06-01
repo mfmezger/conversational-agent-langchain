@@ -4,9 +4,11 @@ import os
 from dotenv import load_dotenv
 from langchain_cohere import ChatCohere, CohereEmbeddings
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
+from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough, chain
 from langchain_text_splitters import NLTKTextSplitter
 from loguru import logger
 from omegaconf import DictConfig
@@ -18,7 +20,7 @@ from agent.data_model.request_data_model import (
     SearchParams,
 )
 from agent.utils.utility import extract_text_from_langchain_documents, load_prompt_template
-from agent.utils.vdb import init_vdb
+from agent.utils.vdb import generate_collection_cohere, init_vdb
 
 load_dotenv()
 
@@ -85,18 +87,35 @@ class CohereService(LLMBase):
 
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database."""
+        generate_collection_cohere(self.cfg, name)
+        return True
 
-    def search(self, search: SearchParams) -> list:
+    def search(self, search: SearchParams) -> BaseRetriever:
         """Searches the documents in the Qdrant DB with semantic search."""
         search = dict(search)
         search.pop("query")
 
-        return self.vector_db.as_retriever(search_kwargs=search)
+        @chain
+        def retriever_with_score(query: str) -> list[Document]:
+            docs, scores = zip(
+                *self.vector_db.similarity_search_with_score(query, k=search["k"], filter=search["filter"], score_threshold=search["score_threshold"]), strict=False
+            )
+            for doc, score in zip(docs, scores, strict=False):
+                doc.metadata["score"] = score
+
+            return docs
+
+        return retriever_with_score
 
     def rag(self, rag: RAGRequest, search: SearchParams) -> tuple:
         """Retrieval Augmented Generation."""
         search_chain = self.search(search=search)
-        return {"context": search_chain | extract_text_from_langchain_documents, "question": RunnablePassthrough()} | self.prompt | ChatCohere() | StrOutputParser()
+
+        rag_chain_from_docs = (
+            RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"]))) | self.prompt | ChatCohere() | StrOutputParser()
+        )
+
+        return RunnableParallel({"context": search_chain, "question": RunnablePassthrough()}).assign(answer=rag_chain_from_docs)
 
     def summarize_text(self, text: str) -> str:
         """Summarize text."""
@@ -109,8 +128,12 @@ if __name__ == "__main__":
 
     # cohere_service.embed_documents(directory="tests/resources/")
 
-    search_chain = cohere_service.search(search=SearchParams(query=query, amount=3))
+    # search_chain = cohere_service.search(search=SearchParams(query=query, amount=3))
 
-    chain = cohere_service.generate(search_chain=search_chain)
+    # search_results = search_chain.invoke(query)
 
     chain = cohere_service.rag(rag=RAGRequest(), search=SearchParams(query=query, amount=3))
+
+    answer = chain.invoke(query)
+
+    logger.info(answer)

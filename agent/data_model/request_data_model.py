@@ -60,7 +60,16 @@ class SearchParams(BaseModel):
     query: str = Field(..., title="Query", description="The search query.")
     k: int = Field(3, title="Amount", description="The number of search results to return.")
     score_threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
+    # TODO: renaming due to python keyword
     filter: dict | None = Field(None, title="Filter", description="Filter for the database search with metadata.")
+
+
+class RAGRequest(BaseModel):
+
+    """Request for the QA endpoint."""
+
+    language: Language | None = Field(Language.DETECT, title="Language", description="The language to use for the answer.")
+    history: dict[str, str] | None = Field([], title="History", description="A list of previous questions and answers to include in the context.")
 
 
 class EmbeddTextRequest(BaseModel):
@@ -82,14 +91,6 @@ class CustomPromptCompletion(BaseModel):
     max_tokens: int = Field(256, title="Max Tokens", description="The maximum number of tokens to generate.")
     temperature: float = Field(..., title="Temperature", description="The temperature to use for the completion.")
     stop_sequences: list[str] = Field([], title="Stop Sequences", description="The stop sequences to use for the completion.")
-
-
-class RAGRequest(BaseModel):
-
-    """Request for the QA endpoint."""
-
-    language: Language | None = Field(Language.DETECT, title="Language", description="The language to use for the answer.")
-    history: dict[str, str] | None = Field([], title="History", description="A list of previous questions and answers to include in the context.")
 
 
 class ExplainQARequest(BaseModel):
