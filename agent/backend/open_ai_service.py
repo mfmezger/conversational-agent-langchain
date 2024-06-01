@@ -5,10 +5,11 @@ import openai
 from dotenv import load_dotenv
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
+from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough, chain
 from langchain_openai import ChatOpenAI
 from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
 from loguru import logger
@@ -17,7 +18,7 @@ from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import RAGRequest, SearchParams
-from agent.utils.utility import generate_prompt
+from agent.utils.utility import extract_text_from_langchain_documents, generate_prompt, load_prompt_template
 from agent.utils.vdb import generate_collection_openai, init_vdb
 
 load_dotenv()
@@ -34,13 +35,7 @@ class OpenAIService(LLMBase):
 
         """Openai Service."""
         if token:
-            self.openai_token = token
-        else:
-            self.openai_token = os.getenv("OPENAI_API_KEY")
-
-        if not self.openai_token:
-            msg = "API Token not provided!"
-            raise ValueError(msg)
+            os.environ["COHERE_API_KEY"] = token
 
         self.cfg = cfg
 
@@ -109,7 +104,7 @@ class OpenAIService(LLMBase):
 
         logger.info("SUCCESS: Texts embedded.")
 
-    def search(self, search: SearchParams) -> BaseRetriever:
+    def create_search_chain(self, search: SearchParams) -> BaseRetriever:
         """Searches the documents in the Qdrant DB with a specific query.
 
         Args:
@@ -123,10 +118,18 @@ class OpenAIService(LLMBase):
             containing a Document object and a float score.
 
         """
-        search = dict(search)
-        search.pop("query")
 
-        return self.vector_db.as_retriever(search_kwargs=search)
+        @chain
+        def retriever_with_score(query: str) -> list[Document]:
+            docs, scores = zip(
+                *self.vector_db.similarity_search_with_score(query, k=search.k, filter=search.filter, score_threshold=search.score_threshold), strict=False
+            )
+            for doc, score in zip(docs, scores, strict=False):
+                doc.metadata["score"] = score
+
+            return docs
+
+        return retriever_with_score
 
     def summarize_text(self, text: str) -> str:
         """Summarizes the given text using the OpenAI API.
@@ -185,41 +188,26 @@ class OpenAIService(LLMBase):
 
         return response.choices[0].message.content
 
-    def rag(self, rag: RAGRequest, search: SearchParams) -> tuple:
-        """QA Function for OpenAI LLMs.
+    def create_rag_chain(self, rag: RAGRequest, search: SearchParams) -> chain:
+        """Retrieval Augmented Generation."""
+        search_chain = self.create_search_chain(search=search)
 
-        Args:
-        ----
-            rag (RAGRequest): The RAG Request Object.
-            search (SearchRequest): The search request object.
-            filtering (Filtering): The filtering object.
-
-        Returns:
-        -------
-            tuple: answer, prompt, meta_data
-
-        """
-        search_chain = self.search(search=search)
-        return (
-            {"context": search_chain | format_docs, "question": RunnablePassthrough()} | prompt | ChatOpenAI(model=self.cfg.openai_completion.model) | StrOutputParser()
+        rag_chain_from_docs = (
+            RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"]))) | self.prompt | ChatOpenAI() | StrOutputParser()
         )
+
+        return RunnableParallel({"context": search_chain, "question": RunnablePassthrough()}).assign(answer=rag_chain_from_docs)
 
 
 if __name__ == "__main__":
-    token = os.getenv("OPENAI_API_KEY")
     query = "Was ist Attention?"
-    logger.info(f"Token: {token}")
 
-    from agent.data_model.request_data_model import SearchParams
+    openai_service = OpenAIService(collection_name="", token="")
 
-    if not token:
-        msg = "OPENAI_API_KEY is not set."
-        raise ValueError(msg)
+    openai_service.embed_documents(directory="tests/resources/")
 
-    openai_service = OpenAIService(collection_name="openai", token=token)
+    chain = openai_service.create_rag_chain(rag=RAGRequest(), search=SearchParams(query=query, amount=3))
 
-    rag_chain = openai_service.create_rag_chain(search_chain=retriever)
+    answer = chain.invoke(query)
 
-    answer = rag_chain.invoke(query)
-
-    logger.info("Answer: {answer}")
+    logger.info(answer)

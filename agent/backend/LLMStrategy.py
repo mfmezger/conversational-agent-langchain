@@ -5,7 +5,7 @@ from agent.backend.aleph_alpha_service import AlephAlphaService
 from agent.backend.gpt4all_service import GPT4AllService
 from agent.backend.LLMBase import LLMBase
 from agent.backend.open_ai_service import OpenAIService
-from agent.data_model.request_data_model import Filtering, LLMProvider, RAGRequest, SearchParams
+from agent.data_model.request_data_model import LLMProvider, RAGRequest, SearchParams
 
 
 class LLMStrategyFactory:
@@ -66,9 +66,9 @@ class LLMContext:
         """Changes the strategy using the Factory."""
         self.llm = LLMStrategyFactory.get_strategy(strategy_type=strategy_type, token=token, collection_name=collection_name)
 
-    def search(self, search: SearchParams, filtering: Filtering) -> list:
+    def search(self, search: SearchParams) -> list:
         """Wrapper for the search."""
-        return self.llm.search(search=search, filtering=filtering)
+        return self.llm.create_search_chain(search=search)
 
     def embed_documents(self, directory: str, file_ending: str) -> None:
         """Wrapper for the Embedding of Documents."""
@@ -82,9 +82,9 @@ class LLMContext:
         """Wrapper for the generation of text."""
         return self.llm.generate(prompt)
 
-    def rag(self, rag: RAGRequest, search: SearchParams, filtering: Filtering) -> tuple:
+    def rag(self, rag: RAGRequest, search: SearchParams) -> tuple:
         """Wrapper for the RAG."""
-        return self.llm.rag(rag=rag, search=search, filtering=filtering)
+        return self.llm.create_rag_chain(rag=rag, search=search)
 
     def summarize_text(self, text: str) -> str:
         """Wrapper for the summarization of text."""

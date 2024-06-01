@@ -1,9 +1,9 @@
-"""Cohere Backend."""
-import os
+"""Ollama Backend."""
 
 from dotenv import load_dotenv
-from langchain_cohere import ChatCohere, CohereEmbeddings
+from langchain_community.chat_models import ChatOllama
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
+from langchain_community.embeddings import OllamaEmbeddings
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -20,33 +20,30 @@ from agent.data_model.request_data_model import (
     SearchParams,
 )
 from agent.utils.utility import extract_text_from_langchain_documents, load_prompt_template
-from agent.utils.vdb import generate_collection_cohere, init_vdb
+from agent.utils.vdb import generate_collection_ollama, init_vdb
 
 load_dotenv()
 
 
-class CohereService(LLMBase):
+class OllamaService(LLMBase):
 
-    """Wrapper for cohere llms."""
+    """Wrapper for Ollama llms."""
 
     @load_config(location="config/main.yml")
     def __init__(self, cfg: DictConfig, collection_name: str | None, token: str | None) -> None:
-        """Init the Cohere Service."""
+        """Init the Ollama Service."""
         super().__init__(token=token, collection_name=collection_name)
-
-        if token:
-            os.environ["COHERE_API_KEY"] = token
 
         self.cfg = cfg
 
         if collection_name:
             self.collection_name = collection_name
         else:
-            self.collection_name = self.cfg.qdrant.collection_name_cohere
+            self.collection_name = self.cfg.qdrant.collection_name_Ollama
 
-        embedding = CohereEmbeddings(model=self.cfg.cohere_embeddings.embedding_model_name)
+        embedding = OllamaEmbeddings(model=self.cfg.ollama_embeddings.embedding_model_name)
 
-        template = load_prompt_template(prompt_name="cohere_chat.j2", task="chat")
+        template = load_prompt_template(prompt_name="ollama_chat.j2", task="chat")
         self.prompt = ChatPromptTemplate.from_template(template=template, template_format="jinja2")
 
         self.vector_db = init_vdb(self.cfg, self.collection_name, embedding=embedding)
@@ -87,7 +84,7 @@ class CohereService(LLMBase):
 
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database."""
-        generate_collection_cohere(self.cfg, name)
+        generate_collection_ollama(self.cfg, name)
         return True
 
     def create_search_chain(self, search: SearchParams) -> BaseRetriever:
@@ -110,7 +107,7 @@ class CohereService(LLMBase):
         search_chain = self.create_search_chain(search=search)
 
         rag_chain_from_docs = (
-            RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"]))) | self.prompt | ChatCohere() | StrOutputParser()
+            RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"]))) | self.prompt | ChatOllama(model=self.cfg.ollama.model) | StrOutputParser()
         )
 
         return RunnableParallel({"context": search_chain, "question": RunnablePassthrough()}).assign(answer=rag_chain_from_docs)
@@ -122,11 +119,11 @@ class CohereService(LLMBase):
 if __name__ == "__main__":
     query = "Was ist Attention?"
 
-    cohere_service = CohereService(collection_name="", token="")
+    Ollama_service = OllamaService(collection_name="", token="")
 
-    cohere_service.embed_documents(directory="tests/resources/")
+    Ollama_service.embed_documents(directory="tests/resources/")
 
-    chain = cohere_service.create_rag_chain(rag=RAGRequest(), search=SearchParams(query=query, amount=3))
+    chain = Ollama_service.create_rag_chain(rag=RAGRequest(), search=SearchParams(query=query, amount=3))
 
     answer = chain.invoke(query)
 

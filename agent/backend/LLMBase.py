@@ -23,7 +23,7 @@ class LLMBase(ABC):
         """Create a new collection in the Vector Database."""
 
     @abstractmethod
-    def search(self, search: SearchParams) -> list:
+    def create_search_chain(self, search: SearchParams) -> list:
         """Searches the documents in the Qdrant DB with semantic search."""
 
     # @abstractmethod
@@ -31,7 +31,7 @@ class LLMBase(ABC):
     #     """Generate text from a prompt."""
 
     @abstractmethod
-    def rag(self, rag: RAGRequest, search: SearchParams) -> tuple:
+    def create_rag_chain(self, rag: RAGRequest, search: SearchParams) -> tuple:
         """Retrieval Augmented Generation."""
 
     @abstractmethod

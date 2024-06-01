@@ -17,17 +17,20 @@ from langchain.docstore.document import Document as LangchainDocument
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_community.embeddings import AlephAlphaAsymmetricSemanticEmbedding
+from langchain_community.llms import AlephAlpha
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough, chain
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import (
-    Filtering,
     RAGRequest,
     SearchParams,
 )
-from agent.utils.utility import convert_qdrant_result_to_retrieval_results, generate_prompt
+from agent.utils.utility import extract_text_from_langchain_documents, generate_prompt, load_prompt_template
 from agent.utils.vdb import generate_collection_aleph_alpha, init_vdb
 
 nltk.download("punkt")  # This needs to be installed for the tokenizer to work.
@@ -47,13 +50,7 @@ class AlephAlphaService(LLMBase):
         super().__init__(token=token, collection_name=collection_name)
         """Initialize the Aleph Alpha Service."""
         if token:
-            self.aleph_alpha_token = token
-        else:
-            self.aleph_alpha_token = os.getenv("ALEPH_ALPHA_API_KEY")
-
-        if not self.aleph_alpha_token:
-            msg = "API Token not provided!"
-            raise ValueError(msg)
+            os.environ["ALEPH_ALPHA_API_KEY"] = token
 
         self.cfg = cfg
 
@@ -68,6 +65,9 @@ class AlephAlphaService(LLMBase):
             normalize=self.cfg.aleph_alpha_embeddings.normalize,
             compress_to_size=self.cfg.aleph_alpha_embeddings.compress_to_size,
         )
+
+        template = load_prompt_template(prompt_name="aleph_alpha_chat.j2", task="chat")
+        self.prompt = ChatPromptTemplate.from_template(template=template, template_format="jinja2")
         self.vector_db = init_vdb(cfg=self.cfg, collection_name=collection_name, embedding=embedding)
 
     def get_tokenizer(self) -> None:
@@ -208,7 +208,7 @@ class AlephAlphaService(LLMBase):
 
         logger.info("SUCCESS: Texts embedded.")
 
-    def search(self, search: SearchParams, filtering: Filtering) -> list[tuple[LangchainDocument, float]]:
+    def create_search_chain(self, search: SearchParams) -> list[tuple[LangchainDocument, float]]:
         """Searches the Aleph Alpha service for similar documents.
 
         Args:
@@ -222,36 +222,35 @@ class AlephAlphaService(LLMBase):
             List[Tuple[Document, float]]: A list of tuples containing the documents and their similarity scores.
 
         """
-        docs = self.vector_db.similarity_search_with_score(query=search.query, k=search.amount, score_threshold=filtering.threshold)
-        logger.info(f"SUCCESS: {len(docs)} Documents found.")
 
-        return convert_qdrant_result_to_retrieval_results(docs)
+        @chain
+        def retriever_with_score(query: str) -> list[Document]:
+            docs, scores = zip(
+                *self.vector_db.similarity_search_with_score(query, k=search.k, filter=search.filter, score_threshold=search.score_threshold), strict=False
+            )
+            for doc, score in zip(docs, scores, strict=False):
+                doc.metadata["score"] = score
 
-    def rag(self, rag: RAGRequest, search: SearchParams, filtering: Filtering) -> tuple:
-        """QA takes a list of documents and returns a list of answers.
+            return docs
 
-        Args:
-        ----
-            rag (RAGRequest): The request for the RAG endpoint.
-            search (SearchRequest): The search request object.
-            filtering (Filtering): The filtering object.
+        return retriever_with_score
 
-        Returns:
-        -------
-            Tuple[str, str, List[RetrievalResults]]: The answer, the prompt and the metadata.
+    def create_rag_chain(self, rag: RAGRequest, search: SearchParams) -> tuple:
+        """Retrieval Augmented Generation."""
+        search_chain = self.create_search_chain(search=search)
+        llm = AlephAlpha(
+            model=self.cfg.aleph_alpha_completion.model,
+            maximum_tokens=self.cfg.aleph_alpha_completion.max_tokens,
+            stop_sequences=self.cfg.aleph_alpha_completion.stop_sequences,
+            top_p=self.cfg.aleph_alpha_completion.top_p,
+            temperature=self.cfg.aleph_alpha_completion.temperature,
+            repetition_penalties_include_completion=self.cfg.aleph_alpha_completion.repetition_penalties_include_completion,
+            repetition_penalties_include_prompt=self.cfg.aleph_alpha_completion.repetition_penalties_include_prompt,
+        )
 
-        """
-        documents = self.search(search=search, filtering=filtering)
-        if search.amount == 0:
-            msg = "No documents found."
-            raise ValueError(msg)
-        text = "\n".join([doc.document for doc in documents]) if len(documents) > 1 else documents[0].document
+        rag_chain_from_docs = RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"]))) | self.prompt | llm | StrOutputParser()
 
-        prompt = generate_prompt(prompt_name="aleph_alpha_qa.j2", text=text, query=search.query, language=rag.language)
-
-        answer = self.generate(prompt)
-
-        return answer, prompt, documents
+        return RunnableParallel({"context": search_chain, "question": RunnablePassthrough()}).assign(answer=rag_chain_from_docs)
 
     def explain_qa(self, document: LangchainDocument, explain_threshold: float, query: str) -> tuple:
         """Explian QA WIP."""
@@ -346,29 +345,14 @@ class AlephAlphaService(LLMBase):
 
 
 if __name__ == "__main__":
-    token = os.getenv("ALEPH_ALPHA_API_KEY")
+    query = "Was ist Attention?"
 
-    if not token:
-        msg = "Token cannot be None or empty."
-        raise ValueError(msg)
+    aa_service = AlephAlphaService(collection_name="", token="")
 
-    aa_service = AlephAlphaService(token=token, collection_name="aleph_alpha")
+    aa_service.embed_documents(directory="tests/resources/")
 
-    aa_service.embed_documents("tests/resources/")
-    # open the text file and read the text
-    docs = aa_service.search(SearchParams(query="Was ist Attention?", amount=3), Filtering(threshold=0.0, collection_name="aleph_alpha"))
+    chain = aa_service.create_rag_chain(rag=RAGRequest(), search=SearchParams(query=query, amount=3))
 
-    logger.info(f"Documents: {docs}")
+    answer = chain.invoke(query)
 
-    answer, prompt, meta_data = aa_service.rag(
-        RAGRequest(language="detect", history={}),
-        SearchParams(
-            query="Was ist Attention?",
-            amount=3,
-        ),
-        Filtering(threshold=0.0, collection_name="aleph_alpha"),
-    )
-
-    logger.info(f"Answer: {answer}")
-    logger.info(f"Prompt: {prompt}")
-    logger.info(f"Metadata: {meta_data}")
+    logger.info(answer)

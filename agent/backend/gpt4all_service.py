@@ -5,18 +5,21 @@ from gpt4all import GPT4All
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_community.embeddings import GPT4AllEmbeddings
+from langchain_core.documents import Document
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough, chain
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
-from agent.data_model.internal_model import RetrievalResults
 from agent.data_model.request_data_model import (
-    Filtering,
     RAGRequest,
     SearchParams,
 )
-from agent.utils.utility import convert_qdrant_result_to_retrieval_results, generate_prompt
+from agent.utils.utility import extract_text_from_langchain_documents, generate_prompt, load_prompt_template
 from agent.utils.vdb import generate_collection_gpt4all, init_vdb
 
 load_dotenv()
@@ -37,7 +40,11 @@ class GPT4AllService(LLMBase):
         else:
             self.collection_name = self.cfg.qdrant.collection_name_gpt4all
 
-        embedding = GPT4AllEmbeddings()
+        embedding = GPT4AllEmbeddings(model_name="nomic-embed-text-v1.5.f16.gguf")
+
+        template = load_prompt_template(prompt_name="cohere_chat.j2", task="chat")
+        self.prompt = ChatPromptTemplate.from_template(template=template, template_format="jinja2")
+
         self.vector_db = init_vdb(cfg=self.cfg, collection_name=collection_name, embedding=embedding)
 
     def create_collection(self, name: str) -> bool:
@@ -117,69 +124,40 @@ class GPT4AllService(LLMBase):
 
         return model.generate(prompt, max_tokens=250)
 
-    def search(self, search: SearchParams, filtering: Filtering) -> list[RetrievalResults]:
-        """Searches the documents in the Qdrant DB with a specific query.
+    def create_search_chain(self, search: SearchParams) -> BaseRetriever:
+        """Searches the documents in the Qdrant DB with semantic search."""
 
-        Args:
-        ----
-            search (SearchRequest): The search request.
-            filtering (Filtering): The filtering parameters.
+        @chain
+        def retriever_with_score(query: str) -> list[Document]:
+            docs, scores = zip(
+                *self.vector_db.similarity_search_with_score(query, k=search.k, filter=search.filter, score_threshold=search.score_threshold), strict=False
+            )
+            for doc, score in zip(docs, scores, strict=False):
+                doc.metadata["score"] = score
 
-        Returns:
-        -------
-            List[Tuple[Document, float]]: A list of search results, where each result is a tuple
-            containing a Document object and a float score.
+            return docs
 
-        """
-        docs = self.vector_db.similarity_search_with_score(query=search.query, k=search.amount, score_threshold=filtering.threshold, filter=filtering.filter)
-        logger.info(f"SUCCESS: {len(docs)} Documents found.")
+        return retriever_with_score
 
-        return convert_qdrant_result_to_retrieval_results(docs)
-
-    def rag(self, rag_request: RAGRequest, search: SearchParams, filtering: Filtering) -> tuple:
-        """RAG takes a Rag Request Object and performs a semantic search and then a generation.
-
-        Args:
-        ----
-            rag_request (RAGRequest): The RAG Request Object.
-            search (SearchRequest): The search request.
-            filtering (Filtering): The filtering parameters.
-
-        Returns:
-        -------
-            Tuple[str, str, List[RetrievalResults]]: The answer, the prompt and the metadata.
-
-        """
+    def create_rag_chain(self, rag: RAGRequest, search: SearchParams) -> tuple:
+        """Retrieval Augmented Generation."""
+        search_chain = self.create_search_chain(search=search)
         llm = GPT4All(self.cfg.gpt4all_completion.completion_model)
-        return search_chain | llm
+
+        rag_chain_from_docs = RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"]))) | self.prompt | llm | StrOutputParser()
+
+        return RunnableParallel({"context": search_chain, "question": RunnablePassthrough()}).assign(answer=rag_chain_from_docs)
 
 
 if __name__ == "__main__":
     query = "Was ist Attention?"
 
-    gpt4all_service = GPT4AllService(collection_name="gpt4all", token="")
+    gpt4all_service = GPT4AllService(collection_name="", token="")
 
-    # gpt4all_service.embed_documents(directory="tests/resources/")
+    gpt4all_service.embed_documents(directory="tests/resources/")
 
-    retriever = gpt4all_service.create_search_chain(search_kwargs={"k": 3})
+    chain = gpt4all_service.create_rag_chain(rag=RAGRequest(), search=SearchParams(query=query, amount=3))
 
-    results = (retriever.invoke(query),)  # config={'callbacks': [ConsoleCallbackHandler()]})
+    answer = chain.invoke(query)
 
-    rag_chain = gpt4all_service.create_rag_chain(search_chain=retriever)
-
-    # docs = gpt4all_service.search(SearchRequest(query, amount=3), Filtering(threshold=0.0, collection_name="gpt4all"))
-
-    # logger.info(f"Documents: {docs}")
-
-    # answer, prompt, meta_data = gpt4all_service.rag(
-    #     RAGRequest(language="detect", history={}),
-    #     SearchRequest(
-    #         query=query,
-    #         amount=3,
-    #     ),
-    #     Filtering(threshold=0.0, collection_name="gpt4all"),
-    # )
-
-    # logger.info(f"Answer: {answer}")
-    # logger.info(f"Prompt: {prompt}")
-    # logger.info(f"Metadata: {meta_data}")
+    logger.info(answer)

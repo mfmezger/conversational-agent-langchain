@@ -128,7 +128,7 @@ def generate_collection_gpt4all(qdrant_client: Qdrant, collection_name: str) -> 
     """
     qdrant_client.recreate_collection(
         collection_name=collection_name,
-        vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
+        vectors_config=models.VectorParams(size=2048, distance=models.Distance.COSINE),
     )
     logger.info(f"SUCCESS: Collection {collection_name} created.")
 

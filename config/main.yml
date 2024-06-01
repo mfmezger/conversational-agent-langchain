@@ -14,6 +14,12 @@ aleph_alpha_embeddings:
   compress_to_size: null
   model_name: "luminous-base"
 
+ollama_embeddings:
+  embedding_model_name: "nomic-embed-text"
+
+ollama:
+  model: phi3
+
 openai_embeddings:
   azure: False
   embedding_model_name: text-embedding-ada-002
