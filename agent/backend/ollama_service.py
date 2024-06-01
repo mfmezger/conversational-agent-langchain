@@ -39,11 +39,11 @@ class OllamaService(LLMBase):
         if collection_name:
             self.collection_name = collection_name
         else:
-            self.collection_name = self.cfg.qdrant.collection_name_Ollama
+            self.collection_name = self.cfg.qdrant.collection_name_ollama
 
         embedding = OllamaEmbeddings(model=self.cfg.ollama_embeddings.embedding_model_name)
 
-        template = load_prompt_template(prompt_name="ollama_chat.j2", task="chat")
+        template = load_prompt_template(prompt_name="cohere_chat.j2", task="chat")
         self.prompt = ChatPromptTemplate.from_template(template=template, template_format="jinja2")
 
         self.vector_db = init_vdb(self.cfg, self.collection_name, embedding=embedding)

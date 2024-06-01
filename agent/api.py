@@ -32,7 +32,7 @@ from agent.utils.utility import (
     create_tmp_folder,
     validate_token,
 )
-from agent.utils.vdb import initialize_aleph_alpha_vector_db, initialize_cohere_vector_db, initialize_gpt4all_vector_db, initialize_open_ai_vector_db, load_vec_db_conn
+from agent.utils.vdb import initialize_all_vector_dbs, load_vec_db_conn, generate_collection
 
 nltk.download("punkt")
 # add file logger for loguru
@@ -427,10 +427,7 @@ def delete(
 
 
 # initialize the databases
-initialize_open_ai_vector_db()
-initialize_aleph_alpha_vector_db()
-initialize_gpt4all_vector_db()
-initialize_cohere_vector_db()
+initialize_all_vector_dbs()
 
 # for debugging useful.
 if __name__ == "__main__":

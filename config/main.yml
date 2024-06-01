@@ -7,6 +7,7 @@ qdrant:
   collection_name_gpt4all: gpt4all
   collection_name_openai: openai
   collection_name_cohere: cohere
+  collection_name_ollama: ollama
 
 aleph_alpha_embeddings:
   normalize: True
@@ -19,10 +20,12 @@ ollama_embeddings:
 
 ollama:
   model: phi3
+  size: 768
 
 openai_embeddings:
   azure: False
   embedding_model_name: text-embedding-ada-002
+  size: 1536
   openai_api_version: 2024-02-15-preview
 
 aleph_alpha_completion:
@@ -53,3 +56,4 @@ openai_completion:
 
 cohere_embeddings:
   embedding_model_name: "embed-multilingual-v3.0"
+  size: 2048
