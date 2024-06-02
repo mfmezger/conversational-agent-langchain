@@ -47,7 +47,6 @@ class LLMBackend(BaseModel):
     """The LLM Backend Model."""
 
     llm_provider: LLMProvider = Field(LLMProvider.ALEPH_ALPHA, description="The LLM provider to use for embedding.")
-    token: str | None = Field("", description="The API token for the LLM provider.")
     collection_name: str | None = Field("", description="The name of the Qdrant Collection.")
 
 
@@ -91,7 +90,6 @@ class CustomPromptCompletion(BaseModel):
 
     """The Custom Prompt Completion Model."""
 
-    token: str = Field(..., title="Token", description="The API token for the LLM provider.")
     prompt: str = Field(..., title="Prompt", description="The prompt to use for the completion.")
     model: str = Field(..., title="Model", description="The model to use for the completion.")
     max_tokens: int = Field(256, title="Max Tokens", description="The maximum number of tokens to generate.")

@@ -130,4 +130,4 @@ if __name__ == "__main__":
 
     answer = chain.invoke(query)
 
-    logger.info(answer)
+    logger.info(answer["answer"])

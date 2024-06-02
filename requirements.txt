@@ -654,6 +654,9 @@ langchain-core==0.2.2 ; python_version >= "3.11" and python_version < "3.12" \
 langchain-openai==0.1.8 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:8125c84223e9f43b05defbca64eedbcf362fd78a680de6c25e64f973b34a8063 \
     --hash=sha256:a11fcce15def7917c44232abda6baaa63dfc79fe44be1531eea650d39a44cd95
+langchain-qdrant==0.1.0 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:3e4213425a806745409ad6705841fde948024699b44ff584ad58f95e82858116 \
+    --hash=sha256:8f49c08b0e5e648ba3bb685914d50a2805ba2bff96922b2f3e6c51311284d3b0
 langchain-text-splitters==0.2.0 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:7b4c6a45f8471630a882b321e138329b6897102a5bc62f4c12be1c0b05bb9199 \
     --hash=sha256:b32ab4f7397f7d42c1fa3283fefc2547ba356bd63a68ee9092865e5ad83c82f9
