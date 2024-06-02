@@ -45,13 +45,10 @@ class AlephAlphaService(LLMBase):
     """Aleph Alpha Strategy implementation."""
 
     @load_config(location="config/main.yml")
-    def __init__(self, cfg: DictConfig, collection_name: str, token: str) -> None:
+    def __init__(self, cfg: DictConfig, collection_name: str) -> None:
         """Initialize the Aleph Alpha Service."""
-        super().__init__(token=token, collection_name=collection_name)
+        super().__init__(collection_name=collection_name)
         """Initialize the Aleph Alpha Service."""
-        if token:
-            os.environ["ALEPH_ALPHA_API_KEY"] = token
-
         self.cfg = cfg
 
         if collection_name:
@@ -61,7 +58,6 @@ class AlephAlphaService(LLMBase):
 
         embedding = AlephAlphaAsymmetricSemanticEmbedding(
             model=self.cfg.aleph_alpha_embeddings.model_name,
-            aleph_alpha_api_key=self.aleph_alpha_token,
             normalize=self.cfg.aleph_alpha_embeddings.normalize,
             compress_to_size=self.cfg.aleph_alpha_embeddings.compress_to_size,
         )
@@ -72,7 +68,7 @@ class AlephAlphaService(LLMBase):
 
     def get_tokenizer(self) -> None:
         """Initialize the tokenizer."""
-        client = Client(token=self.aleph_alpha_token)
+        client = Client(token=os.getenv("ALEPH_ALPHA_API_KEY"))
         self.tokenizer = client.tokenizer("luminous-base")
 
     def count_tokens(self, text: str) -> int:
@@ -115,7 +111,7 @@ class AlephAlphaService(LLMBase):
 
         """
         # TODO: rewrite because deprecated.
-        client = Client(token=self.aleph_alpha_token)
+        client = Client(token=os.getenv("ALEPH_ALPHA_API_KEY"))
         document = Document.from_text(text=text)
         request = SummarizationRequest(document=document)
         response = client.summarize(request=request)

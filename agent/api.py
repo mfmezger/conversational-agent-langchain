@@ -163,6 +163,8 @@ async def embedd_text(embedding: EmbeddTextRequest, llm_backend: LLMBackend) -> 
 
     """
     logger.info("Embedding Text")
+
+    # TODO: REWORK THE TOKEN
     token = validate_token(token=llm_backend.token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=token, collection_name=llm_backend.collection_name))
@@ -195,7 +197,6 @@ def search(search: SearchParams, llm_backend: LLMBackend) -> list[SearchResponse
 
     """
     logger.info("Searching for Documents")
-    llm_backend.token = validate_token(token=llm_backend.token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=llm_backend.token, collection_name=llm_backend.collection_name))
 

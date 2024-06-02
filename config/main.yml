@@ -12,7 +12,7 @@ qdrant:
 # COHERE CONFIG
 cohere_embeddings:
   embedding_model_name: "embed-multilingual-v3.0"
-  size: 2048
+  size: 1024
 
 # OLLAMA CONFIG
 ollama_embeddings:

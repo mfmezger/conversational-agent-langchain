@@ -1,5 +1,5 @@
 """Tests for the utility functions."""
-from agent.utils.utility import generate_prompt, validate_token
+from agent.utils.utility import generate_prompt, set_token
 
 
 def test_generate_prompt() -> None:
@@ -37,23 +37,23 @@ def test_combine_text_from_list() -> None:
 
 def test_validate_token() -> None:
     """Test that validate_token returns the correct token."""
-    token = validate_token(token="example_token", llm_backend="openai", aleph_alpha_key="example_key_a", openai_key="example_key_o")
+    token = set_token(token="example_token", llm_backend="openai", aleph_alpha_key="example_key_a", openai_key="example_key_o")
 
     assert token == "example_token"
 
-    token = validate_token(token="", llm_backend="aleph-alpha", aleph_alpha_key="example_key_a", openai_key="example_key_o")
+    token = set_token(token="", llm_backend="aleph-alpha", aleph_alpha_key="example_key_a", openai_key="example_key_o")
 
     assert token == "example_key_a"
 
-    token = validate_token(token="", llm_backend="openai", aleph_alpha_key="example_key_a", openai_key="example_key_o")
+    token = set_token(token="", llm_backend="openai", aleph_alpha_key="example_key_a", openai_key="example_key_o")
 
     assert token == "example_key_o"
 
-    token = validate_token(token=None, llm_backend="openai", aleph_alpha_key="example_key_a", openai_key="example_key_o")
+    token = set_token(token=None, llm_backend="openai", aleph_alpha_key="example_key_a", openai_key="example_key_o")
 
     assert token == "example_key_o"
 
-    token = validate_token(token="", llm_backend="gpt4all", aleph_alpha_key="example_key_a", openai_key="example_key_o")
+    token = set_token(token="", llm_backend="gpt4all", aleph_alpha_key="example_key_a", openai_key="example_key_o")
 
     assert token == "gpt4all"
 
@@ -61,6 +61,6 @@ def test_validate_token() -> None:
 
     backend = LLMProvider.ALEPH_ALPHA
 
-    token = validate_token(token="", llm_backend=backend, aleph_alpha_key="example_key_a", openai_key="example_key_o")
+    token = set_token(token="", llm_backend=backend, aleph_alpha_key="example_key_a", openai_key="example_key_o")
 
     assert token == "example_key_a"

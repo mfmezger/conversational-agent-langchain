@@ -30,9 +30,9 @@ class OllamaService(LLMBase):
     """Wrapper for Ollama llms."""
 
     @load_config(location="config/main.yml")
-    def __init__(self, cfg: DictConfig, collection_name: str | None, token: str | None) -> None:
+    def __init__(self, cfg: DictConfig, collection_name: str | None) -> None:
         """Init the Ollama Service."""
-        super().__init__(token=token, collection_name=collection_name)
+        super().__init__(collection_name=collection_name)
 
         self.cfg = cfg
 
@@ -122,7 +122,7 @@ class OllamaService(LLMBase):
 if __name__ == "__main__":
     query = "Was ist Attention?"
 
-    Ollama_service = OllamaService(collection_name="", token="")
+    Ollama_service = OllamaService(collection_name="")
 
     Ollama_service.embed_documents(directory="tests/resources/")
 

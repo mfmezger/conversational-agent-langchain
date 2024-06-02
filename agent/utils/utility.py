@@ -8,7 +8,6 @@ from lingua import Language, LanguageDetectorBuilder
 from loguru import logger
 
 from agent.data_model.internal_model import RetrievalResults
-from agent.data_model.request_data_model import LLMProvider
 
 # add new languages to detect here
 languages = [Language.ENGLISH, Language.GERMAN]
@@ -130,63 +129,6 @@ def load_prompt_template(prompt_name: str, task: str) -> PromptTemplate:
         raise FileNotFoundError(msg) from e
 
     return prompt_template
-
-
-def get_token(token: str | None, llm_provider: str | LLMProvider | None, aleph_alpha_key: str | None, openai_key: str | None) -> str:
-    """Get the token from the environment variables or the parameter.
-
-    Args:
-    ----
-        token (str, optional): Token from the REST service.
-        llm_provider (Union[str, LLMProvider], optional): LLM provider. Defaults to "openai".
-        aleph_alpha_key (str, optional): Key from the .env file. Defaults to None.
-        openai_key (str, optional): Key from the .env file. Defaults to None.
-
-    Returns:
-    -------
-        str: Token for the LLM Provider of choice.
-
-    Raises:
-    ------
-        ValueError: If no token is provided.
-
-    """
-    if isinstance(llm_provider, str):
-        llm_provider = LLMProvider.normalize(llm_provider)
-
-    if token in ("string", ""):
-        token = None
-
-    if token:
-        return token
-
-    env_token = aleph_alpha_key if llm_provider == LLMProvider.ALEPH_ALPHA else openai_key
-    if not env_token and not token:
-        msg = "No token provided."
-        raise ValueError(msg)
-    return env_token
-
-
-def validate_token(token: str | None, llm_backend: str | LLMProvider, aleph_alpha_key: str | None, openai_key: str | None) -> str:
-    """Test if a token is available, and raise an error if it is missing when needed.
-
-    Args:
-    ----
-        token (str): Token from the request
-        llm_backend (str): Backend from the request
-        aleph_alpha_key (str): Key from the .env file
-        openai_key (str): Key from the .env file
-
-    Raises:
-    ------
-        ValueError: If the llm backend is AA or OpenAI and there is no token.
-
-    Returns:
-    -------
-        str: Token
-
-    """
-    return get_token(token, llm_backend.llm_provider, aleph_alpha_key, openai_key) if llm_backend != "gpt4all" else "gpt4all"
 
 
 def convert_qdrant_result_to_retrieval_results(docs: list) -> list[RetrievalResults]:

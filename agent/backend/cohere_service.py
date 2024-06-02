@@ -1,5 +1,4 @@
 """Cohere Backend."""
-import os
 
 from dotenv import load_dotenv
 from langchain_cohere import ChatCohere, CohereEmbeddings
@@ -30,12 +29,9 @@ class CohereService(LLMBase):
     """Wrapper for cohere llms."""
 
     @load_config(location="config/main.yml")
-    def __init__(self, cfg: DictConfig, collection_name: str | None, token: str | None) -> None:
+    def __init__(self, cfg: DictConfig, collection_name: str | None) -> None:
         """Init the Cohere Service."""
-        super().__init__(token=token, collection_name=collection_name)
-
-        if token:
-            os.environ["COHERE_API_KEY"] = token
+        super().__init__(collection_name=collection_name)
 
         self.cfg = cfg
 

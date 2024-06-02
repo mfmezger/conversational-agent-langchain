@@ -29,14 +29,11 @@ class OpenAIService(LLMBase):
     """OpenAI Backend Service."""
 
     @load_config(location="config/main.yml")
-    def __init__(self, cfg: DictConfig, collection_name: str, token: str) -> None:
+    def __init__(self, cfg: DictConfig, collection_name: str) -> None:
         """Init the OpenAI Service."""
-        super().__init__(token=token, collection_name=collection_name)
+        super().__init__(collection_name=collection_name)
 
         """Openai Service."""
-        if token:
-            os.environ["COHERE_API_KEY"] = token
-
         self.cfg = cfg
 
         if collection_name:

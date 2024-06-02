@@ -30,15 +30,11 @@ class GPT4AllService(LLMBase):
     """GPT4ALL Backend Service."""
 
     @load_config(location="config/main.yml")
-    def __init__(self, cfg: DictConfig, collection_name: str, token: str | None) -> None:
+    def __init__(self, cfg: DictConfig, collection_name: str) -> None:
         """Init the GPT4ALL Service."""
-        self.cfg = cfg
-        self.token = token
+        super().__init__(collection_name=collection_name)
 
-        if collection_name:
-            self.collection_name = collection_name
-        else:
-            self.collection_name = self.cfg.qdrant.collection_name_gpt4all
+        self.cfg = cfg
 
         embedding = GPT4AllEmbeddings(model_name="nomic-embed-text-v1.5.f16.gguf")
 

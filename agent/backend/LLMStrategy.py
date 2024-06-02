@@ -66,9 +66,9 @@ class LLMContext:
         """Init the Context."""
         self.llm = llm
 
-    def change_strategy(self, strategy_type: str, token: str, collection_name: str) -> None:
+    def change_strategy(self, strategy_type: str, collection_name: str) -> None:
         """Changes the strategy using the Factory."""
-        self.llm = LLMStrategyFactory.get_strategy(strategy_type=strategy_type, token=token, collection_name=collection_name)
+        self.llm = LLMStrategyFactory.get_strategy(strategy_type=strategy_type, collection_name=collection_name)
 
     def search(self, search: SearchParams) -> list:
         """Wrapper for the search."""
