@@ -118,7 +118,7 @@ class CohereService(LLMBase):
 if __name__ == "__main__":
     query = "Was ist Attention?"
 
-    cohere_service = CohereService(collection_name="", token="")
+    cohere_service = CohereService(collection_name="")
 
     cohere_service.embed_documents(directory="tests/resources/")
 

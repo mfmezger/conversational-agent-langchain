@@ -1,4 +1,4 @@
-"""Script is used to initialize the Qdrant db backend with Azure OpenAI."""
+"""Script is used to initialize the Qdrant db backend with (Azure) OpenAI."""
 import os
 
 import openai

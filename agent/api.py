@@ -30,7 +30,6 @@ from agent.data_model.response_data_model import (
 from agent.utils.utility import (
     combine_text_from_list,
     create_tmp_folder,
-    validate_token,
 )
 from agent.utils.vdb import initialize_all_vector_dbs, load_vec_db_conn
 
@@ -116,10 +115,9 @@ async def post_embedd_documents(llm_backend: LLMBackend, files: list[UploadFile]
     """
     logger.info("Embedding Multiple Documents")
 
-    token = validate_token(token=llm_backend.token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
     tmp_dir = create_tmp_folder()
 
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=LLMProvider.ALEPH_ALPHA, token=token, collection_name=llm_backend.collection_name))
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=LLMProvider.ALEPH_ALPHA, collection_name=llm_backend.collection_name))
 
     file_names = []
 
@@ -164,10 +162,7 @@ async def embedd_text(embedding: EmbeddTextRequest, llm_backend: LLMBackend) -> 
     """
     logger.info("Embedding Text")
 
-    # TODO: REWORK THE TOKEN
-    token = validate_token(token=llm_backend.token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
-
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=token, collection_name=llm_backend.collection_name))
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, collection_name=llm_backend.collection_name))
 
     # save the string to a txt file in a uuid directory
     tmp_dir = create_tmp_folder()
@@ -243,9 +238,7 @@ def question_answer(rag: RAGRequest, llm_backend: LLMBackend) -> QAResponse:
         msg = "Please provide a Question."
         raise ValueError(msg)
 
-    token = validate_token(token=llm_backend.token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
-
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=token, collection_name=llm_backend.collection_name))
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, collection_name=llm_backend.collection_name))
     # summarize the history
     if rag.history:
         # combine the texts
@@ -284,13 +277,6 @@ def explain_question_answer(explain_request: ExplainQARequest, llm_backend: LLMB
         msg = "Please provide a Question."
         raise ValueError(msg)
 
-    explain_request.rag_request.search.llm_backend.token = validate_token(
-        token=explain_request.rag_request.search.llm_backend.token,
-        llm_backend=explain_request.rag_request.search.llm_backend.llm_provider,
-        aleph_alpha_key=ALEPH_ALPHA_API_KEY,
-        openai_key=OPENAI_API_KEY,
-    )
-
     service = LLMContext(
         LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=search.llm_backend.token, collection_name=llm_backend.collection_name)
     )
@@ -324,7 +310,6 @@ def explain_question_answer(explain_request: ExplainQARequest, llm_backend: LLMB
 #         JSONResponse: _description_
 #     """
 #     logger.info("Processing Document")
-#     token = validate_token(token=token, llm_backend=llm_backend, aleph_alpha_key=ALEPH_ALPHA_API_KEY, openai_key=OPENAI_API_KEY)
 
 #     # Create a temporary folder to save the files
 #     tmp_dir = create_tmp_folder()
@@ -347,7 +332,7 @@ def explain_question_answer(explain_request: ExplainQARequest, llm_backend: LLMB
 #         with Path(tmp_dir / file_name).open() as f:
 #             f.write(await file.read())
 
-#     process_documents_aleph_alpha(folder=tmp_dir, token=token, type=document_type)
+#     process_documents_aleph_alpha(folder=tmp_dir, , type=document_type)
 
 #     logger.info(f"Found {len(documents)} documents.")
 #     return documents

@@ -343,7 +343,7 @@ class AlephAlphaService(LLMBase):
 if __name__ == "__main__":
     query = "Was ist Attention?"
 
-    aa_service = AlephAlphaService(collection_name="", token="")
+    aa_service = AlephAlphaService(collection_name="")
 
     aa_service.embed_documents(directory="tests/resources/")
 

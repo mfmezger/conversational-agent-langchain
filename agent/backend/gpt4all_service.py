@@ -148,7 +148,7 @@ class GPT4AllService(LLMBase):
 if __name__ == "__main__":
     query = "Was ist Attention?"
 
-    gpt4all_service = GPT4AllService(collection_name="", token="")
+    gpt4all_service = GPT4AllService(collection_name="")
 
     gpt4all_service.embed_documents(directory="tests/resources/")
 
