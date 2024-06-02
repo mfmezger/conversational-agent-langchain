@@ -20,7 +20,7 @@ from agent.data_model.request_data_model import (
     SearchParams,
 )
 from agent.utils.utility import extract_text_from_langchain_documents, load_prompt_template
-from agent.utils.vdb import generate_collection_ollama, init_vdb
+from agent.utils.vdb import generate_collection, init_vdb
 
 load_dotenv()
 
@@ -84,7 +84,7 @@ class OllamaService(LLMBase):
 
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database."""
-        generate_collection_ollama(self.cfg, name)
+        generate_collection(self.vector_db, name, self.cfg.qdrant.embeddings_size)
         return True
 
     def create_search_chain(self, search: SearchParams) -> BaseRetriever:
@@ -107,7 +107,10 @@ class OllamaService(LLMBase):
         search_chain = self.create_search_chain(search=search)
 
         rag_chain_from_docs = (
-            RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"]))) | self.prompt | ChatOllama(model=self.cfg.ollama.model) | StrOutputParser()
+            RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"])))
+            | self.prompt
+            | ChatOllama(model=self.cfg.ollama.model)
+            | StrOutputParser()
         )
 
         return RunnableParallel({"context": search_chain, "question": RunnablePassthrough()}).assign(answer=rag_chain_from_docs)

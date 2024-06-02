@@ -23,7 +23,7 @@ def test_read_root() -> None:
     assert response.status_code == http_ok
 
 
-@pytest.mark.parametrize("provider", ["aa", "gpt4all", "openai"])
+@pytest.mark.parametrize("provider", ["aa", "gpt4all", "openai", "cohere", "ollama"])
 def test_create_collection(provider: str) -> None:
     """Test the create_collection function.
 

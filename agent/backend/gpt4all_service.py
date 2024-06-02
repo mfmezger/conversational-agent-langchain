@@ -20,7 +20,7 @@ from agent.data_model.request_data_model import (
     SearchParams,
 )
 from agent.utils.utility import extract_text_from_langchain_documents, generate_prompt, load_prompt_template
-from agent.utils.vdb import generate_collection_gpt4all, init_vdb
+from agent.utils.vdb import generate_collection, init_vdb
 
 load_dotenv()
 
@@ -49,7 +49,7 @@ class GPT4AllService(LLMBase):
 
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database."""
-        generate_collection_gpt4all(self.vector_db.client, name)
+        generate_collection(name, self.cfg.gpt4all_embeddings.size)
         return True
 
     def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:

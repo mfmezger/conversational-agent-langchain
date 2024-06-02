@@ -32,7 +32,7 @@ from agent.utils.utility import (
     create_tmp_folder,
     validate_token,
 )
-from agent.utils.vdb import initialize_all_vector_dbs, load_vec_db_conn, generate_collection
+from agent.utils.vdb import initialize_all_vector_dbs, load_vec_db_conn
 
 nltk.download("punkt")
 # add file logger for loguru

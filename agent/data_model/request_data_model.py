@@ -12,6 +12,8 @@ class LLMProvider(str, Enum):
     ALEPH_ALPHA = "aa"
     OPENAI = "openai"
     GPT4ALL = "gpt4all"
+    COHERE = "cohere"
+    OLLAMA = "ollama"
 
     @classmethod
     def normalize(cls: type["LLMProvider"], value: str) -> "LLMProvider":
@@ -23,6 +25,10 @@ class LLMProvider(str, Enum):
             return cls.OPENAI
         elif normalized_value == "gpt4all":
             return cls.GPT4ALL
+        elif normalized_value == "cohere":
+            return cls.COHERE
+        elif normalized_value == "ollama":
+            return cls.OLLAMA
         msg = f"Unsupported LLM provider: {value}"
         raise ValueError(msg)
 

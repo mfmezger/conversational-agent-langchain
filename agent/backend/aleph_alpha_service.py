@@ -31,7 +31,7 @@ from agent.data_model.request_data_model import (
     SearchParams,
 )
 from agent.utils.utility import extract_text_from_langchain_documents, generate_prompt, load_prompt_template
-from agent.utils.vdb import init_vdb
+from agent.utils.vdb import generate_collection, init_vdb
 
 nltk.download("punkt")  # This needs to be installed for the tokenizer to work.
 load_dotenv()
@@ -98,7 +98,7 @@ class AlephAlphaService(LLMBase):
             name (str): The name of the new collection.
 
         """
-        generate_collection(self.vector_db.client, name, self.cfg.aleph_alpha_embeddings.size)
+        generate_collection(name, self.cfg.aleph_alpha_embeddings.size)
         return True
 
     def summarize_text(self, text: str) -> str:

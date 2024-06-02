@@ -20,7 +20,7 @@ from agent.data_model.request_data_model import (
     SearchParams,
 )
 from agent.utils.utility import extract_text_from_langchain_documents, load_prompt_template
-from agent.utils.vdb import generate_collection_cohere, init_vdb
+from agent.utils.vdb import generate_collection, init_vdb
 
 load_dotenv()
 
@@ -87,7 +87,7 @@ class CohereService(LLMBase):
 
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database."""
-        generate_collection_cohere(self.cfg, name)
+        generate_collection(name, self.cfg.cohere_embeddings.size)
         return True
 
     def create_search_chain(self, search: SearchParams) -> BaseRetriever:

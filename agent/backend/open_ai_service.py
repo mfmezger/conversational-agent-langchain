@@ -19,7 +19,7 @@ from ultra_simple_config import load_config
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import RAGRequest, SearchParams
 from agent.utils.utility import extract_text_from_langchain_documents, generate_prompt, load_prompt_template
-from agent.utils.vdb import generate_collection_openai, init_vdb
+from agent.utils.vdb import generate_collection, init_vdb
 
 load_dotenv()
 
@@ -52,10 +52,9 @@ class OpenAIService(LLMBase):
                 azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
                 deployment=self.cfg.openai_embeddings.embedding_model_name,
                 openai_api_version=self.cfg.openai_embeddings.openai_api_version,
-                openai_api_key=self.openai_token,
             )
         else:
-            embedding = OpenAIEmbeddings(model=self.cfg.openai_embeddings.embedding_model_name, openai_api_key=self.openai_token)
+            embedding = OpenAIEmbeddings(model=self.cfg.openai_embeddings.embedding_model_name)
 
         self.vector_db = init_vdb(self.cfg, self.collection_name, embedding=embedding)
 
@@ -67,7 +66,8 @@ class OpenAIService(LLMBase):
             name (str): The name of the new collection.
 
         """
-        generate_collection_openai(self.cfg, name, self.openai_token)
+        generate_collection(name, self.cfg.openai_embeddings.size)
+        logger.info(f"SUCCESS: Collection {name} created.")
         return True
 
     def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:

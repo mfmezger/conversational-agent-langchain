@@ -39,6 +39,7 @@ def load_vec_db_conn(cfg: DictConfig) -> QdrantClient:
     """Load the Vector Database Connection."""
     return QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc), cfg
 
+
 def initialize_vector_db(collection_name: str, embeddings_size: int) -> None:
     """Initializes the vector db for a given backend.
 
@@ -54,10 +55,10 @@ def initialize_vector_db(collection_name: str, embeddings_size: int) -> None:
         qdrant_client.get_collection(collection_name=collection_name)
         logger.info(f"SUCCESS: Collection {collection_name} already exists.")
     except UnexpectedResponse:
-        generate_collection(qdrant_client, collection_name=collection_name, embeddings_size=embeddings_size)
+        generate_collection(collection_name=collection_name, embeddings_size=embeddings_size)
 
 
-def generate_collection(qdrant_client: Qdrant, collection_name: str, embeddings_size: int) -> None:
+def generate_collection(collection_name: str, embeddings_size: int) -> None:
     """Generate a collection for a given backend.
 
     Args:
@@ -67,6 +68,7 @@ def generate_collection(qdrant_client: Qdrant, collection_name: str, embeddings_
         embeddings_size (int): Size of the Embeddings
 
     """
+    qdrant_client, _ = load_vec_db_conn()
     qdrant_client.recreate_collection(
         collection_name=collection_name,
         vectors_config=models.VectorParams(size=embeddings_size, distance=models.Distance.COSINE),
@@ -77,7 +79,7 @@ def generate_collection(qdrant_client: Qdrant, collection_name: str, embeddings_
 @load_config("config/main.yml")
 def initialize_all_vector_dbs(cfg: DictConfig) -> None:
     """Initializes all vector dbs."""
-    initialize_vector_db(cfg.qdrant.collection_name_aleph_alpha, cfg.aleph_alpha_embeddings.size)
+    initialize_vector_db(cfg.qdrant.collection_name_aa, cfg.aleph_alpha_embeddings.size)
     initialize_vector_db(cfg.qdrant.collection_name_openai, cfg.openai_embeddings.size)
     initialize_vector_db(cfg.qdrant.collection_name_gpt4all, 2048)
     initialize_vector_db(cfg.qdrant.collection_name_cohere, cfg.cohere_embeddings.size)

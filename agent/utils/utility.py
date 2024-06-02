@@ -3,6 +3,7 @@ import uuid
 from pathlib import Path
 
 from langchain.prompts import PromptTemplate
+from langchain_core.documents import Document
 from lingua import Language, LanguageDetectorBuilder
 from loguru import logger
 
@@ -106,9 +107,23 @@ def generate_prompt(prompt_name: str, text: str, query: str = "", language: str 
 
 
 def load_prompt_template(prompt_name: str, task: str) -> PromptTemplate:
+    """Loading a task specific prompt template.
+
+    Args:
+    ----
+        prompt_name (str): Name of the prompt template
+        task (str): Name of the task, e.g. chat.
+
+    Raises:
+    ------
+        FileNotFoundError: If the File does not exist.
+
+    Returns:
+    -------
+        PromptTemplate: The loaded prompt template
+    """
     try:
         with Path(Path("prompts") / task / prompt_name).open(encoding="utf-8") as f:
-            # prompt_template = PromptTemplate.from_template(f.read(), template_format="jinja2")
             prompt_template = f.read()
     except FileNotFoundError as e:
         msg = f"Prompt file '{prompt_name}' not found."
@@ -208,7 +223,17 @@ def create_tmp_folder() -> str:
     return str(tmp_dir)
 
 
-def extract_text_from_langchain_documents(docs):
+def extract_text_from_langchain_documents(docs: list[Document]) -> str:
+    """Extracts the text from the langchain documents.
+
+    Args:
+    ----
+        docs (list[Document]): List of Lanchain documents.
+
+    Returns:
+    -------
+        str: The extracted text.
+    """
     logger.info(f"Loaded {len(docs)} documents.")
     return "\n\n".join(f"Context {i+1}:\n{doc.page_content}" for i, doc in enumerate(docs))
 
