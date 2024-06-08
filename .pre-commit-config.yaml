@@ -1,55 +1,54 @@
 # # See https://pre-commit.com for more information
 # # See https://pre-commit.com/hooks.html for more hooks
 repos:
-- repo: https://github.com/astral-sh/ruff-pre-commit
-  # Ruff version.
-  rev: v0.1.14
-  hooks:
-    # Run the linter.
-    - id: ruff
-      args: [ --fix ]
-    # Run the formatter.
-    - id: ruff-format
+    - repo: https://github.com/astral-sh/ruff-pre-commit
+      # Ruff version.
+      rev: v0.1.14
+      hooks:
+          # Run the linter.
+          - id: ruff
+            args: [--fix]
+          # Run the formatter.
+          - id: ruff-format
 
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
-    hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
-        # exlude j2
-        exclude: ^.*\.j2$
-    -   id: check-yaml
-    -   id: check-added-large-files
-        args: ['--maxkb=5000']
-    -   id: check-ast
-    -   id: check-docstring-first
-    -   id: detect-private-key
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v4.5.0
+      hooks:
+          - id: trailing-whitespace
+          - id: end-of-file-fixer
+            # exlude j2
+            exclude: ^.*\.j2$
+          - id: check-yaml
+          - id: check-added-large-files
+            args: ["--maxkb=5000"]
+          - id: check-ast
+          - id: check-docstring-first
+          - id: detect-private-key
 
--   repo: https://github.com/adamchainz/blacken-docs
-    rev: 1.13.0  # replace with latest tag on GitHub
-    hooks:
-    -   id: blacken-docs
-        additional_dependencies:
-        - black==22.12.0
+    - repo: https://github.com/adamchainz/blacken-docs
+      rev: 1.13.0 # replace with latest tag on GitHub
+      hooks:
+          - id: blacken-docs
+            additional_dependencies:
+                - black==22.12.0
 
-# shows old code and how to update it
--   repo: https://github.com/asottile/pyupgrade
-    rev: v2.7.2
-    hooks:
-    -   id: pyupgrade
-        args: [--py38-plus]
+    # shows old code and how to update it
+    - repo: https://github.com/asottile/pyupgrade
+      rev: v2.7.2
+      hooks:
+          - id: pyupgrade
+            args: [--py38-plus]
 
-# for poetry projects
--   repo: https://github.com/python-poetry/poetry
-    rev: 1.3.2  # add version here
-    hooks:
-    -   id: poetry-check
-    -   id: poetry-lock
-        args: ["--no-update"]
-        language_version: python3.11
-    -   id: poetry-export
-        args: ["-f", "requirements.txt", "-o", "requirements.txt"]
-
+    # for poetry projects
+    - repo: https://github.com/python-poetry/poetry
+      rev: 1.3.2 # add version here
+      hooks:
+          - id: poetry-check
+          - id: poetry-lock
+            args: ["--no-update"]
+            language_version: python3.11
+          - id: poetry-export
+            args: ["-f", "requirements.txt", "-o", "requirements.txt"]
 # -   repo: https://github.com/Lucas-C/pre-commit-hooks-safety
 #     rev: v1.3.1
 #     hooks:

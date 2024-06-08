@@ -86,7 +86,7 @@ class LLMContext:
         """Wrapper for the generation of text."""
         return self.llm.generate(prompt)
 
-    def rag(self, rag: RAGRequest, search: SearchParams) -> tuple:
+    def create_rag_chain(self, rag: RAGRequest, search: SearchParams) -> tuple:
         """Wrapper for the RAG."""
         return self.llm.create_rag_chain(rag=rag, search=search)
 

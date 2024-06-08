@@ -125,6 +125,16 @@ class GPT4AllService(LLMBase):
 
         @chain
         def retriever_with_score(query: str) -> list[Document]:
+            """Defines a retriever that returns the score.
+
+            Args:
+            ----
+                query (str): Query the user asks.
+
+            Returns:
+            -------
+                list[Document]: List of Langchain Documents.
+            """
             docs, scores = zip(
                 *self.vector_db.similarity_search_with_score(query, k=search.k, filter=search.filter, score_threshold=search.score_threshold), strict=False
             )

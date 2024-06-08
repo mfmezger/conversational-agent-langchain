@@ -10,6 +10,10 @@ qdrant:
   collection_name_ollama: ollama
 
 # COHERE CONFIG
+cohere_completions:
+  model_name: "cohere-command"
+  maximum_tokens: 300
+
 cohere_embeddings:
   embedding_model_name: "embed-multilingual-v3.0"
   size: 1024

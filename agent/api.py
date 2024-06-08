@@ -1,5 +1,4 @@
 """FastAPI Backend for the Knowledge Agent."""
-import os
 from pathlib import Path
 
 import nltk
@@ -63,8 +62,6 @@ app.openapi = my_schema
 load_dotenv()
 
 # load the token from the environment variables, is None if not set.
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-ALEPH_ALPHA_API_KEY = os.environ.get("ALEPH_ALPHA_API_KEY")
 logger.info("Loading REST API Finished.")
 
 
@@ -246,9 +243,17 @@ def question_answer(rag: RAGRequest, llm_backend: LLMBackend) -> QAResponse:
         text = combine_text_from_list(rag.history)
         service.summarize_text(text=text, token="")
 
-    answer, prompt, meta_data = service.rag(rag=rag, llm_backend=llm_backend)
+    rag_chain = service.create_rag_chain(rag=rag, llm_backend=llm_backend)
 
-    return QAResponse(answer=answer, prompt=prompt, meta_data=meta_data)
+    chain_result = rag_chain.invoke(rag.query)
+
+    return QAResponse(answer=chain_result["answer"], prompt=prompt, meta_data=chain_result["meta_data"])
+
+
+# TODO: implement server side events.
+@app.post("/rag/stream", tags=["rag"])
+def question_answer_stream(rag: RAGRequest, llm_backend: LLMBackend) -> None:
+    pass
 
 
 @app.post("/explanation/explain-qa", tags=["explanation"])

@@ -91,6 +91,16 @@ class CohereService(LLMBase):
 
         @chain
         def retriever_with_score(query: str) -> list[Document]:
+            """Defines a retriever that returns the score.
+
+            Args:
+            ----
+                query (str): Query the user asks.
+
+            Returns:
+            -------
+                list[Document]: List of Langchain Documents.
+            """
             docs, scores = zip(
                 *self.vector_db.similarity_search_with_score(query, k=search.k, filter=search.filter, score_threshold=search.score_threshold), strict=False
             )
@@ -105,9 +115,9 @@ class CohereService(LLMBase):
         """Retrieval Augmented Generation."""
         search_chain = self.create_search_chain(search=search)
 
-        rag_chain_from_docs = (
-            RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"]))) | self.prompt | ChatCohere() | StrOutputParser()
-        )
+        chat = ChatCohere(model_name=cfg.cohere_completions.model_name, maximum_tokens=cfg.cohere_completions.maximum_tokens)
+
+        rag_chain_from_docs = RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"]))) | self.prompt | chat | StrOutputParser()
 
         return RunnableParallel({"context": search_chain, "question": RunnablePassthrough()}).assign(answer=rag_chain_from_docs)
 
