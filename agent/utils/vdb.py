@@ -35,35 +35,26 @@ def init_vdb(cfg: DictConfig, collection_name: str, embedding: Embeddings) -> Qd
 
 
 @load_config("config/main.yml")
-def load_vec_db_conn(cfg: DictConfig) -> Tuple[QdrantClient, DictConfig]:
-    """
-    Load the Vector Database Connection.
+def load_vec_db_conn(cfg: DictConfig) -> tuple[QdrantClient, DictConfig]:
+    """Load the Vector Database Connection.
 
     This function creates a new QdrantClient instance using the configuration
     parameters provided in the 'cfg' argument. The QdrantClient is used to
     interact with the Qdrant vector database.
 
     Args:
-    -----
+    ----
         cfg (DictConfig): A configuration object that contains the settings
                           for the QdrantClient. It should have 'url', 'port',
                           and 'prefer_grpc' fields under the 'qdrant' key.
 
     Returns:
-    --------
+    -------
         Tuple[QdrantClient, DictConfig]: A tuple containing the created
                                          QdrantClient instance and the
                                          original configuration object.
     """
-    return (
-        QdrantClient(
-            cfg.qdrant.url,
-            port=cfg.qdrant.port,
-            api_key=os.getenv("QDRANT_API_KEY"),
-            prefer_grpc=cfg.qdrant.prefer_grpc
-        ),
-        cfg
-    )
+    return (QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc), cfg)
 
 
 def initialize_vector_db(collection_name: str, embeddings_size: int) -> None:

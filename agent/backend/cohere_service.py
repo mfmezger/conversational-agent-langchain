@@ -115,7 +115,7 @@ class CohereService(LLMBase):
         """Retrieval Augmented Generation."""
         search_chain = self.create_search_chain(search=search)
 
-        chat = ChatCohere(model_name=cfg.cohere_completions.model_name, maximum_tokens=cfg.cohere_completions.maximum_tokens)
+        chat = ChatCohere(model_name=self.cfg.cohere_completions.model_name, maximum_tokens=self.cfg.cohere_completions.maximum_tokens)
 
         rag_chain_from_docs = RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"]))) | self.prompt | chat | StrOutputParser()
 
