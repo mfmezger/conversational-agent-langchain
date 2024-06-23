@@ -24,8 +24,6 @@ def create_folder_structure(folder_path: str) -> None:
 
 def initialize() -> None:
     """Initialize the GUI."""
-    answer = ""
-    prompt = ""
     aleph_alpha_api_key = ""
     # The user needs to enter the aleph alpha api key
 
@@ -64,9 +62,9 @@ def initialize() -> None:
                     "collection_name": collection_name,
                     "amount": amount,
                 },
+                timeout=60,
             ).json()
             with st.chat_message(name="ai", avatar="🤖"):
-
                 # Search the documents
                 # make this one hidden
                 # iterate over the objects in the json documents

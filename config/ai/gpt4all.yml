@@ -1,2 +1,0 @@
-gpt4all:
-  completion_model: "orca-mini-3b-gguf2-q4_0.gguf" # "mistral-7b-openorca.Q4_0.gguf"

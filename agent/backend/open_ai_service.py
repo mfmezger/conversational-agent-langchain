@@ -1,249 +1,220 @@
-"""This script is used to initialize the Qdrant db backend with Azure OpenAI."""
+"""Script is used to initialize the Qdrant db backend with (Azure) OpenAI."""
 import os
-from typing import Any, List, Optional, Tuple
 
 import openai
 from dotenv import load_dotenv
-from langchain.docstore.document import Document
 from langchain.text_splitter import NLTKTextSplitter
-from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader
-from langchain_community.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
-from langchain_community.vectorstores import Qdrant
+from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
+from langchain_core.documents import Document
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough, chain
+from langchain_openai import ChatOpenAI
+from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
-from agent.utils.utility import generate_prompt
-from agent.utils.vdb import init_vdb
+from agent.backend.LLMBase import LLMBase
+from agent.data_model.request_data_model import RAGRequest, SearchParams
+from agent.utils.utility import extract_text_from_langchain_documents, generate_prompt, load_prompt_template
+from agent.utils.vdb import generate_collection, init_vdb
 
 load_dotenv()
 
 
-@load_config(location="config/db.yml")
-def get_db_connection(open_ai_token: str, cfg: DictConfig, collection_name: str) -> Qdrant:
-    """Initializes a connection to the Qdrant DB.
+class OpenAIService(LLMBase):
 
-    Args:
-        open_ai_token (str): The openai token.
-        cfg (DictConfig): the config file.
-        collection_name (str): The name of the vector database collection.
+    """OpenAI Backend Service."""
 
-    Returns:
-        Qdrant: An Langchain Instance of the Qdrant DB.
-    """
-    if cfg.openai.azure:
-        embedding = AzureOpenAIEmbeddings(deployment=cfg.openai.deployment, openai_api_version="2023-05-15", openai_api_key=open_ai_token)  # type: ignore
-    else:
-        embedding = OpenAIEmbeddings(model=cfg.openai.deployment, openai_api_key=open_ai_token)
+    @load_config(location="config/main.yml")
+    def __init__(self, cfg: DictConfig, collection_name: str) -> None:
+        """Init the OpenAI Service."""
+        super().__init__(collection_name=collection_name)
 
-    if collection_name is None or not collection_name:
-        collection_name = cfg.qdrant.collection_name_openai
+        """Openai Service."""
+        self.cfg = cfg
 
-    return init_vdb(cfg, collection_name, embedding)
-
-
-def embedd_documents_openai(dir: str, open_ai_token: str, collection_name: Optional[str] = None) -> None:
-    """embedd_documents embedds the documents in the given directory.
-
-    :param cfg: Configuration from the file
-    :type cfg: DictConfig
-    :param dir: PDF Directory
-    :type dir: str
-    :param open_ai_token: OpenAI API Token
-    :type open_ai_token: str
-    """
-    vector_db: Qdrant = get_db_connection(open_ai_token=open_ai_token, collection_name=collection_name)
-
-    splitter = NLTKTextSplitter(chunk_size=500, chunk_overlap=100)
-
-    loader = DirectoryLoader(dir, glob="*.pdf", loader_cls=PyPDFium2Loader)
-    docs = loader.load_and_split(splitter)
-
-    logger.info(f"Loaded {len(docs)} documents.")
-    texts = [doc.page_content for doc in docs]
-    metadatas = [doc.metadata for doc in docs]
-    vector_db.add_texts(texts=texts, metadatas=metadatas)
-    logger.info("SUCCESS: Texts embedded.")
-
-
-def search_documents_openai(open_ai_token: str, query: str, amount: int, threshold: float = 0.0, collection_name: Optional[str] = None) -> List[Tuple[Document, float]]:
-    """Searches the documents in the Qdrant DB with a specific query.
-
-    Args:
-        open_ai_token (str): The OpenAI API token.
-        query (str): The question for which documents should be searched.
-
-    Returns:
-        List[Tuple[Document, float]]: A list of search results, where each result is a tuple
-        containing a Document object and a float score.
-    """
-    vector_db = get_db_connection(open_ai_token=open_ai_token, collection_name=collection_name)
-
-    docs = vector_db.similarity_search_with_score(query, k=amount, score_threshold=threshold)
-    logger.info("SUCCESS: Documents found.")
-    return docs
-
-
-@load_config(location="config/ai/openai.yml")
-def summarize_text_openai(text: str, token: str, cfg: DictConfig) -> str:
-    """Summarizes the given text using the Luminous API.
-
-    Args:
-        text (str): The text to be summarized.
-        token (str): The token for the Luminous API.
-
-    Returns:
-        str: The summary of the text.
-    """
-    prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, language="de")
-
-    openai.api_key = token
-    response = openai.Completion.create(
-        engine=cfg.openai.model,
-        prompt=prompt,
-        temperature=cfg.openai.temperature,
-        max_tokens=cfg.openai.max_tokens,
-        top_p=cfg.openai.top_p,
-        frequency_penalty=cfg.openai.frequency_penalty,
-        presence_penalty=cfg.openai.presence_penalty,
-        best_of=cfg.openai.best_of,
-        stop=cfg.openai.stop,
-    )
-
-    return response.choices[0].text
-
-
-@load_config(location="config/ai/openai.yml")
-def send_completion(text: str, query: str, token: str, cfg: DictConfig) -> str:
-    """Sent completion request to OpenAI API.
-
-    Args:
-        text (str): The text on which the completion should be based.
-        query (str): The query for the completion.
-        token (str): The token for the OpenAI API.
-        cfg (DictConfig):
-
-    Returns:
-        str: Response from the OpenAI API.
-    """
-    prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, query=query, language="de")
-
-    openai.api_key = token
-    response = openai.Completion.create(
-        engine=cfg.openai.model,
-        prompt=prompt,
-        temperature=cfg.openai.temperature,
-        max_tokens=cfg.openai.max_tokens,
-        top_p=cfg.openai.top_p,
-        frequency_penalty=cfg.openai.frequency_penalty,
-        presence_penalty=cfg.openai.presence_penalty,
-        best_of=cfg.openai.best_of,
-        stop=cfg.openai.stop,
-    )
-
-    return response.choices[0].text
-
-
-def send_custom_completion_openai(
-    token: str,
-    prompt: str,
-    model: str = "gpt3.5",
-    max_tokens: int = 256,
-    stop_sequences: List[str] = ["###"],
-    temperature: float = 0,
-) -> str:
-    """Sent completion request to OpenAI API.
-
-    Args:
-        text (str): The text on which the completion should be based.
-        query (str): The query for the completion.
-        token (str): The token for the OpenAI API.
-        cfg (DictConfig):
-
-    Returns:
-        str: Response from the OpenAI API.
-    """
-    openai.api_key = token
-    response = openai.Completion.create(
-        engine=model,
-        prompt=prompt,
-        temperature=temperature,
-        max_tokens=max_tokens,
-        stop_sequences=stop_sequences,
-    )
-
-    return response.choices[0].text
-
-
-def qa_openai(token: str, documents: list[tuple[Document, float]], query: str, summarization: bool = False) -> tuple[Any, str, dict[Any, Any]]:
-    """QA Function for OpenAI LLMs.
-
-    Args:
-        token (str): The token for the OpenAI API.
-        documents (list[tuple[Document, float]]): The documents to be searched.
-        query (str): The question for which the LLM should generate an answer.
-        summarization (bool, optional): If the Documents should be summarized. Defaults to False.
-
-    Returns:
-        tuple: answer, prompt, meta_data
-    """
-    # if the list of documents contains only one document extract the text directly
-    if len(documents) == 1:
-        text = documents[0][0].page_content
-        meta_data = documents[0][0].metadata
-
-    else:
-        # extract the text from the documents
-        texts = [doc[0].page_content for doc in documents]
-        if summarization:
-            # call summarization
-            text = ""
-            for t in texts:
-                text += summarize_text_openai(text=t, token=token)
-
+        if collection_name:
+            self.collection_name = collection_name
         else:
-            # combine the texts to one text
-            text = " ".join(texts)
-        meta_data = [doc[0].metadata for doc in documents]
+            self.collection_name = self.cfg.qdrant.collection_name_openai
 
-    # load the prompt
-    prompt = generate_prompt("aleph_alpha_qa.j2", text=text, query=query)
+        template = load_prompt_template(prompt_name="cohere_chat.j2", task="chat")
+        self.prompt = ChatPromptTemplate.from_template(template=template, template_format="jinja2")
 
-    try:
+        if self.cfg.openai_embeddings.azure:
+            embedding = AzureOpenAIEmbeddings(
+                azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+                deployment=self.cfg.openai_embeddings.embedding_model_name,
+                openai_api_version=self.cfg.openai_embeddings.openai_api_version,
+            )
+        else:
+            embedding = OpenAIEmbeddings(model=self.cfg.openai_embeddings.embedding_model_name)
 
-        # call the luminous api
-        answer = send_completion(prompt, token)
+        self.vector_db = init_vdb(self.cfg, self.collection_name, embedding=embedding)
 
-    except ValueError as e:
-        # if the code is PROMPT_TOO_LONG, split it into chunks
-        if e.args[0] == "PROMPT_TOO_LONG":
-            logger.info("Prompt too long. Summarizing.")
+    def create_collection(self, name: str) -> bool:
+        """Create a new collection in the Vector Database.
 
-            # summarize the text
-            short_text = summarize_text_openai(text, token)
+        Args:
+        ----
+            name (str): The name of the new collection.
 
-            # generate the prompt
-            prompt = generate_prompt("openai-qa.j2", text=short_text, query=query)
+        """
+        generate_collection(name, self.cfg.openai_embeddings.size)
+        logger.info(f"SUCCESS: Collection {name} created.")
+        return True
 
-            # call the luminous api
-            answer = send_completion(prompt, token)
+    def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:
+        """Embeds the documents in the given directory.
 
-    # extract the answer
-    return answer, prompt, meta_data
+        Args:
+        ----
+            directory (str): PDF Directory.
+            file_ending (str): File ending of the documents.
+
+        """
+        if file_ending == ".pdf":
+            loader = DirectoryLoader(directory, glob="*" + file_ending, loader_cls=PyPDFium2Loader)
+        elif file_ending == ".txt":
+            loader = DirectoryLoader(directory, glob="*" + file_ending, loader_cls=TextLoader)
+        else:
+            msg = "File ending not supported."
+            raise ValueError(msg)
+
+        splitter = NLTKTextSplitter(length_function=len, chunk_size=500, chunk_overlap=75)
+
+        docs = loader.load_and_split(splitter)
+
+        logger.info(f"Loaded {len(docs)} documents.")
+        text_list = [doc.page_content for doc in docs]
+        metadata_list = [doc.metadata for doc in docs]
+
+        for m in metadata_list:
+            # only when there are / in the source
+            if "/" in m["source"]:
+                m["source"] = m["source"].split("/")[-1]
+
+        self.vector_db.add_texts(texts=text_list, metadatas=metadata_list)
+
+        logger.info("SUCCESS: Texts embedded.")
+
+    def create_search_chain(self, search: SearchParams) -> BaseRetriever:
+        """Searches the documents in the Qdrant DB with a specific query.
+
+        Args:
+        ----
+            search (SearchRequest): The search request object.
+            filtering (Filtering): The filtering object.
+
+        Returns:
+        -------
+            List[Tuple[Document, float]]: A list of search results, where each result is a tuple
+            containing a Document object and a float score.
+
+        """
+
+        @chain
+        def retriever_with_score(query: str) -> list[Document]:
+            """Defines a retriever that returns the score.
+
+            Args:
+            ----
+                query (str): Query the user asks.
+
+            Returns:
+            -------
+                list[Document]: List of Langchain Documents.
+            """
+            docs, scores = zip(
+                *self.vector_db.similarity_search_with_score(query, k=search.k, filter=search.filter, score_threshold=search.score_threshold), strict=False
+            )
+            for doc, score in zip(docs, scores, strict=False):
+                doc.metadata["score"] = score
+
+            return docs
+
+        return retriever_with_score
+
+    def summarize_text(self, text: str) -> str:
+        """Summarizes the given text using the OpenAI API.
+
+        Args:
+        ----
+            text (str): The text to be summarized.
+            token (str): The token for the OpenAI API.
+
+        Returns:
+        -------
+            str: The summary of the text.
+
+        """
+        prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, language="de")
+
+        openai.api_key = self.token
+        response = openai.chat.completions.create(
+            model=self.cfg.openai_completion.model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=self.cfg.openai_completion.temperature,
+            max_tokens=self.cfg.openai_completion.max_tokens,
+            top_p=self.cfg.openai_completion.top_p,
+            frequency_penalty=self.cfg.openai_completion.frequency_penalty,
+            presence_penalty=self.cfg.openai_completion.presence_penalty,
+            stop=self.cfg.openai_completion.stop,
+            stream=False,
+        )
+
+        return response.choices[0].messages.content
+
+    def generate(self, prompt: str) -> str:
+        """Sent completion request to OpenAI API.
+
+        Args:
+        ----
+            prompt (str): The text on which the completion should be based.
+
+        Returns:
+        -------
+            str: Response from the OpenAI API.
+
+        """
+        openai.api_key = self.token
+        response = openai.chat.completions.create(
+            model=self.cfg.openai_completion.model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=self.cfg.openai_completion.temperature,
+            max_tokens=self.cfg.openai_completion.max_tokens,
+            top_p=self.cfg.openai_completion.top_p,
+            frequency_penalty=self.cfg.openai_completion.frequency_penalty,
+            presence_penalty=self.cfg.openai_completion.presence_penalty,
+            stop=self.cfg.openai_completion.stop,
+            stream=False,
+        )
+
+        return response.choices[0].message.content
+
+    def create_rag_chain(self, rag: RAGRequest, search: SearchParams) -> chain:
+        """Retrieval Augmented Generation."""
+        search_chain = self.create_search_chain(search=search)
+
+        rag_chain_from_docs = (
+            RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"]))) | self.prompt | ChatOpenAI() | StrOutputParser()
+        )
+
+        return RunnableParallel({"context": search_chain, "question": RunnablePassthrough()}).assign(answer=rag_chain_from_docs)
 
 
 if __name__ == "__main__":
+    query = "Was ist Attention?"
 
-    token = os.getenv("OPENAI_API_KEY")
+    openai_service = OpenAIService(collection_name="", token="")
 
-    if not token:
-        raise ValueError("OPENAI_API_KEY is not set.")
+    openai_service.embed_documents(directory="tests/resources/")
 
-    embedd_documents_openai(dir="data", open_ai_token=token)
+    chain = openai_service.create_rag_chain(rag=RAGRequest(), search=SearchParams(query=query, amount=3))
 
-    DOCS = search_documents_openai(open_ai_token="", query="Was ist Vanille?", amount=3)
-    print(f"DOCUMENTS: {DOCS}")
+    answer = chain.invoke(query)
 
-    summary = summarize_text_openai(text="Below is an extract from the annual financial report of a company. ", token=token)
-
-    print(f"SUMMARY: {summary}")
+    logger.info(answer)

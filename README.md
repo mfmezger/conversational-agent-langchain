@@ -7,27 +7,47 @@
 This is a Rest-Backend for a Conversational Agent, that allows to embedd Documentes, search for them using Semantic Search, to QA based on Documents and do document processing with Large Language Models.
 
 
+## Rework
+
+At the moment i am doing a complete rework to use the langchain expression language. if you want to use the old stable versions please look at the release page.
+
+## Table of Contects
 - [Conversational Agent](#conversational-agent)
+  - [Rework](#rework)
+  - [Table of Contects](#table-of-contects)
+  - [LLMs and Backend Providers](#llms-and-backend-providers)
   - [Recent Updates](#recent-updates)
   - [Quickstart](#quickstart)
   - [Project Description](#project-description)
   - [Semantic Search](#semantic-search)
   - [Architecture](#architecture)
   - [Components](#components)
-  - [Available LLM Backends](#available-llm-backends)
   - [Secret Management](#secret-management)
   - [Installation \& Development Backend](#installation--development-backend)
   - [Development Frontend](#development-frontend)
   - [Vector Database](#vector-database)
   - [Qdrant API Key](#qdrant-api-key)
   - [Bulk Ingestion](#bulk-ingestion)
+  - [Update all dependencies](#update-all-dependencies)
   - [Star History](#star-history)
 
 
+## LLMs and Backend Providers
+
+- [Cohere](https://cohere.com/)
+- [Ollama](https://ollama.com/)
+- [Aleph Alpha Luminous](https://aleph-alpha.com/)
+- [GPT4All](https://gpt4all.io/index.html)
+- [(Azure) OpenAI](https://openai.com/)
+
+
+
 ## Recent Updates
-- GPT4ALL Uses Mistral now! If you want to enable it go to config/ai/gpt4all.yaml and change the string. Then you need to restart.
-- Switching for Aleph Alpha to Embeddings with luminous base control.
-![Frontend](resources/research.png)
+- Complete Rework to match the Lanchain Expression Language (LCEL)
+- Adding Cohere
+- Adding Ollama
+
+
 
 If you want to use an Aleph Alpha only backend i would recommend my other backend: https://github.com/mfmezger/aleph-alpha-rag.
 
@@ -74,11 +94,7 @@ Semantic search is an advanced search technique that aims to understand the mean
 
 Langchain is a library for natural language processing and machine learning. FastAPI is a modern, fast (high-performance) web framework for building APIs with Python 3.7+ based on standard Python type hints. A Vectordatabase is a database that stores vectors, which can be used for similarity searches and other machine learning tasks.
 
-## Available LLM Backends
 
-- [Aleph Alpha Luminous](https://aleph-alpha.com/)
-- [GPT4All](https://gpt4all.io/index.html)
-- (Azure) OpenAI
 
 
 ## Secret Management
@@ -145,6 +161,12 @@ And you need to change it in the qdrant.yaml file in the config folder.
 
 If you want to ingest large amount of data i would recommend you use the scripts located in agent/ingestion.
 
+
+## Update all dependencies
+
+```
+poetry add langchain@latest loguru@latest omegaconf@latest aleph-alpha-client@latest tiktoken@latest python-dotenv@latest httpx@latest python-multipart@latest fastapi@latest openai@latest grpcio@latest grpcio-tools@latest uvicorn@latest gpt4all@latest nltk@latest pypdfium2@latest lingua-language-detector@latest pyarrow@latest aiohttp@latest gitpython@latest jinja2@latest langchain-openai@latest
+```
 
 
 ## Star History
