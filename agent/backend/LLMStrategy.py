@@ -7,7 +7,7 @@ from agent.backend.gpt4all_service import GPT4AllService
 from agent.backend.LLMBase import LLMBase
 from agent.backend.ollama_service import OllamaService
 from agent.backend.open_ai_service import OpenAIService
-from agent.data_model.request_data_model import LLMProvider, RAGRequest, SearchParams
+from agent.data_model.request_data_model import LLMProvider, SearchParams
 
 
 class LLMStrategyFactory:
@@ -81,14 +81,6 @@ class LLMContext:
     def create_collection(self, name: str) -> None:
         """Wrapper for creating a collection."""
         return self.llm.create_collection(name)
-
-    def generate(self, prompt: str) -> str:
-        """Wrapper for the generation of text."""
-        return self.llm.generate(prompt)
-
-    def create_rag_chain(self, rag: RAGRequest, search: SearchParams) -> tuple:
-        """Wrapper for the RAG."""
-        return self.llm.create_rag_chain(rag=rag, search=search)
 
     def summarize_text(self, text: str) -> str:
         """Wrapper for the summarization of text."""

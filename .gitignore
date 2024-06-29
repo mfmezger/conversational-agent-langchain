@@ -137,3 +137,4 @@ htmlcov/
 vector_db/
 test.py
 reports.xlsx
+phoenix_data/

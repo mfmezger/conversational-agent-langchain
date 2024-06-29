@@ -104,22 +104,6 @@ class GPT4AllService(LLMBase):
 
         return model.generate(prompt, max_tokens=300)
 
-    def generate(self, prompt: str) -> str:
-        """Complete text with GPT4ALL.
-
-        Args:
-        ----
-            prompt (str): The prompt to be completed.
-
-        Returns:
-        -------
-            str: The completed text.
-
-        """
-        model = GPT4All(self.cfg.gpt4all_completion.completion_model)
-
-        return model.generate(prompt, max_tokens=250)
-
     def create_search_chain(self, search: SearchParams) -> BaseRetriever:
         """Searches the documents in the Qdrant DB with semantic search."""
 

@@ -1,7 +1,7 @@
 """Strategy Pattern."""
 from abc import ABC, abstractmethod
 
-from agent.data_model.request_data_model import LLMBackend, RAGRequest, SearchParams
+from agent.data_model.request_data_model import LLMBackend, SearchParams
 
 
 class LLMBase(ABC):
@@ -24,14 +24,6 @@ class LLMBase(ABC):
     @abstractmethod
     def create_search_chain(self, search: SearchParams) -> list:
         """Searches the documents in the Qdrant DB with semantic search."""
-
-    # @abstractmethod
-    # def generate(self, prompt: str) -> str:
-    #     """Generate text from a prompt."""
-
-    @abstractmethod
-    def create_rag_chain(self, rag: RAGRequest, search: SearchParams) -> tuple:
-        """Retrieval Augmented Generation."""
 
     @abstractmethod
     def summarize_text(self, text: str) -> str:

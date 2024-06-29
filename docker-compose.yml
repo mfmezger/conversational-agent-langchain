@@ -43,3 +43,15 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+# docker-compose.yml
+  phoenix:
+    image: arizephoenix/phoenix:latest # Must be greater than 4.0 version to work
+    ports:
+      - 6006:6006  # PHOENIX_PORT
+      - 4317:4317  # PHOENIX_GRPC_PORT
+      - 9090:9090  # [Optional] PROMETHEUS PORT IF ENABLED
+    environment:
+      - PHOENIX_WORKING_DIR=/mnt/data
+    volumes:
+      - ./phoenix_data:/mnt/data   # PHOENIX_WORKING_DIR

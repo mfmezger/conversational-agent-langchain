@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
-langchain = "^0.2.3"
+langchain = "^0.2.5"
 loguru = "^0.7.2"
 omegaconf = "^2.3.0"
 aleph-alpha-client = "^7.1.0"
@@ -16,9 +16,7 @@ python-dotenv = "^1.0.1"
 httpx = "^0.27.0"
 python-multipart = "^0.0.9"
 fastapi = "^0.111.0"
-openai = "^1.33.0"
-grpcio = "^1.64.1"
-grpcio-tools = "^1.64.1" # for qdrant
+openai = "^1.35.3"
 qdrant-client = "^1.8.2" # for qdrant
 uvicorn = "^0.30.1"
 gpt4all = "^2.7.0"
@@ -30,10 +28,12 @@ aiohttp = "^3.9.5" # security issue
 ultra-simple-config = "^0.1.0"
 gitpython = "^3.1.43" # https://github.com/advisories/GHSA-wfm5-v35h-vwf4
 jinja2 = "^3.1.4"
-langchain-openai = "^0.1.8"
+langchain-openai = "^0.1.9"
 langchain-cohere = "^0.1.5"
 langchain-community = "^0.2.4"
 langchain-qdrant = "^0.1.0"
+langgraph = "^0.1.1"
+arize-phoenix = {extras = ["evals"], version = "^4.5.0"}
 
 
 [tool.poetry.group.dev.dependencies]

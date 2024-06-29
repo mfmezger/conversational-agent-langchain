@@ -1,14 +1,12 @@
 """Ollama Backend."""
 
 from dotenv import load_dotenv
-from langchain_community.chat_models import ChatOllama
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_core.documents import Document
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough, chain
+from langchain_core.runnables import chain
 from langchain_text_splitters import NLTKTextSplitter
 from loguru import logger
 from omegaconf import DictConfig
@@ -19,7 +17,7 @@ from agent.data_model.request_data_model import (
     RAGRequest,
     SearchParams,
 )
-from agent.utils.utility import extract_text_from_langchain_documents, load_prompt_template
+from agent.utils.utility import load_prompt_template
 from agent.utils.vdb import generate_collection, init_vdb
 
 load_dotenv()
@@ -111,19 +109,6 @@ class OllamaService(LLMBase):
             return docs
 
         return retriever_with_score
-
-    def create_rag_chain(self, rag: RAGRequest, search: SearchParams) -> tuple:
-        """Retrieval Augmented Generation."""
-        search_chain = self.create_search_chain(search=search)
-
-        rag_chain_from_docs = (
-            RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"])))
-            | self.prompt
-            | ChatOllama(model=self.cfg.ollama.model)
-            | StrOutputParser()
-        )
-
-        return RunnableParallel({"context": search_chain, "question": RunnablePassthrough()}).assign(answer=rag_chain_from_docs)
 
     def summarize_text(self, text: str) -> str:
         """Summarize text."""

@@ -6,11 +6,9 @@ from dotenv import load_dotenv
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_core.documents import Document
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough, chain
-from langchain_openai import ChatOpenAI
+from langchain_core.runnables import chain
 from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
 from loguru import logger
 from omegaconf import DictConfig
@@ -18,7 +16,7 @@ from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import RAGRequest, SearchParams
-from agent.utils.utility import extract_text_from_langchain_documents, generate_prompt, load_prompt_template
+from agent.utils.utility import generate_prompt, load_prompt_template
 from agent.utils.vdb import generate_collection, init_vdb
 
 load_dotenv()
@@ -167,43 +165,6 @@ class OpenAIService(LLMBase):
         )
 
         return response.choices[0].messages.content
-
-    def generate(self, prompt: str) -> str:
-        """Sent completion request to OpenAI API.
-
-        Args:
-        ----
-            prompt (str): The text on which the completion should be based.
-
-        Returns:
-        -------
-            str: Response from the OpenAI API.
-
-        """
-        openai.api_key = self.token
-        response = openai.chat.completions.create(
-            model=self.cfg.openai_completion.model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=self.cfg.openai_completion.temperature,
-            max_tokens=self.cfg.openai_completion.max_tokens,
-            top_p=self.cfg.openai_completion.top_p,
-            frequency_penalty=self.cfg.openai_completion.frequency_penalty,
-            presence_penalty=self.cfg.openai_completion.presence_penalty,
-            stop=self.cfg.openai_completion.stop,
-            stream=False,
-        )
-
-        return response.choices[0].message.content
-
-    def create_rag_chain(self, rag: RAGRequest, search: SearchParams) -> chain:
-        """Retrieval Augmented Generation."""
-        search_chain = self.create_search_chain(search=search)
-
-        rag_chain_from_docs = (
-            RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"]))) | self.prompt | ChatOpenAI() | StrOutputParser()
-        )
-
-        return RunnableParallel({"context": search_chain, "question": RunnablePassthrough()}).assign(answer=rag_chain_from_docs)
 
 
 if __name__ == "__main__":

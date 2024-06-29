@@ -180,6 +180,14 @@ def extract_text_from_langchain_documents(docs: list[Document]) -> str:
     return "\n\n".join(f"Context {i+1}:\n{doc.page_content}" for i, doc in enumerate(docs))
 
 
+def format_docs_for_citations(docs: Sequence[Document]) -> str:
+    formatted_docs = []
+    for i, doc in enumerate(docs):
+        doc_string = f"<doc id='{i}'>{doc.page_content}</doc>"
+        formatted_docs.append(doc_string)
+    return "\n".join(formatted_docs)
+
+
 if __name__ == "__main__":
     # test the function
     generate_prompt("aleph_alpha_qa.j2", "This is a test text.", "What is the meaning of life?")

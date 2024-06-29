@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
 from fastapi.openapi.utils import get_openapi
 from loguru import logger
+from phoenix.trace.langchain import LangChainInstrumentor
 from qdrant_client import models
 from qdrant_client.http.models.models import UpdateResult
 from starlette.responses import JSONResponse
@@ -32,6 +33,7 @@ from agent.utils.utility import (
 )
 from agent.utils.vdb import initialize_all_vector_dbs, load_vec_db_conn
 
+LangChainInstrumentor().instrument()
 nltk.download("punkt")
 # add file logger for loguru
 # logger.add("logs/file_{time}.log", backtrace=False, diagnose=False)
