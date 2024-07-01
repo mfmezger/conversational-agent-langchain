@@ -1,12 +1,12 @@
 """The Strategy Pattern for the LLM Backend."""
 from typing import ClassVar
 
-from agent.backend.aleph_alpha_service import AlephAlphaService
-from agent.backend.cohere_service import CohereService
-from agent.backend.gpt4all_service import GPT4AllService
 from agent.backend.LLMBase import LLMBase
-from agent.backend.ollama_service import OllamaService
-from agent.backend.open_ai_service import OpenAIService
+from agent.backend.services.aleph_alpha_service import AlephAlphaService
+from agent.backend.services.cohere_service import CohereService
+from agent.backend.services.gpt4all_service import GPT4AllService
+from agent.backend.services.ollama_service import OllamaService
+from agent.backend.services.open_ai_service import OpenAIService
 from agent.data_model.request_data_model import LLMProvider, SearchParams
 
 
