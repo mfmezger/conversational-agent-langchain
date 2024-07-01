@@ -1,5 +1,6 @@
 """Utility module."""
 import uuid
+from collections.abc import Sequence
 from pathlib import Path
 
 from langchain.prompts import PromptTemplate
@@ -181,6 +182,16 @@ def extract_text_from_langchain_documents(docs: list[Document]) -> str:
 
 
 def format_docs_for_citations(docs: Sequence[Document]) -> str:
+    """Format the documents for citations.
+
+    Args:
+    ----
+        docs (Sequence[Document]): Langchain documents from a vectordatabase.
+
+    Returns:
+    -------
+        str: Combined documents in a format suitable for citations.
+    """
     formatted_docs = []
     for i, doc in enumerate(docs):
         doc_string = f"<doc id='{i}'>{doc.page_content}</doc>"
