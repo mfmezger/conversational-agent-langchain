@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
     cohere_service.embed_documents(directory="tests/resources/")
 
-    chain = cohere_service.create_rag_chain(rag=RAGRequest(), search=SearchParams(query=query, amount=3))
+    chain = cohere_service.create_search_chain(SearchParams(query=query, amount=3))
 
     answer = chain.invoke(query)
 

@@ -104,39 +104,6 @@ class GPT4AllService(LLMBase):
 
         return model.generate(prompt, max_tokens=300)
 
-    def create_search_chain(self, search: SearchParams) -> BaseRetriever:
-        """Searches the documents in the Qdrant DB with semantic search."""
-
-        @chain
-        def retriever_with_score(query: str) -> list[Document]:
-            """Defines a retriever that returns the score.
-
-            Args:
-            ----
-                query (str): Query the user asks.
-
-            Returns:
-            -------
-                list[Document]: List of Langchain Documents.
-            """
-            docs, scores = zip(
-                *self.vector_db.similarity_search_with_score(query, k=search.k, filter=search.filter, score_threshold=search.score_threshold), strict=False
-            )
-            for doc, score in zip(docs, scores, strict=False):
-                doc.metadata["score"] = score
-
-            return docs
-
-        return retriever_with_score
-
-    def create_rag_chain(self, rag: RAGRequest, search: SearchParams) -> tuple:
-        """Retrieval Augmented Generation."""
-        search_chain = self.create_search_chain(search=search)
-        llm = GPT4All(self.cfg.gpt4all_completion.completion_model)
-
-        rag_chain_from_docs = RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"]))) | self.prompt | llm | StrOutputParser()
-
-        return RunnableParallel({"context": search_chain, "question": RunnablePassthrough()}).assign(answer=rag_chain_from_docs)
 
 
 if __name__ == "__main__":

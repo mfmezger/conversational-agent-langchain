@@ -117,12 +117,12 @@ class OllamaService(LLMBase):
 if __name__ == "__main__":
     query = "Was ist Attention?"
 
-    Ollama_service = OllamaService(collection_name="")
+    ollama_service = OllamaService(collection_name="")
 
-    Ollama_service.embed_documents(directory="tests/resources/")
+    ollama_service.embed_documents(directory="tests/resources/")
 
-    chain = Ollama_service.create_rag_chain(rag=RAGRequest(), search=SearchParams(query=query, amount=3))
+    chain = ollama_service.create_search_chain(query)
 
     answer = chain.invoke(query)
 
-    logger.info(answer["answer"])
+    logger.info(answer)

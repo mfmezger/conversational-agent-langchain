@@ -99,42 +99,6 @@ class OpenAIService(LLMBase):
 
         logger.info("SUCCESS: Texts embedded.")
 
-    def create_search_chain(self, search: SearchParams) -> BaseRetriever:
-        """Searches the documents in the Qdrant DB with a specific query.
-
-        Args:
-        ----
-            search (SearchRequest): The search request object.
-            filtering (Filtering): The filtering object.
-
-        Returns:
-        -------
-            List[Tuple[Document, float]]: A list of search results, where each result is a tuple
-            containing a Document object and a float score.
-
-        """
-
-        @chain
-        def retriever_with_score(query: str) -> list[Document]:
-            """Defines a retriever that returns the score.
-
-            Args:
-            ----
-                query (str): Query the user asks.
-
-            Returns:
-            -------
-                list[Document]: List of Langchain Documents.
-            """
-            docs, scores = zip(
-                *self.vector_db.similarity_search_with_score(query, k=search.k, filter=search.filter, score_threshold=search.score_threshold), strict=False
-            )
-            for doc, score in zip(docs, scores, strict=False):
-                doc.metadata["score"] = score
-
-            return docs
-
-        return retriever_with_score
 
     def summarize_text(self, text: str) -> str:
         """Summarizes the given text using the OpenAI API.
