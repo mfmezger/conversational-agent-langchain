@@ -65,6 +65,40 @@ llm = gpt4o.configurable_alternatives(
 ).with_fallbacks([cohere_command, ollama_chat])
 
 
+def get_score_retriever() -> BaseRetriever:
+    """Get the Retriever.
+
+    Returns
+    -------
+        BaseRetriever: _description_
+    """
+    embedding = CohereEmbeddings(model="embed-multilingual-v3.0")
+
+    qdrant_client = QdrantClient("http://localhost", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
+
+    vector_db = Qdrant(client=qdrant_client, collection_name="cohere", embeddings=embedding)
+
+    @chain
+    def retriever_with_score(query: str) -> list[Document]:
+        """Defines a retriever that returns the score.
+
+        Args:
+        ----
+            query (str): Query the user asks.
+
+        Returns:
+        -------
+            list[Document]: List of Langchain Documents.
+        """
+        docs, scores = zip(*vector_db.similarity_search_with_score(query), strict=False)
+        for doc, score in zip(docs, scores, strict=False):
+            doc.metadata["score"] = score
+
+        return docs
+
+    return retriever_with_score
+
+
 def get_retriever() -> BaseRetriever:
     """Create a Vector Database retriever.
 
