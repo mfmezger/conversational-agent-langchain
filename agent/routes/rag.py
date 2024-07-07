@@ -6,6 +6,9 @@ from agent.backend.LLMStrategy import LLMContext, LLMStrategyFactory
 from agent.data_model.request_data_model import LLMBackend, RAGRequest
 from agent.data_model.response_data_model import QAResponse
 from agent.utils.utility import combine_text_from_list
+from agent.backend.graph import build_graph
+
+graph = build_graph()
 
 router = APIRouter()
 
@@ -29,3 +32,5 @@ def question_answer(rag: RAGRequest, llm_backend: LLMBackend) -> QAResponse:
 @router.post("/stream", tags=["rag"])
 def question_answer_stream(rag: RAGRequest, llm_backend: LLMBackend) -> None:
     """Stream the Answering."""
+
+    
