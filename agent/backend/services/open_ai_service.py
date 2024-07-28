@@ -5,9 +5,7 @@ import openai
 from dotenv import load_dotenv
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
-from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import chain
 from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
 from loguru import logger
@@ -98,7 +96,6 @@ class OpenAIService(LLMBase):
         self.vector_db.add_texts(texts=text_list, metadatas=metadata_list)
 
         logger.info("SUCCESS: Texts embedded.")
-
 
     def summarize_text(self, text: str) -> str:
         """Summarizes the given text using the OpenAI API.

@@ -1,13 +1,12 @@
 """The RAG Routes."""
+import json
+
 from fastapi import APIRouter
-from loguru import logger
+from fastapi.responses import StreamingResponse
 
 from agent.backend.graph import build_graph
-from agent.backend.LLMStrategy import LLMContext, LLMStrategyFactory
-from fastapi.responses import StreamingResponse
 from agent.data_model.request_data_model import LLMBackend, RAGRequest
 from agent.data_model.response_data_model import QAResponse
-from agent.utils.utility import combine_text_from_list
 
 graph = build_graph()
 
@@ -17,11 +16,7 @@ router = APIRouter()
 @router.post("/", tags=["rag"])
 def question_answer(rag: RAGRequest) -> QAResponse:
     """Answering the Question."""
-
-    results = graph.with_config(configurable={"model_name": rag.model}).invoke({"retriever_name": model_name, "messages": chat_request.messages})
-
-    
-
+    chain_result = graph.with_config(configurable={"model_name": rag.model}).invoke({"retriever_name": model_name, "messages": chat_request.messages})
 
     return QAResponse(answer=chain_result["answer"], prompt=chain_result["prompt"], meta_data=chain_result["meta_data"])
 

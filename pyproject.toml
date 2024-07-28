@@ -37,27 +37,9 @@ arize-phoenix = {extras = ["evals"], version = "^4.5.0"}
 
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.8.0"
-pytest = "^7.4.0"
-pylint = "^2.17.4"
-ruff = "^0.0.280"
-pytest-asyncio = "^0.21.0"
-coverage = "^7.2.7"
-types-urllib3 = "^1.26.25.14"
-lxml-stubs = "^0.4.0"
-types-pillow = "^10.0.0.2"
-types-pyyaml = "^6.0.12.11"
-types-cachetools = "^5.3.0.6"
-types-google-cloud-ndb = "^2.1.0.8"
-types-protobuf = "^4.23.0.2"
-types-psutil = "^5.9.5.16"
-types-python-dateutil = "^2.8.19.14"
-types-pytz = "^2023.3.0.0"
-types-regex = "^2023.6.3.1"
-types-requests = "^2.31.0.2"
-types-toml = "^0.10.8.7"
-types-tqdm = "^4.65.0.2"
-types-tzlocal = "^5.0.1.1"
+mypy = "^1.11.0"
+ruff = "^0.5.5"
+
 
 [build-system]
 requires = ["poetry-core"]
@@ -96,71 +78,3 @@ strict_equality = true
 
 # Config file
 warn_unused_configs = true
-
-[tool.pylint]
-max-line-length = 170
-
-
-[tool.ruff]
-# Exclude a variety of commonly ignored directories.
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".git-rewrite",
-    ".hg",
-    ".ipynb_checkpoints",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pyenv",
-    ".pytest_cache",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    ".vscode",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "site-packages",
-    "venv",
-    "tests",
-]
-
-# Same as Black.
-"line-length" = 170
-"indent-width" = 4
-"unsafe-fixes" = true
-# Assume Python 3.11
-target-version = "py311"
-
-[tool.ruff.lint]
-# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
-select = ["ALL"]
-ignore = ["S101", "ERA001", "COM812", "ISC001", "D213", "D211", "TD002", "TD003", "FIX002", "D401", "ANN101", "S105", "ANN002", "ANN003", "INP001", "S104", "S108", "FBT001", "FBT002", "PLW0603", "S106", "PLR2004", "B008", "RET505"]
-
-# Allow fix for all enabled rules (when `--fix`) is provided.
-fixable = ["ALL"]
-unfixable = []
-
-# Allow unused variables when underscore-prefixed.
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-
-[tool.ruff.format]
-# Like Black, use double quotes for strings.
-quote-style = "double"
-
-# Like Black, indent with spaces, rather than tabs.
-indent-style = "space"
-
-# Like Black, respect magic trailing commas.
-skip-magic-trailing-comma = false
-
-# Like Black, automatically detect the appropriate line ending.
-line-ending = "auto"

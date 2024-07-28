@@ -14,7 +14,6 @@ from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import (
-    RAGRequest,
     SearchParams,
 )
 from agent.utils.utility import load_prompt_template

@@ -24,6 +24,7 @@ from langchain_openai import ChatOpenAI
 from langchain_qdrant import Qdrant
 from langgraph.graph import END, StateGraph, add_messages
 from qdrant_client import QdrantClient
+from agent.backend.data_model.request_data_model import LLMProvider
 
 from agent.backend.prompts import COHERE_RESPONSE_TEMPLATE, REPHRASE_TEMPLATE, RESPONSE_TEMPLATE
 from agent.utils.utility import format_docs_for_citations
@@ -309,4 +310,3 @@ def build_graph() -> StateGraph:
 # answer = graph.invoke({"messages": [{"role": "human", "content": "wer ist der vater von luke skywalker?"}, {"role": "assistant", "content": "Der Vater von Luke
 # Skywalker war Anakin Skywalker."}, {"role": "human", "content": "und wer ist seine mutter?"}]})
 # logger.info(answer)
- 

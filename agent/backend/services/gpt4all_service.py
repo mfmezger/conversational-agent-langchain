@@ -5,11 +5,8 @@ from gpt4all import GPT4All
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_community.embeddings import GPT4AllEmbeddings
-from langchain_core.documents import Document
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough, chain
+from langchain_core.runnables import chain
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
@@ -19,7 +16,7 @@ from agent.data_model.request_data_model import (
     RAGRequest,
     SearchParams,
 )
-from agent.utils.utility import extract_text_from_langchain_documents, generate_prompt, load_prompt_template
+from agent.utils.utility import generate_prompt, load_prompt_template
 from agent.utils.vdb import generate_collection, init_vdb
 
 load_dotenv()
@@ -103,7 +100,6 @@ class GPT4AllService(LLMBase):
         model = GPT4All(self.cfg.gpt4all_completion.completion_model)
 
         return model.generate(prompt, max_tokens=300)
-
 
 
 if __name__ == "__main__":
