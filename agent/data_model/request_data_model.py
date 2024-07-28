@@ -73,8 +73,8 @@ class RAGRequest(BaseModel):
 
     """Request for the QA endpoint."""
 
-    language: Language | None = Field(Language.DETECT, title="Language", description="The language to use for the answer.")
-    history: dict[str, str] | None = Field([], title="History", description="A list of previous questions and answers to include in the context.")
+    # language: Language | None = Field(Language.DETECT, title="Language", description="The language to use for the answer.")
+    messages: dict[str, str] | None = Field([], title="History", description="A list of previous questions and answers to include in the context.")
 
 
 class EmbeddTextRequest(BaseModel):

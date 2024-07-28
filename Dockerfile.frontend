@@ -4,7 +4,7 @@ COPY ./frontend/requirements.txt  ./requirements.txt
 
 RUN pip install -r requirements.txt
 
-COPY . .
+COPY ./frontend /frontend
 
 # CMD ["tail", "-f", "/dev/null"]
 CMD ["streamlit", "run", "frontend/pages/2_semantic_search.py", "--theme.base=dark"]

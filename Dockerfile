@@ -5,7 +5,10 @@ COPY ./requirements.txt  ./requirements.txt
 
 RUN pip install -r requirements.txt
 
-COPY . .
+COPY ./config /config
+COPY ./prompts /prompts
+COPY ./agent /agent
+
 
 ENTRYPOINT ["uvicorn", "agent.api:app", "--host", "0.0.0.0", "--port", "8001"]
 

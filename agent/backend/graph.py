@@ -30,7 +30,7 @@ from agent.utils.utility import format_docs_for_citations
 
 OPENAI_MODEL_KEY = "openai_gpt_3_5_turbo"
 COHERE_MODEL_KEY = "cohere_command"
-OLLAMA_MODEL_KEY = "phi3_ollama"
+OLLAMA_MODEL_KEY = "ollama_llama8b3.1"
 
 
 class AgentState(TypedDict):
@@ -52,15 +52,15 @@ cohere_command = ChatCohere(
     streaming=True,
 )
 
-ollama_chat = ChatOllama()
+ollama_chat = ChatOllama(model="llama3.1")
 
 
 # define model alternatives
 llm = gpt4o.configurable_alternatives(
     ConfigurableField(id="model_name"),
-    default_key=OPENAI_MODEL_KEY,
+    default_key=LLMProvider.OPENAI.value,
     **{
-        COHERE_MODEL_KEY: cohere_command,
+        LLMProvider.COHERE.value: cohere_command,
     },
 ).with_fallbacks([cohere_command, ollama_chat])
 
@@ -309,3 +309,4 @@ def build_graph() -> StateGraph:
 # answer = graph.invoke({"messages": [{"role": "human", "content": "wer ist der vater von luke skywalker?"}, {"role": "assistant", "content": "Der Vater von Luke
 # Skywalker war Anakin Skywalker."}, {"role": "human", "content": "und wer ist seine mutter?"}]})
 # logger.info(answer)
+ 

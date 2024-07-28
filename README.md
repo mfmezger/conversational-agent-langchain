@@ -7,7 +7,7 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
 
 ## Rework
 
-At the moment i am doing a complete rework to use the langchain expression language. if you want to use the old stable versions please look at the release page.
+At the moment i am reworking to langgraph, therefore not all versions on main will work with all of the providers. I will update the providers in the next weeks. Please use the releases to get a working version.
 
 ## Table of Contects
 - [Conversational Agent](#conversational-agent)
@@ -103,6 +103,12 @@ If you use OpenAI from Azure or OpenAI directly you need to set the correct para
 
 
 ## Installation & Development Backend
+
+On Linux or Mac you need to adjust your /etc/hosts file to include the following line:
+
+```bash
+127.0.0.1 qdrant
+```
 
 First install Python Dependencies:
 

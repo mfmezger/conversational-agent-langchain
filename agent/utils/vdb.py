@@ -86,7 +86,7 @@ def generate_collection(collection_name: str, embeddings_size: int) -> None:
 
     """
     qdrant_client, _ = load_vec_db_conn()
-    qdrant_client.recreate_collection(
+    qdrant_client.create_collection(
         collection_name=collection_name,
         vectors_config=models.VectorParams(size=embeddings_size, distance=models.Distance.COSINE),
     )

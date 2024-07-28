@@ -1,18 +1,34 @@
 """Main API."""
+
 import nltk
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from loguru import logger
 from phoenix.trace.langchain import LangChainInstrumentor
-from routes import collection, delete, embeddings, explanation, rag, search
 
+from agent.routes import (collection, delete, embeddings, explanation, rag,
+                          search)
 from agent.utils.vdb import initialize_all_vector_dbs
 
 LangChainInstrumentor().instrument()
 nltk.download("punkt")
 logger.info("Startup.")
 
+logger.info("""
+
+Welcome to 
+
+ ██████╗ ██████╗ ███╗   ██╗██╗   ██╗███████╗██████╗ ███████╗ █████╗ ████████╗██╗ ██████╗ ███╗   ██╗ █████╗ ██╗          █████╗  ██████╗ ███████╗███╗   ██╗████████╗    
+██╔════╝██╔═══██╗████╗  ██║██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║██╔══██╗██║         ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝    
+██║     ██║   ██║██╔██╗ ██║██║   ██║█████╗  ██████╔╝███████╗███████║   ██║   ██║██║   ██║██╔██╗ ██║███████║██║         ███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║       
+██║     ██║   ██║██║╚██╗██║╚██╗ ██╔╝██╔══╝  ██╔══██╗╚════██║██╔══██║   ██║   ██║██║   ██║██║╚██╗██║██╔══██║██║         ██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║       
+╚██████╗╚██████╔╝██║ ╚████║ ╚████╔╝ ███████╗██║  ██║███████║██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║██║  ██║███████╗    ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║       
+ ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝    ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝       
+                                                                                                                                                                       
+
+
+""")
 
 def my_schema() -> dict:
     """Generate the OpenAPI Schema."""
@@ -29,7 +45,7 @@ def my_schema() -> dict:
 app = FastAPI(debug=True)
 app.openapi = my_schema
 
-load_dotenv()
+load_dotenv(override=True)
 logger.info("Loading REST API Finished.")
 
 app.include_router(collection.router, prefix="/collection")

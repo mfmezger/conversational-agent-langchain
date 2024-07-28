@@ -22,5 +22,5 @@ def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONRe
         JSONResponse: Success Message.
     """
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_provider, token="", collection_name=collection_name))
-    service.create_collection(name=collection_name)
+    service.createe_collection_collection(name=collection_name)
     return JSONResponse(content={"message": f"Collection {collection_name} created."})

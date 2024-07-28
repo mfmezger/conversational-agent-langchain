@@ -15,18 +15,14 @@ router = APIRouter()
 
 
 @router.post("/", tags=["rag"])
-def question_answer(rag: RAGRequest, llm_backend: LLMBackend) -> QAResponse:
+def question_answer(rag: RAGRequest) -> QAResponse:
     """Answering the Question."""
-    logger.info("Answering Question")
-    if rag.search.query is None:
-        msg = "Please provide a Question."
-        raise ValueError(msg)
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, collection_name=llm_backend.collection_name))
-    if rag.history:
-        text = combine_text_from_list(rag.history)
-        service.summarize_text(text=text, token="")
-    rag_chain = service.create_rag_chain(rag=rag, llm_backend=llm_backend)
-    chain_result = rag_chain.invoke(rag.query)
+
+    results = graph.with_config(configurable={"model_name": rag.model}).invoke({"retriever_name": model_name, "messages": chat_request.messages})
+
+    
+
+
     return QAResponse(answer=chain_result["answer"], prompt=chain_result["prompt"], meta_data=chain_result["meta_data"])
 
 

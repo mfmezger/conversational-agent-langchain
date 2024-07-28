@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
-langchain = "^0.2.5"
+langchain = "^0.2.11"
 loguru = "^0.7.2"
 omegaconf = "^2.3.0"
 aleph-alpha-client = "^7.1.0"
