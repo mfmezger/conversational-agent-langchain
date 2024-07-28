@@ -22,9 +22,10 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import ConfigurableField, RunnableConfig
 from langchain_openai import ChatOpenAI
 from langchain_qdrant import Qdrant
+from langchain_core.runnables import chain
 from langgraph.graph import END, StateGraph, add_messages
 from qdrant_client import QdrantClient
-from agent.backend.data_model.request_data_model import LLMProvider
+from agent.data_model.request_data_model import LLMProvider
 
 from agent.backend.prompts import COHERE_RESPONSE_TEMPLATE, REPHRASE_TEMPLATE, RESPONSE_TEMPLATE
 from agent.utils.utility import format_docs_for_citations

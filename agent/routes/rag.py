@@ -14,9 +14,9 @@ router = APIRouter()
 
 
 @router.post("/", tags=["rag"])
-def question_answer(rag: RAGRequest) -> QAResponse:
+def question_answer(rag: RAGRequest, llm_backend: LLMBackend) -> QAResponse:
     """Answering the Question."""
-    chain_result = graph.with_config(configurable={"model_name": rag.model}).invoke({"retriever_name": model_name, "messages": chat_request.messages})
+    chain_result = graph.with_config(configurable={"model_name": rag.model}).invoke({"retriever_name": llm_backend.llm_provider, "messages": rag.messages})
 
     return QAResponse(answer=chain_result["answer"], prompt=chain_result["prompt"], meta_data=chain_result["meta_data"])
 
