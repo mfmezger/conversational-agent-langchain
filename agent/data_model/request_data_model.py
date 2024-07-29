@@ -69,12 +69,20 @@ class SearchParams(BaseModel):
     filter: dict | None = Field(None, title="Filter", description="Filter for the database search with metadata.")
 
 
+class ChatMessages(BaseModel):
+
+    """The Chat Messages Model."""
+
+    role: str = Field(..., title="Role", description="The role of the sender can be either user or assistant.")
+    content: str = Field(..., title="Content", description="The content of the message.")
+
+
 class RAGRequest(BaseModel):
 
     """Request for the QA endpoint."""
 
     # language: Language | None = Field(Language.DETECT, title="Language", description="The language to use for the answer.")
-    messages: dict[str, str] | None = Field([], title="History", description="A list of previous questions and answers to include in the context.")
+    messages: list[ChatMessages] | None = Field([], title="History", description="A list of previous questions and answers to include in the context.")
 
 
 class EmbeddTextRequest(BaseModel):

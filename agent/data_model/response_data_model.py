@@ -12,14 +12,6 @@ class Status(str, Enum):
     FAILURE = "failure"
 
 
-class MetaData(BaseModel):
-
-    """Metadata for the response."""
-
-    page: int = 0
-    source: str = ""
-
-
 class SearchResponse(BaseModel):
 
     """The request parameters for explaining the output."""
@@ -43,8 +35,7 @@ class QAResponse(BaseModel):
     """The Response for the QA endpoint."""
 
     answer: str = Field(..., title="Answer", description="The answer to the question.")
-    prompt: str = Field(..., title="Prompt", description="The prompt used to generate the answer.")
-    meta_data: list[MetaData]
+    meta_data: list
 
 
 class ExplainQAResponse(BaseModel):
@@ -52,7 +43,7 @@ class ExplainQAResponse(BaseModel):
     """The Response for the Explain QA endpoint."""
 
     answer: str = Field(..., title="Answer", description="The answer to the question.")
-    meta_data: MetaData
+    meta_data: list
     explanation: str = Field(..., title="Explanation", description="The explanation for the answer.")
     text: str = Field(..., title="Text", description="The text of the document.")
     score: float = Field(..., title="Score", description="The score of the document.")
