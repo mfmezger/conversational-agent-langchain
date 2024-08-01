@@ -23,6 +23,7 @@ At the moment i am reworking to langgraph, therefore not all versions on main wi
   - [Secret Management](#secret-management)
   - [Installation \& Development Backend](#installation--development-backend)
   - [Development Frontend](#development-frontend)
+    - [Mypy](#mypy)
   - [Vector Database](#vector-database)
   - [Qdrant API Key](#qdrant-api-key)
   - [Bulk Ingestion](#bulk-ingestion)
@@ -149,6 +150,10 @@ To run the Frontend use this command in the root directory:
 ```bash
 poetry run streamlit run gui.py --theme.base="dark"
 ```
+
+### Mypy
+
+mypy rag --explicit-package-bases
 
 ## Vector Database
 
