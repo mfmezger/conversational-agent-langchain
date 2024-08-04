@@ -34,6 +34,7 @@ langchain-community = "^0.2.4"
 langchain-qdrant = "^0.1.0"
 langgraph = "^0.1.1"
 arize-phoenix = {extras = ["evals"], version = "^4.5.0"}
+werkzeug = "^3.0.3"
 
 
 [tool.poetry.group.dev.dependencies]

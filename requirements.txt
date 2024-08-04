@@ -2005,6 +2005,9 @@ urllib3==2.2.1 ; python_version >= "3.11" and python_version < "3.12" \
 uvicorn==0.30.1 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:cd17daa7f3b9d7a24de3617820e634d0933b69eed8e33a516071174427238c81 \
     --hash=sha256:d46cd8e0fd80240baffbcd9ec1012a712938754afcf81bce56c024c1656aece8
+werkzeug==3.0.3 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:097e5bfda9f0aba8da6b8545146def481d06aa7d3266e7448e2cccf67dd8bd18 \
+    --hash=sha256:fc9645dc43e03e4d630d23143a04a7f947a9a3b5727cd535fdfe155a17cc48c8
 win32-setctime==1.1.0 ; python_version >= "3.11" and python_version < "3.12" and sys_platform == "win32" \
     --hash=sha256:15cf5750465118d6929ae4de4eb46e8edae9a5634350c01ba582df868e932cb2 \
     --hash=sha256:231db239e959c2fe7eb1d7dc129f11172354f98361c4fa2d6d2d7e278baa8aad

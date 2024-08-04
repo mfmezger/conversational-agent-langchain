@@ -3966,6 +3966,23 @@ h11 = ">=0.8"
 standard = ["colorama (>=0.4)", "httptools (>=0.5.0)", "python-dotenv (>=0.13)", "pyyaml (>=5.1)", "uvloop (>=0.14.0,!=0.15.0,!=0.15.1)", "watchfiles (>=0.13)", "websockets (>=10.4)"]
 
 [[package]]
+name = "werkzeug"
+version = "3.0.3"
+description = "The comprehensive WSGI web application library."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "werkzeug-3.0.3-py3-none-any.whl", hash = "sha256:fc9645dc43e03e4d630d23143a04a7f947a9a3b5727cd535fdfe155a17cc48c8"},
+    {file = "werkzeug-3.0.3.tar.gz", hash = "sha256:097e5bfda9f0aba8da6b8545146def481d06aa7d3266e7448e2cccf67dd8bd18"},
+]
+
+[package.dependencies]
+MarkupSafe = ">=2.1.1"
+
+[package.extras]
+watchdog = ["watchdog (>=2.3)"]
+
+[[package]]
 name = "win32-setctime"
 version = "1.1.0"
 description = "A small Python utility to set file creation time on Windows"
@@ -4179,4 +4196,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "5069bda7478e5c8ff89ad86e64b5106a392e32439b1ab16b0859864a2a641a8d"
+content-hash = "781a9f56a1dd1532bf34bbefabd937ab59d16318af15038d74b17901dae6ba26"
