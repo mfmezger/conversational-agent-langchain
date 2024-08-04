@@ -1,4 +1,5 @@
 """Route to handle the delection of a vector from the database."""
+
 from fastapi import APIRouter
 from loguru import logger
 from qdrant_client import models
@@ -27,6 +28,7 @@ def delete(page: int, source: str, llm_provider: LLMProvider = LLMProvider.OPENA
     Returns:
     -------
         UpdateResult: Result of the Update.
+
     """
     logger.info("Deleting Vector from Database")
     if llm_provider == LLMProvider.ALEPH_ALPHA:

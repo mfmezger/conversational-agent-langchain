@@ -1,11 +1,11 @@
 """Strategy Pattern."""
+
 from abc import ABC, abstractmethod
 
 from agent.data_model.request_data_model import LLMBackend, SearchParams
 
 
 class LLMBase(ABC):
-
     """The LLM Base Strategy."""
 
     @abstractmethod

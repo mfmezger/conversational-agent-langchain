@@ -1,4 +1,5 @@
 """Script is used to initialize the Qdrant db backend with (Azure) OpenAI."""
+
 import os
 
 import openai
@@ -21,7 +22,6 @@ load_dotenv()
 
 
 class OpenAIService(LLMBase):
-
     """OpenAI Backend Service."""
 
     @load_config(location="config/main.yml")

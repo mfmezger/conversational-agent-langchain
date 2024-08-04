@@ -1,4 +1,5 @@
 """Vector Database Utilities."""
+
 import os
 
 from langchain_core.embeddings import Embeddings
@@ -53,6 +54,7 @@ def load_vec_db_conn(cfg: DictConfig) -> tuple[QdrantClient, DictConfig]:
         Tuple[QdrantClient, DictConfig]: A tuple containing the created
                                          QdrantClient instance and the
                                          original configuration object.
+
     """
     return (QdrantClient(cfg.qdrant.url, port=cfg.qdrant.port, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=cfg.qdrant.prefer_grpc), cfg)
 

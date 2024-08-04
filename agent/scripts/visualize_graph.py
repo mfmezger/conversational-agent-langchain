@@ -1,4 +1,5 @@
 """Visualizing the Langgraph Graph."""
+
 from pathlib import Path
 
 from langchain_core.runnables.graph import MermaidDrawMethod

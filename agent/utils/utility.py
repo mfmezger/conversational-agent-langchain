@@ -1,4 +1,5 @@
 """Utility module."""
+
 import uuid
 from collections.abc import Sequence
 from pathlib import Path
@@ -121,6 +122,7 @@ def load_prompt_template(prompt_name: str, task: str) -> PromptTemplate:
     Returns:
     -------
         PromptTemplate: The loaded prompt template
+
     """
     try:
         with Path(Path("prompts") / task / prompt_name).open(encoding="utf-8") as f:
@@ -176,6 +178,7 @@ def extract_text_from_langchain_documents(docs: list[Document]) -> str:
     Returns:
     -------
         str: The extracted text.
+
     """
     logger.info(f"Loaded {len(docs)} documents.")
     return "\n\n".join(f"Context {i+1}:\n{doc.page_content}" for i, doc in enumerate(docs))
@@ -191,6 +194,7 @@ def format_docs_for_citations(docs: Sequence[Document]) -> str:
     Returns:
     -------
         str: Combined documents in a format suitable for citations.
+
     """
     formatted_docs = []
     for i, doc in enumerate(docs):

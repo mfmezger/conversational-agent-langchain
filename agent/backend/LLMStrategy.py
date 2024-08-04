@@ -1,4 +1,5 @@
 """The Strategy Pattern for the LLM Backend."""
+
 from typing import ClassVar
 
 from agent.backend.LLMBase import LLMBase
@@ -11,7 +12,6 @@ from agent.data_model.request_data_model import LLMProvider, SearchParams
 
 
 class LLMStrategyFactory:
-
     """The Factory to select the correct LLM Backend.
 
     Raises
@@ -33,7 +33,7 @@ class LLMStrategyFactory:
     }
 
     @staticmethod
-    def get_strategy(strategy_type: str, token: str, collection_name: str) -> LLMBase:
+    def get_strategy(strategy_type: str, collection_name: str) -> LLMBase:
         """Get the correct strategy.
 
         Args:
@@ -59,7 +59,6 @@ class LLMStrategyFactory:
 
 
 class LLMContext:
-
     """The Context for the LLM Backend."""
 
     def __init__(self, llm: LLMBase) -> None:

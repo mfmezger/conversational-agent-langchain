@@ -1,11 +1,11 @@
 """Script that contains the Pydantic Models for the Rest Response."""
+
 from enum import Enum
 
 from pydantic import BaseModel, Field
 
 
 class Status(str, Enum):
-
     """Status."""
 
     SUCCESS = "success"
@@ -13,7 +13,6 @@ class Status(str, Enum):
 
 
 class SearchResponse(BaseModel):
-
     """The request parameters for explaining the output."""
 
     text: str = Field(..., title="Text", description="The text of the document.")
@@ -23,7 +22,6 @@ class SearchResponse(BaseModel):
 
 
 class EmbeddingResponse(BaseModel):
-
     """The Response for the Embedding endpoint."""
 
     status: Status = Field(Status.SUCCESS, title="Status", description="The status of the request.")
@@ -31,7 +29,6 @@ class EmbeddingResponse(BaseModel):
 
 
 class QAResponse(BaseModel):
-
     """The Response for the QA endpoint."""
 
     answer: str = Field(..., title="Answer", description="The answer to the question.")
@@ -39,7 +36,6 @@ class QAResponse(BaseModel):
 
 
 class ExplainQAResponse(BaseModel):
-
     """The Response for the Explain QA endpoint."""
 
     answer: str = Field(..., title="Answer", description="The answer to the question.")

@@ -23,7 +23,6 @@ load_dotenv()
 
 
 class OllamaService(LLMBase):
-
     """Wrapper for Ollama llms."""
 
     @load_config(location="config/main.yml")
@@ -98,6 +97,7 @@ class OllamaService(LLMBase):
             Returns:
             -------
                 list[Document]: List of Langchain Documents.
+
             """
             docs, scores = zip(
                 *self.vector_db.similarity_search_with_score(query, k=search.k, filter=search.filter, score_threshold=search.score_threshold), strict=False

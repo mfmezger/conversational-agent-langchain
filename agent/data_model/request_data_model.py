@@ -1,4 +1,5 @@
 """Script that contains the Pydantic Models for the Rest Request."""
+
 from enum import Enum
 
 from fastapi import UploadFile
@@ -6,7 +7,6 @@ from pydantic import BaseModel, Field
 
 
 class LLMProvider(str, Enum):
-
     """The LLM Provider Enum."""
 
     ALEPH_ALPHA = "aa"
@@ -34,7 +34,6 @@ class LLMProvider(str, Enum):
 
 
 class Language(str, Enum):
-
     """The Language Enum."""
 
     DETECT = "detect"
@@ -43,7 +42,6 @@ class Language(str, Enum):
 
 
 class LLMBackend(BaseModel):
-
     """The LLM Backend Model."""
 
     llm_provider: LLMProvider = Field(LLMProvider.ALEPH_ALPHA, description="The LLM provider to use for embedding.")
@@ -51,7 +49,6 @@ class LLMBackend(BaseModel):
 
 
 class EmbeddTextFilesRequest(BaseModel):
-
     """The request for the Embedd Text Files endpoint."""
 
     files: list[UploadFile] = Field(..., description="The list of text files to embed.")
@@ -59,7 +56,6 @@ class EmbeddTextFilesRequest(BaseModel):
 
 
 class SearchParams(BaseModel):
-
     """The request parameters for searching the database."""
 
     query: str = Field(..., title="Query", description="The search query.")
@@ -70,7 +66,6 @@ class SearchParams(BaseModel):
 
 
 class ChatMessages(BaseModel):
-
     """The Chat Messages Model."""
 
     role: str = Field(..., title="Role", description="The role of the sender can be either user or assistant.")
@@ -78,7 +73,6 @@ class ChatMessages(BaseModel):
 
 
 class RAGRequest(BaseModel):
-
     """Request for the QA endpoint."""
 
     # language: Language | None = Field(Language.DETECT, title="Language", description="The language to use for the answer.")
@@ -86,7 +80,6 @@ class RAGRequest(BaseModel):
 
 
 class EmbeddTextRequest(BaseModel):
-
     """The request parameters for embedding text."""
 
     text: str = Field(..., title="Text", description="The text to embed.")
@@ -95,7 +88,6 @@ class EmbeddTextRequest(BaseModel):
 
 
 class CustomPromptCompletion(BaseModel):
-
     """The Custom Prompt Completion Model."""
 
     prompt: str = Field(..., title="Prompt", description="The prompt to use for the completion.")
@@ -106,7 +98,6 @@ class CustomPromptCompletion(BaseModel):
 
 
 class ExplainQARequest(BaseModel):
-
     """Request for the QA endpoint."""
 
     rag_request: RAGRequest

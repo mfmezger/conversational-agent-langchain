@@ -1,4 +1,5 @@
 """The gui for the semantic search."""
+
 from pathlib import Path
 
 import requests

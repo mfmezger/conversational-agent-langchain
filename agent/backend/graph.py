@@ -1,4 +1,5 @@
 """Defining the graph."""
+
 import os
 from collections.abc import Sequence
 from typing import Annotated, Literal, TypedDict
@@ -19,15 +20,14 @@ from langchain_core.prompts import (
     PromptTemplate,
 )
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import ConfigurableField, RunnableConfig
+from langchain_core.runnables import ConfigurableField, RunnableConfig, chain
 from langchain_openai import ChatOpenAI
 from langchain_qdrant import Qdrant
-from langchain_core.runnables import chain
 from langgraph.graph import END, StateGraph, add_messages
 from qdrant_client import QdrantClient
-from agent.data_model.request_data_model import LLMProvider
 
 from agent.backend.prompts import COHERE_RESPONSE_TEMPLATE, REPHRASE_TEMPLATE, RESPONSE_TEMPLATE
+from agent.data_model.request_data_model import LLMProvider
 from agent.utils.utility import format_docs_for_citations
 
 OPENAI_MODEL_KEY = "openai_gpt_3_5_turbo"
@@ -36,7 +36,6 @@ OLLAMA_MODEL_KEY = "ollama_llama8b3.1"
 
 
 class AgentState(TypedDict):
-
     """State of the Agent."""
 
     query: str
@@ -73,6 +72,7 @@ def get_score_retriever() -> BaseRetriever:
     Returns
     -------
         BaseRetriever: _description_
+
     """
     embedding = CohereEmbeddings(model="embed-multilingual-v3.0")
 
@@ -91,6 +91,7 @@ def get_score_retriever() -> BaseRetriever:
         Returns:
         -------
             list[Document]: List of Langchain Documents.
+
         """
         docs, scores = zip(*vector_db.similarity_search_with_score(query), strict=False)
         for doc, score in zip(docs, scores, strict=False):
@@ -107,6 +108,7 @@ def get_retriever() -> BaseRetriever:
     Returns
     -------
         BaseRetriever: Qdrant + Cohere Embeddings Retriever
+
     """
     embedding = CohereEmbeddings(model="embed-multilingual-v3.0")
 
@@ -126,6 +128,7 @@ def retrieve_documents(state: AgentState) -> AgentState:
     Returns:
     -------
         AgentState: Modified Graph State.
+
     """
     retriever = get_retriever()
     messages = convert_to_messages(state["messages"])
@@ -144,6 +147,7 @@ def retrieve_documents_with_chat_history(state: AgentState) -> AgentState:
     Returns:
     -------
         AgentState: Modified Graph State.
+
     """
     retriever = get_retriever()
     model = llm.with_config(tags=["nostream"])
@@ -168,6 +172,7 @@ def route_to_retriever(
     Returns
     -------
         Literal["retriever", "retriever_with_chat_history"]: Choosen retriever method.
+
     """
     # at this point in the graph execution there is exactly one (i.e. first) message from the user,
     # so use basic retriever without chat history
@@ -187,6 +192,7 @@ def get_chat_history(messages: Sequence[BaseMessage]) -> Sequence[BaseMessage]:
     Returns:
     -------
         Sequence[BaseMessage]: Chat history as Langchain messages.
+
     """
     return [
         {"content": message.content, "role": message.type}
@@ -207,6 +213,7 @@ def generate_response(state: AgentState, model: LanguageModelLike, prompt_templa
     Returns:
     -------
         AgentState: Modified Graph State.
+
     """
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -240,6 +247,7 @@ def generate_response_default(state: AgentState) -> AgentState:
     Returns:
     -------
         AgentState: Modified Graph State.
+
     """
     return generate_response(state, llm, RESPONSE_TEMPLATE)
 
@@ -254,6 +262,7 @@ def generate_response_cohere(state: AgentState) -> AgentState:
     Returns:
     -------
         AgentState: Modified Graph State.
+
     """
     model = llm.bind(documents=state["documents"])
     return generate_response(state, model, COHERE_RESPONSE_TEMPLATE)
@@ -271,6 +280,7 @@ def route_to_response_synthesizer(state: AgentState, config: RunnableConfig) -> 
     Returns:
     -------
         Literal["response_synthesizer", "response_synthesizer_cohere"]: Choosen response synthesizer method.
+
     """
     model_name = config.get("configurable", {}).get("model_name", OPENAI_MODEL_KEY)
     if model_name == COHERE_MODEL_KEY:
@@ -285,6 +295,7 @@ def build_graph() -> StateGraph:
     Returns
     -------
         Graph: The generated graph for RAG.
+
     """
     workflow = StateGraph(AgentState)
 

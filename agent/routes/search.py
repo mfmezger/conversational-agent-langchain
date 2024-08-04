@@ -1,4 +1,5 @@
 """The search routes."""
+
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from loguru import logger

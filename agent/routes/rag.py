@@ -1,4 +1,5 @@
 """The RAG Routes."""
+
 import json
 from collections.abc import AsyncGenerator
 

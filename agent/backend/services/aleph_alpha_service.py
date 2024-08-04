@@ -17,10 +17,8 @@ from langchain.docstore.document import Document as LangchainDocument
 from langchain.text_splitter import NLTKTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_community.embeddings import AlephAlphaAsymmetricSemanticEmbedding
-from langchain_community.llms import AlephAlpha
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough, chain
+from langchain_core.runnables import chain
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
@@ -30,7 +28,7 @@ from agent.data_model.request_data_model import (
     RAGRequest,
     SearchParams,
 )
-from agent.utils.utility import extract_text_from_langchain_documents, generate_prompt, load_prompt_template
+from agent.utils.utility import generate_prompt, load_prompt_template
 from agent.utils.vdb import generate_collection, init_vdb
 
 nltk.download("punkt")  # This needs to be installed for the tokenizer to work.
@@ -41,7 +39,6 @@ tokenizer = None
 
 
 class AlephAlphaService(LLMBase):
-
     """Aleph Alpha Strategy implementation."""
 
     @load_config(location="config/main.yml")
@@ -230,6 +227,7 @@ class AlephAlphaService(LLMBase):
             Returns:
             -------
                 list[Document]: List of Langchain Documents.
+
             """
             docs, scores = zip(
                 *self.vector_db.similarity_search_with_score(query, k=search.k, filter=search.filter, score_threshold=search.score_threshold), strict=False
@@ -240,23 +238,6 @@ class AlephAlphaService(LLMBase):
             return docs
 
         return retriever_with_score
-
-    def create_rag_chain(self, rag: RAGRequest, search: SearchParams) -> tuple:
-        """Retrieval Augmented Generation."""
-        search_chain = self.create_search_chain(search=search)
-        llm = AlephAlpha(
-            model=self.cfg.aleph_alpha_completion.model,
-            maximum_tokens=self.cfg.aleph_alpha_completion.max_tokens,
-            stop_sequences=self.cfg.aleph_alpha_completion.stop_sequences,
-            top_p=self.cfg.aleph_alpha_completion.top_p,
-            temperature=self.cfg.aleph_alpha_completion.temperature,
-            repetition_penalties_include_completion=self.cfg.aleph_alpha_completion.repetition_penalties_include_completion,
-            repetition_penalties_include_prompt=self.cfg.aleph_alpha_completion.repetition_penalties_include_prompt,
-        )
-
-        rag_chain_from_docs = RunnablePassthrough.assign(context=(lambda x: extract_text_from_langchain_documents(x["context"]))) | self.prompt | llm | StrOutputParser()
-
-        return RunnableParallel({"context": search_chain, "question": RunnablePassthrough()}).assign(answer=rag_chain_from_docs)
 
     def explain_qa(self, document: LangchainDocument, explain_threshold: float, query: str) -> tuple:
         """Explian QA WIP."""

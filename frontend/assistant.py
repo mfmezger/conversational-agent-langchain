@@ -1,4 +1,5 @@
 """The main gui."""
+
 from pathlib import Path
 
 import requests

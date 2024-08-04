@@ -23,7 +23,6 @@ load_dotenv()
 
 
 class GPT4AllService(LLMBase):
-
     """GPT4ALL Backend Service."""
 
     @load_config(location="config/main.yml")

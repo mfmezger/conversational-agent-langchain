@@ -1,4 +1,5 @@
 """Routes for the collection management."""
+
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
@@ -20,6 +21,7 @@ def create_collection(llm_provider: LLMProvider, collection_name: str) -> JSONRe
     Returns:
     -------
         JSONResponse: Success Message.
+
     """
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_provider, token="", collection_name=collection_name))
     service.createe_collection_collection(name=collection_name)

@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
-langchain = "^0.2.11"
+langchain = "^0.2.12"
 loguru = "^0.7.2"
 omegaconf = "^2.3.0"
 aleph-alpha-client = "^7.1.0"
@@ -15,7 +15,7 @@ tiktoken = "^0.7.0"
 python-dotenv = "^1.0.1"
 httpx = "^0.27.0"
 python-multipart = "^0.0.9"
-fastapi = "^0.111.0"
+fastapi = "^0.112.0"
 openai = "^1.35.3"
 qdrant-client = "^1.8.2" # for qdrant
 uvicorn = "^0.30.1"
