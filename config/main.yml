@@ -1,8 +1,8 @@
 qdrant:
   url: http://qdrant
   # url: http://localhost
-  port: 6333
-  prefer_grpc: false
+  port: 6334
+  prefer_grpc: True
   collection_name_aa: aleph_alpha
   collection_name_gpt4all: gpt4all
   collection_name_openai: openai
