@@ -9,9 +9,7 @@ from pydantic import BaseModel, Field
 class LLMProvider(str, Enum):
     """The LLM Provider Enum."""
 
-    ALEPH_ALPHA = "aa"
     OPENAI = "openai"
-    GPT4ALL = "gpt4all"
     COHERE = "cohere"
     OLLAMA = "ollama"
 

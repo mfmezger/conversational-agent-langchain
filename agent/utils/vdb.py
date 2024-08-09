@@ -98,8 +98,6 @@ def generate_collection(collection_name: str, embeddings_size: int) -> None:
 @load_config("config/main.yml")
 def initialize_all_vector_dbs(cfg: DictConfig) -> None:
     """Initializes all vector dbs."""
-    initialize_vector_db(cfg.qdrant.collection_name_aa, cfg.aleph_alpha_embeddings.size)
     initialize_vector_db(cfg.qdrant.collection_name_openai, cfg.openai_embeddings.size)
-    initialize_vector_db(cfg.qdrant.collection_name_gpt4all, 2048)
     initialize_vector_db(cfg.qdrant.collection_name_cohere, cfg.cohere_embeddings.size)
     initialize_vector_db(cfg.qdrant.collection_name_ollama, cfg.ollama_embeddings.size)

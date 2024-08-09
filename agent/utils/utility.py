@@ -50,63 +50,6 @@ def combine_text_from_list(input_list: list) -> str:
     return combined_text
 
 
-def detect_language(text: str) -> str:
-    """Detect the language.
-
-    Args:
-    ----
-        text (str): The input text.
-
-    Returns:
-    -------
-        str: The language which was detected.
-
-    """
-    detected_lang = detector.detect_language_of(text)
-    if detected_lang == "Language.ENGLISH":
-        language = "en"
-    elif detected_lang == "Language.GERMAN":
-        language = "de"
-    else:
-        logger.info(f"Detected Language is not supported. Using English. Detected language was {detected_lang}.")
-        language = "en"
-    return language
-
-
-def generate_prompt(prompt_name: str, text: str, query: str = "", language: str = "detect") -> str:
-    """Generates a prompt for the Luminous API using a Jinja template.
-
-    Args:
-    ----
-        prompt_name (str): The name of the file containing the Jinja template.
-        text (str): The text to be inserted into the template.
-        query (str): The query to be inserted into the template.
-        language (str): The language the query should output. Or it can be detected
-
-    Returns:
-    -------
-        str: The generated prompt.
-
-    Raises:
-    ------
-        FileNotFoundError: If the specified prompt file cannot be found.
-
-    """
-    try:  # TODO: Adding the history to the prompt
-        if language == "detect":
-            language = detect_language(text)
-        if language not in {"en", "de"}:
-            msg = "Language not supported."
-            raise ValueError(msg)
-        with Path(Path("prompts") / language / prompt_name).open(encoding="utf-8") as f:
-            prompt = PromptTemplate.from_template(f.read(), template_format="jinja2")
-    except FileNotFoundError as e:
-        msg = f"Prompt file '{prompt_name}' not found."
-        raise FileNotFoundError(msg) from e
-
-    return prompt.format(text=text, query=query) if query else prompt.format(text=text)
-
-
 def load_prompt_template(prompt_name: str, task: str) -> PromptTemplate:
     """Loading a task specific prompt template.
 
@@ -168,22 +111,6 @@ def create_tmp_folder() -> str:
     return str(tmp_dir)
 
 
-def extract_text_from_langchain_documents(docs: list[Document]) -> str:
-    """Extracts the text from the langchain documents.
-
-    Args:
-    ----
-        docs (list[Document]): List of Lanchain documents.
-
-    Returns:
-    -------
-        str: The extracted text.
-
-    """
-    logger.info(f"Loaded {len(docs)} documents.")
-    return "\n\n".join(f"Context {i+1}:\n{doc.page_content}" for i, doc in enumerate(docs))
-
-
 def format_docs_for_citations(docs: Sequence[Document]) -> str:
     """Format the documents for citations.
 
@@ -201,8 +128,3 @@ def format_docs_for_citations(docs: Sequence[Document]) -> str:
         doc_string = f"<doc id='{i}'>{doc.page_content}</doc>"
         formatted_docs.append(doc_string)
     return "\n".join(formatted_docs)
-
-
-if __name__ == "__main__":
-    # test the function
-    generate_prompt("aleph_alpha_qa.j2", "This is a test text.", "What is the meaning of life?")
