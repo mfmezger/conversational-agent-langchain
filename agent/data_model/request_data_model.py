@@ -42,7 +42,7 @@ class Language(str, Enum):
 class LLMBackend(BaseModel):
     """The LLM Backend Model."""
 
-    llm_provider: LLMProvider = Field(LLMProvider.ALEPH_ALPHA, description="The LLM provider to use for embedding.")
+    llm_provider: LLMProvider = Field(LLMProvider.COHERE, description="The LLM provider to use for embedding.")
     collection_name: str | None = Field("", description="The name of the Qdrant Collection.")
 
 
