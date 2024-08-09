@@ -15,7 +15,7 @@ from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import RAGRequest, SearchParams
-from agent.utils.utility import generate_prompt, load_prompt_template
+from agent.utils.utility import load_prompt_template
 from agent.utils.vdb import generate_collection, init_vdb
 
 load_dotenv()
@@ -110,7 +110,7 @@ class OpenAIService(LLMBase):
             str: The summary of the text.
 
         """
-        prompt = generate_prompt(prompt_name="openai-summarization.j2", text=text, language="de")
+        prompt = load_prompt_template(prompt_name="openai-summarization.j2", text=text, language="de")
 
         openai.api_key = self.token
         response = openai.chat.completions.create(

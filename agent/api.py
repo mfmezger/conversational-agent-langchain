@@ -7,7 +7,7 @@ from fastapi.openapi.utils import get_openapi
 from loguru import logger
 from phoenix.trace.langchain import LangChainInstrumentor
 
-from agent.routes import collection, delete, embeddings, explanation, rag, search
+from agent.routes import collection, delete, embeddings, rag, search
 from agent.utils.vdb import initialize_all_vector_dbs
 
 LangChainInstrumentor().instrument()
@@ -54,7 +54,6 @@ app.include_router(collection.router, prefix="/collection")
 app.include_router(embeddings.router, prefix="/embeddings")
 app.include_router(search.router, prefix="/semantic")
 app.include_router(rag.router, prefix="/rag")
-app.include_router(explanation.router, prefix="/explanation")
 app.include_router(delete.router, prefix="/embeddings")
 
 

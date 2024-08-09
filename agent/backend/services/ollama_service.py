@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_core.documents import Document
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import chain
 from langchain_text_splitters import NLTKTextSplitter
@@ -16,7 +15,6 @@ from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import (
     SearchParams,
 )
-from agent.utils.utility import load_prompt_template
 from agent.utils.vdb import generate_collection, init_vdb
 
 load_dotenv()
@@ -38,9 +36,6 @@ class OllamaService(LLMBase):
             self.collection_name = self.cfg.qdrant.collection_name_ollama
 
         embedding = OllamaEmbeddings(model=self.cfg.ollama_embeddings.embedding_model_name)
-
-        template = load_prompt_template(prompt_name="cohere_chat.j2", task="chat")
-        self.prompt = ChatPromptTemplate.from_template(template=template, template_format="jinja2")
 
         self.vector_db = init_vdb(self.cfg, self.collection_name, embedding=embedding)
 

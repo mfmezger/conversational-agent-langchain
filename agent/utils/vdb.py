@@ -10,7 +10,7 @@ from qdrant_client import QdrantClient, models
 from qdrant_client.http.exceptions import UnexpectedResponse
 from ultra_simple_config import load_config
 
-sparse_embeddings = FastEmbedSparse(model_name="Qdrant/BM25")
+sparse_embeddings = FastEmbedSparse(model_name="Qdrant/bm25")
 
 
 def init_vdb(cfg: DictConfig, collection_name: str, embedding: Embeddings) -> Qdrant:
