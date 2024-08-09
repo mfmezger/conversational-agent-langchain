@@ -14,21 +14,14 @@ class LLMProvider(str, Enum):
     OLLAMA = "ollama"
 
     @classmethod
-    def normalize(cls: type["LLMProvider"], value: str) -> "LLMProvider":
-        """Normalize the LLM provider."""
-        normalized_value = value.lower().replace("-", "").replace("_", "")
-        if normalized_value in {"aa", "alephalpha"}:
-            return cls.ALEPH_ALPHA
-        elif normalized_value == "openai":
-            return cls.OPENAI
-        elif normalized_value == "gpt4all":
-            return cls.GPT4ALL
-        elif normalized_value == "cohere":
-            return cls.COHERE
-        elif normalized_value == "ollama":
-            return cls.OLLAMA
-        msg = f"Unsupported LLM provider: {value}"
-        raise ValueError(msg)
+    def from_normalized_value(cls, normalized_value: str) -> str:
+        """Map the normalized value to the correct LLM Provider."""
+        mapping = {
+            "openai": cls.OPENAI,
+            "cohere": cls.COHERE,
+            "ollama": cls.OLLAMA,
+        }
+        return mapping.get(normalized_value)
 
 
 class Language(str, Enum):

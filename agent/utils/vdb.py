@@ -3,12 +3,14 @@
 import os
 
 from langchain_core.embeddings import Embeddings
-from langchain_qdrant import Qdrant
+from langchain_qdrant import FastEmbedSparse, Qdrant, RetrievalMode
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.exceptions import UnexpectedResponse
 from ultra_simple_config import load_config
+
+sparse_embeddings = FastEmbedSparse(model_name="Qdrant/BM25")
 
 
 def init_vdb(cfg: DictConfig, collection_name: str, embedding: Embeddings) -> Qdrant:
@@ -29,7 +31,7 @@ def init_vdb(cfg: DictConfig, collection_name: str, embedding: Embeddings) -> Qd
 
     logger.info(f"USING COLLECTION: {collection_name}")
 
-    vector_db = Qdrant(client=qdrant_client, collection_name=collection_name, embeddings=embedding)
+    vector_db = Qdrant(client=qdrant_client, collection_name=collection_name, embeddings=embedding, retrival_mode=RetrievalMode.HYBRID)
     logger.info("SUCCESS: Qdrant DB initialized.")
 
     return vector_db
