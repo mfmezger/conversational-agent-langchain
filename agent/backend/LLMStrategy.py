@@ -3,9 +3,7 @@
 from typing import ClassVar
 
 from agent.backend.LLMBase import LLMBase
-from agent.backend.services.aleph_alpha_service import AlephAlphaService
 from agent.backend.services.cohere_service import CohereService
-from agent.backend.services.gpt4all_service import GPT4AllService
 from agent.backend.services.ollama_service import OllamaService
 from agent.backend.services.open_ai_service import OpenAIService
 from agent.data_model.request_data_model import LLMProvider, SearchParams
@@ -25,9 +23,7 @@ class LLMStrategyFactory:
     """
 
     _strategies: ClassVar = {
-        LLMProvider.ALEPH_ALPHA: AlephAlphaService,
         LLMProvider.OPENAI: OpenAIService,
-        LLMProvider.GPT4ALL: GPT4AllService,
         LLMProvider.COHERE: CohereService,
         LLMProvider.OLLAMA: OllamaService,
     }
