@@ -35,6 +35,7 @@ langchain-qdrant = "^0.1.3"
 langgraph = "^0.1.1"
 arize-phoenix = {extras = ["evals"], version = "^4.5.0"}
 werkzeug = "^3.0.3"
+fastembed = "^0.3.4"
 
 
 [tool.poetry.group.dev.dependencies]
