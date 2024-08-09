@@ -35,18 +35,14 @@ At the moment i am reworking to langgraph, therefore not all versions on main wi
 
 - [Cohere](https://cohere.com/)
 - [Ollama](https://ollama.com/)
-- [Aleph Alpha Luminous](https://aleph-alpha.com/)
-- [GPT4All](https://gpt4all.io/index.html)
 - [(Azure) OpenAI](https://openai.com/)
 
 
 
 ## Recent Updates
-- Complete Rework to match the Lanchain Expression Language (LCEL)
+- Complete Rework to Langgraph
 - Adding Cohere
 - Adding Ollama
-
-
 
 If you want to use an Aleph Alpha only backend i would recommend my other backend: https://github.com/mfmezger/aleph-alpha-rag.
 
