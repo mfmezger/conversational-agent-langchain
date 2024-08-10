@@ -3,17 +3,16 @@
 import os
 
 from langchain_core.embeddings import Embeddings
-from langchain_qdrant import FastEmbedSparse, Qdrant, RetrievalMode
+from langchain_qdrant import FastEmbedSparse, QdrantVectorStore, RetrievalMode
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient, models
-from qdrant_client.http.exceptions import UnexpectedResponse
 from ultra_simple_config import load_config
 
 sparse_embeddings = FastEmbedSparse(model_name="Qdrant/bm25")
 
 
-def init_vdb(cfg: DictConfig, collection_name: str, embedding: Embeddings) -> Qdrant:
+def init_vdb(cfg: DictConfig, collection_name: str, embedding: Embeddings) -> QdrantVectorStore:
     """Establish a connection to the Qdrant DB.
 
     Args:
@@ -31,7 +30,14 @@ def init_vdb(cfg: DictConfig, collection_name: str, embedding: Embeddings) -> Qd
 
     logger.info(f"USING COLLECTION: {collection_name}")
 
-    vector_db = Qdrant(client=qdrant_client, collection_name=collection_name, embeddings=embedding, retrieval_mode=RetrievalMode.HYBRID)
+    vector_db = QdrantVectorStore(
+        client=qdrant_client,
+        collection_name=collection_name,
+        embedding=embedding,
+        sparse_embedding=sparse_embeddings,
+        retrieval_mode=RetrievalMode.HYBRID,
+        sparse_vector_name="fast-sparse-bm25",
+    )
     logger.info("SUCCESS: Qdrant DB initialized.")
 
     return vector_db
@@ -72,10 +78,9 @@ def initialize_vector_db(collection_name: str, embeddings_size: int) -> None:
     """
     qdrant_client, _ = load_vec_db_conn()
 
-    try:
-        qdrant_client.get_collection(collection_name=collection_name)
+    if qdrant_client.collection_exists(collection_name=collection_name):
         logger.info(f"SUCCESS: Collection {collection_name} already exists.")
-    except UnexpectedResponse:
+    else:
         generate_collection(collection_name=collection_name, embeddings_size=embeddings_size)
 
 
@@ -90,9 +95,11 @@ def generate_collection(collection_name: str, embeddings_size: int) -> None:
 
     """
     qdrant_client, _ = load_vec_db_conn()
+    qdrant_client.set_sparse_model("Qdrant/bm25")
     qdrant_client.create_collection(
         collection_name=collection_name,
         vectors_config=models.VectorParams(size=embeddings_size, distance=models.Distance.COSINE),
+        sparse_vectors_config=qdrant_client.get_fastembed_sparse_vector_params(),
     )
     logger.info(f"SUCCESS: Collection {collection_name} created.")
 

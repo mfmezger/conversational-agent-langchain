@@ -1492,24 +1492,24 @@ tenacity = ">=8.1.0,<8.4.0 || >8.4.0,<9.0.0"
 
 [[package]]
 name = "langchain-cohere"
-version = "0.2.0"
+version = "0.1.9"
 description = "An integration package connecting Cohere and LangChain"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langchain_cohere-0.2.0-py3-none-any.whl", hash = "sha256:d1462d3bb1897fe5637896063f89c0cef4e3e791fe239825555b1dd97c77acd5"},
-    {file = "langchain_cohere-0.2.0.tar.gz", hash = "sha256:5590e40de766e304a89bfdef70e64d1402ee45d4c416239213ddfd00d4a17eed"},
+    {file = "langchain_cohere-0.1.9-py3-none-any.whl", hash = "sha256:96d6a15125797319474ac84b54024e5024f3f5fc45032ebf228d95d6998c9b13"},
+    {file = "langchain_cohere-0.1.9.tar.gz", hash = "sha256:549620d23bc3d77f62d1045787095fe2c1cfa233dba69455139f9a2f65f952fa"},
 ]
 
 [package.dependencies]
 cohere = ">=5.5.6,<6.0"
-langchain-core = ">=0.2.24,<0.3"
+langchain-core = ">=0.2.2,<0.3"
 langchain-experimental = ">=0.0.6"
 pandas = ">=1.4.3"
 tabulate = ">=0.9.0,<0.10.0"
 
 [package.extras]
-langchain-community = ["langchain-community (>=0.2.10)"]
+langchain-community = ["langchain-community (>=0.2.4)"]
 
 [[package]]
 name = "langchain-community"
@@ -4418,4 +4418,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "99282a14e2a39f02f89d2b1de74a2d40572b1c92f355cb05d74a8bd8bac91a30"
+content-hash = "a2e4a5aad69d8c54d6d690219221dce2415247a7e95d4fe69fb1c50026236f9b"

@@ -12,6 +12,8 @@ from agent.utils.vdb import initialize_all_vector_dbs
 
 LangChainInstrumentor().instrument()
 nltk.download("punkt")
+nltk.download("punkt_tab")
+initialize_all_vector_dbs()
 logger.info("Startup.")
 
 logger.info(
@@ -64,7 +66,7 @@ def read_root() -> str:
 
 
 # initialize the databases
-initialize_all_vector_dbs()
+
 
 if __name__ == "__main__":
     import uvicorn
