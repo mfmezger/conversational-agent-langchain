@@ -31,7 +31,7 @@ def init_vdb(cfg: DictConfig, collection_name: str, embedding: Embeddings) -> Qd
 
     logger.info(f"USING COLLECTION: {collection_name}")
 
-    vector_db = Qdrant(client=qdrant_client, collection_name=collection_name, embeddings=embedding, retrival_mode=RetrievalMode.HYBRID)
+    vector_db = Qdrant(client=qdrant_client, collection_name=collection_name, embeddings=embedding, retrieval_mode=RetrievalMode.HYBRID)
     logger.info("SUCCESS: Qdrant DB initialized.")
 
     return vector_db
