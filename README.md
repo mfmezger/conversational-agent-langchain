@@ -109,11 +109,16 @@ On Linux or Mac you need to adjust your /etc/hosts file to include the following
 127.0.0.1 qdrant
 ```
 
+
+
 First install Python Dependencies:
 
+You need to instal rye if you want to use it for syncing the requirements.lock file. [Rye Installation](https://rye.astral.sh/guide/installation/).
+
 ```bash
-pip install poetry
-poetry install
+rye sync
+# or if you do not want to use rye
+pip install -r requirements.lock
 ```
 
 Start the complete system with:
@@ -156,8 +161,6 @@ mypy rag --explicit-package-bases
 ## Vector Database
 
 Qdrant Dashboard is available at http://127.0.0.1:6333/dashboard. There you need to enter the api key.
-
-
 
 ## Qdrant API Key
 To use the Qdrant API you need to set the correct parameters in the .env file.

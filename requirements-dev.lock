@@ -128,6 +128,8 @@ idna==3.7
     # via yarl
 importlib-metadata==8.0.0
     # via opentelemetry-api
+iniconfig==2.0.0
+    # via pytest
 jinja2==3.1.4
     # via arize-phoenix
 jiter==0.5.0
@@ -291,6 +293,7 @@ packaging==24.1
     # via langchain-core
     # via marshmallow
     # via onnxruntime
+    # via pytest
 pandas==2.2.2
     # via arize-phoenix
     # via arize-phoenix-evals
@@ -299,6 +302,8 @@ parameterized==0.9.0
     # via cohere
 pillow==10.4.0
     # via fastembed
+pluggy==1.5.0
+    # via pytest
 portalocker==2.10.1
     # via qdrant-client
 protobuf==4.25.4
@@ -331,6 +336,7 @@ pypdfium2==4.30.0
     # via agent
 pystemmer==2.2.0.1
     # via fastembed
+pytest==8.3.2
 python-dateutil==2.9.0.post0
     # via botocore
     # via pandas
@@ -464,6 +470,7 @@ wrapt==1.16.0
     # via openinference-instrumentation-llama-index
     # via openinference-instrumentation-openai
     # via opentelemetry-instrumentation
+yappi==1.6.0
 yarl==1.9.4
     # via aiohttp
 zipp==3.20.0
