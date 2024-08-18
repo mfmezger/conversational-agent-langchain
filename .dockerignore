@@ -1,1 +1,8 @@
 vector_db/
+phoenix_data/
+logs/
+data/
+ConvAgentBruno/
+.venv/
+.github/
+.vscode/

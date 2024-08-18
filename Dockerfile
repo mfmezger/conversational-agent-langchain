@@ -1,13 +1,17 @@
 FROM python:3.11
 
-# Copy using poetry.lock* in case it doesn't exist yet
-COPY ./requirements.txt  ./requirements.txt
+# copy python installation files.
+COPY ./requirements.lock  ./requirements.lock
+COPY ./pyproject.toml ./pyproject.toml
+COPY ./README.md ./README.md
 
-RUN pip install -r requirements.txt
+# installing python dependencies
+RUN pip install -r requirements.lock
 
+# copy code and config files.
 COPY ./config /config
 COPY ./prompts /prompts
-COPY ./agent /agent
+COPY ./src/agent /agent
 
 
 ENTRYPOINT ["uvicorn", "agent.api:app", "--host", "0.0.0.0", "--port", "8001"]
