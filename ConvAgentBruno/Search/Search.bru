@@ -1,0 +1,26 @@
+meta {
+  name: Search
+  type: http
+  seq: 1
+}
+
+post {
+  url:
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "search": {
+      "query": "string",
+      "k": 3,
+      "score_threshold": 0,
+      "filter": {}
+    },
+    "llm_backend": {
+      "llm_provider": "aa",
+      "collection_name": ""
+    }
+  }
+}

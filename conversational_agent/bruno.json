@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "conversational_agent",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

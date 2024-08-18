@@ -7,17 +7,19 @@ services:
       - ./logs:/logs
     depends_on:
       - qdrant
-      - streamlit_app
+      # - streamlit_app
     ports:
       - "8001:8001"
+    env_file:
+      - .env
 
-  streamlit_app:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-    platform: linux/amd64
-    ports:
-      - "8501:8501"
+  # streamlit_app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.frontend
+  #   platform: linux/amd64
+  #   ports:
+  #     - "8501:8501"
 
   qdrant:
     image: qdrant/qdrant
@@ -38,3 +40,20 @@ services:
       resources:
         limits:
           memory: 10Gb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/livez"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# docker-compose.yml
+  phoenix:
+    image: arizephoenix/phoenix:latest # Must be greater than 4.0 version to work
+    ports:
+      - 6006:6006  # PHOENIX_PORT
+      - 4317:4317  # PHOENIX_GRPC_PORT
+      - 9090:9090  # [Optional] PROMETHEUS PORT IF ENABLED
+    environment:
+      - PHOENIX_WORKING_DIR=/mnt/data
+    volumes:
+      - ./phoenix_data:/mnt/data   # PHOENIX_WORKING_DIR

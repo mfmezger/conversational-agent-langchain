@@ -1,0 +1,28 @@
+meta {
+  name: Stream
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://agent:8001/rag/stream
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "rag": {
+      "messages": [
+        {
+          "role": "user",
+          "content": "What is attention?"
+        }
+      ]
+    },
+    "llm_backend": {
+      "llm_provider": "cohere",
+      "collection_name": ""
+    }
+  }
+}

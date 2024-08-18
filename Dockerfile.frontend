@@ -1,16 +1,10 @@
 FROM python:3.11
 
-# install poetry and dependencies
-# Install Poetry
-RUN curl -sSL https://install.python-poetry.org/ | POETRY_HOME=/opt/poetry python && \
-    cd /usr/local/bin && \
-    ln -s /opt/poetry/bin/poetry && \
-    poetry config virtualenvs.create false
+COPY ./frontend/requirements.txt  ./requirements.txt
 
-# Copy using poetry.lock* in case it doesn't exist yet
-COPY . .
+RUN pip install -r requirements.txt
 
-RUN poetry install --no-root --no-dev
+COPY ./frontend /frontend
 
 # CMD ["tail", "-f", "/dev/null"]
-CMD ["poetry", "run", "streamlit", "run", "frontend/pages/2_semantic_search.py", "--theme.base=dark"]
+CMD ["streamlit", "run", "frontend/pages/2_semantic_search.py", "--theme.base=dark"]

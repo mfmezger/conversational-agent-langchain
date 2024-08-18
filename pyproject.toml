@@ -1,72 +1,52 @@
 [tool.poetry]
 name = "agent"
-version = "2.2.6"
+version = "3.0.0"
 description = ""
 authors = ["Marc Mezger <marc.mezger@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
-langchain = "^0.1.0"
-streamlit = "^1.30.0"
+langchain = "^0.2.12"
 loguru = "^0.7.2"
 omegaconf = "^2.3.0"
-aleph-alpha-client = "^6.0.0"
-tiktoken = "^0.5.2"
-python-dotenv = "^1.0.0"
-httpx = "^0.26.0"
-python-multipart = "^0.0.6"
-fastapi = "^0.109.0"
-openai = "^1.7.1"
-grpcio = "^1.60.0"
-grpcio-tools = "^1.60.0" # for qdrant
-qdrant-client = "^1.7.0" # for qdrant
-uvicorn = "^0.25.0"
-gpt4all = "^2.0.2"
-nltk = "^3.8.1"
-pypdfium2 = "^4.26.0"
+tiktoken = "^0.7.0"
+python-dotenv = "^1.0.1"
+httpx = "^0.27.0"
+python-multipart = "^0.0.9"
+fastapi = "^0.112.0"
+openai = "^1.40.3"
+qdrant-client = "^1.8.2" # for qdrant
+uvicorn = "^0.30.5"
+nltk = "^3.8.2"
+pypdfium2 = "^4.30.0"
 lingua-language-detector = "^2.0.2"
-pyarrow = "^14.0.2" # security issue with < 14.0.1
-aiohttp = "^3.9.1" # security issue
+pyarrow = "^17.0.0" # security issue with < 14.0.1
+aiohttp = "^3.10.2" # security issue
 ultra-simple-config = "^0.1.0"
-gitpython = "^3.1.41" # https://github.com/advisories/GHSA-wfm5-v35h-vwf4
-jinja2 = "3.1.3"
+gitpython = "^3.1.43" # https://github.com/advisories/GHSA-wfm5-v35h-vwf4
+jinja2 = "^3.1.4"
+langchain-openai = "^0.1.20"
+langchain-cohere = "0.1.9"
+langchain-community = "^0.2.11"
+langchain-qdrant = "^0.1.3"
+langgraph = "^0.2.3"
+arize-phoenix = {extras = ["evals"], version = "^4.5.0"}
+werkzeug = "^3.0.3"
+fastembed = "^0.3.4"
 
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.8.0"
-pytest = "^7.4.0"
-pylint = "^2.17.4"
-ruff = "^0.0.280"
-pytest-asyncio = "^0.21.0"
-coverage = "^7.2.7"
-types-urllib3 = "^1.26.25.14"
-lxml-stubs = "^0.4.0"
-pandas-stubs = "^2.0.2.230605"
-types-pillow = "^10.0.0.2"
-types-pymysql = "^1.1.0.1"
-types-pyyaml = "^6.0.12.11"
-types-beautifulsoup4 = "^4.12.0.5"
-types-cachetools = "^5.3.0.6"
-types-google-cloud-ndb = "^2.1.0.8"
-types-protobuf = "^4.23.0.2"
-types-psutil = "^5.9.5.16"
-types-psycopg2 = "^2.9.21.11"
-types-python-dateutil = "^2.8.19.14"
-types-pytz = "^2023.3.0.0"
-types-redis = "^4.6.0.3"
-types-regex = "^2023.6.3.1"
-types-requests = "^2.31.0.2"
-types-toml = "^0.10.8.7"
-types-tqdm = "^4.65.0.2"
-types-tzlocal = "^5.0.1.1"
+mypy = "^1.11.0"
+ruff = "^0.5.5"
+
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.settings]
-known_third_party = ["aleph_alpha_client", "dotenv", "fastapi", "gpt4all", "httpx", "langchain", "langchain_community", "langchain_core", "lingua", "loguru", "nltk", "numpy", "omegaconf", "openai", "pydantic", "pytest", "qdrant_client", "requests", "starlette", "streamlit", "tqdm", "ultra_simple_config"]
+known_third_party = ["aleph_alpha_client", "dotenv", "fastapi", "gpt4all", "gpt4all_service", "httpx", "langchain", "langchain_community", "langchain_core", "lingua", "loguru", "nltk", "numpy", "omegaconf", "openai", "pydantic", "pytest", "qdrant_client", "requests", "starlette", "streamlit", "tqdm", "ultra_simple_config"]
 
 [tool.mypy]
 # Disallow dynamic typing
@@ -98,8 +78,3 @@ strict_equality = true
 
 # Config file
 warn_unused_configs = true
-
-[tool.ruff]
-line-length = 170
-[tool.pylint]
-max-line-length = 170
