@@ -1,80 +1,45 @@
-[tool.poetry]
+[project]
 name = "agent"
-version = "3.0.0"
-description = ""
-authors = ["Marc Mezger <marc.mezger@gmail.com>"]
+version = "4.0.0"
+description = "Add your description here"
+authors = [
+    { name = "Marc Fabian Mezger", email = "marc.mezger@gmail.com" }
+]
+dependencies = [
+    "langchain-cohere>=0.2.2",
+    "loguru>=0.7.2",
+    "omegaconf>=2.3.0",
+    "tiktoken>=0.7.0",
+    "python-dotenv>=1.0.1",
+    "fastapi>=0.112.1",
+    "openai>=1.41.0",
+    "langchain-qdrant>=0.1.3",
+    "uvicorn>=0.30.6",
+    "pypdfium2>=4.30.0",
+    "ultra-simple-config>=0.1.0",
+    "langchain-openai>=0.1.22",
+    "langchain-community>=0.2.12",
+    "langgraph>=0.2.4",
+    "arize-phoenix>=4.24.0",
+    "fastembed>=0.3.4",
+    "nltk>=3.9",
+]
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = ">=3.11,<3.12"
-langchain = "^0.2.12"
-loguru = "^0.7.2"
-omegaconf = "^2.3.0"
-tiktoken = "^0.7.0"
-python-dotenv = "^1.0.1"
-httpx = "^0.27.0"
-python-multipart = "^0.0.9"
-fastapi = "^0.112.0"
-openai = "^1.40.3"
-qdrant-client = "^1.8.2" # for qdrant
-uvicorn = "^0.30.5"
-nltk = "^3.8.2"
-pypdfium2 = "^4.30.0"
-lingua-language-detector = "^2.0.2"
-pyarrow = "^17.0.0" # security issue with < 14.0.1
-aiohttp = "^3.10.2" # security issue
-ultra-simple-config = "^0.1.0"
-gitpython = "^3.1.43" # https://github.com/advisories/GHSA-wfm5-v35h-vwf4
-jinja2 = "^3.1.4"
-langchain-openai = "^0.1.20"
-langchain-cohere = "0.1.9"
-langchain-community = "^0.2.11"
-langchain-qdrant = "^0.1.3"
-langgraph = "^0.2.3"
-arize-phoenix = {extras = ["evals"], version = "^4.5.0"}
-werkzeug = "^3.0.3"
-fastembed = "^0.3.4"
-
-
-[tool.poetry.group.dev.dependencies]
-mypy = "^1.11.0"
-ruff = "^0.5.5"
-
+requires-python = ">= 3.11"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.settings]
-known_third_party = ["aleph_alpha_client", "dotenv", "fastapi", "gpt4all", "gpt4all_service", "httpx", "langchain", "langchain_community", "langchain_core", "lingua", "loguru", "nltk", "numpy", "omegaconf", "openai", "pydantic", "pytest", "qdrant_client", "requests", "starlette", "streamlit", "tqdm", "ultra_simple_config"]
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "pytest>=8.3.2",
+    "yappi>=1.6.0",
+]
 
-[tool.mypy]
-# Disallow dynamic typing
-disallow_any_unimported=true
-disallow_any_expr = true
-disallow_any_decorated = true
-disallow_any_generics = true
-disallow_any_explicit = true
-disallow_subclassing_any = true
+[tool.hatch.metadata]
+allow-direct-references = true
 
-# Disallow untyped definitions and calls
-disallow_untyped_calls = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-
-# None and optional handling
-no_implicit_optional = true
-
-# Configuring warnings
-warn_unused_ignores = true
-warn_no_return = true
-warn_return_any = true
-warn_redundant_casts = true
-
-# Misc things
-strict_equality = true
-
-# Config file
-warn_unused_configs = true
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent"]
