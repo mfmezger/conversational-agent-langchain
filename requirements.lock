@@ -177,6 +177,8 @@ langsmith==0.1.99
     # via langchain
     # via langchain-community
     # via langchain-core
+lingua-language-detector==2.0.2
+    # via agent
 llvmlite==0.43.0
     # via numba
     # via pynndescent
@@ -199,7 +201,7 @@ multidict==6.0.5
     # via yarl
 mypy-extensions==1.0.0
     # via typing-inspect
-nltk==3.9
+nltk==3.9.1
     # via agent
 numba==0.60.0
     # via pynndescent

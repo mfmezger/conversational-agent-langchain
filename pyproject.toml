@@ -22,7 +22,8 @@ dependencies = [
     "langgraph>=0.2.4",
     "arize-phoenix>=4.24.0",
     "fastembed>=0.3.4",
-    "nltk>=3.9",
+    "nltk>=3.9.1",
+    "lingua-language-detector>=2.0.2",
 ]
 readme = "README.md"
 requires-python = ">= 3.11"
