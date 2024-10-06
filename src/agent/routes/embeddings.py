@@ -60,7 +60,18 @@ async def post_embed_documents(llm_backend: LLMBackend, files: list[UploadFile] 
 
 @router.post("/string/", tags=["embeddings"])
 async def embedd_text(embedding: EmbeddTextRequest, llm_backend: LLMBackend) -> EmbeddingResponse:
-    """Embedding text."""
+    """Embedding text into the Vectordatabase.
+
+    Args:
+    ----
+        embedding (EmbeddTextRequest): The Embedding Text with Metadata.
+        llm_backend (LLMBackend): The LLM Backend to use.
+
+    Returns:
+    -------
+        EmbeddingResponse: A response with Success or Failure Notification.
+
+    """
     logger.info("Embedding Text")
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, collection_name=llm_backend.collection_name))
     tmp_dir = create_tmp_folder()
