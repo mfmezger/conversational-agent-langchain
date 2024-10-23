@@ -73,9 +73,12 @@ async def embedd_text(embedding: EmbeddTextRequest, llm_backend: LLMBackend) -> 
 
     """
     logger.info("Embedding Text")
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, collection_name=llm_backend.collection_name))
+
+    service = LLMContext(LLMStrategyFactory.get_strategy(provider=llm_backend.llm_provider, collection_name=llm_backend.collection_name))
+
     tmp_dir = create_tmp_folder()
     with (Path(tmp_dir) / (embedding.file_name + ".txt")).open("w") as f:
         f.write(embedding.text)
+
     service.embed_documents(directory=tmp_dir, file_ending=".txt")
     return EmbeddingResponse(status="success", files=[embedding.file_name])

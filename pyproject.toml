@@ -25,6 +25,7 @@ dependencies = [
     "fastembed>=0.3.6",
     "nltk>=3.9.1",
     "lingua-language-detector>=2.0.2",
+    "weave>=0.51.17",
 ]
 
 readme = "README.md"

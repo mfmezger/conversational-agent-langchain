@@ -15,7 +15,7 @@ from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
 from agent.utils.utility import load_prompt_template
-from agent.utils.vdb import generate_collection, init_vdb
+from agent.utils.vdb import _generate_collection, init_vdb
 
 load_dotenv()
 
@@ -74,7 +74,7 @@ class OpenAIService(LLMBase):
             bool: True if the collection was created successfully.
 
         """
-        generate_collection(name, self.cfg.openai_embeddings.size)
+        _generate_collection(name, self.cfg.openai_embeddings.size)
         logger.info(f"SUCCESS: Collection {name} created.")
         return True
 

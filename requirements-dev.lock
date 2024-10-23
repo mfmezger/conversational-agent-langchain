@@ -13,6 +13,7 @@
 aiohappyeyeballs==2.3.7
     # via aiohttp
 aiohttp==3.10.4
+    # via gql
     # via langchain
     # via langchain-community
 aioitertools==0.11.0
@@ -28,6 +29,7 @@ annotated-types==0.7.0
 antlr4-python3-runtime==4.9.3
     # via omegaconf
 anyio==4.4.0
+    # via gql
     # via httpx
     # via openai
     # via starlette
@@ -39,6 +41,8 @@ arize-phoenix-otel==0.5.1
     # via arize-phoenix
 attrs==24.2.0
     # via aiohttp
+backoff==2.2.1
+    # via gql
 boto3==1.35.0
     # via cohere
 botocore==1.35.0
@@ -50,11 +54,13 @@ certifi==2024.7.4
     # via httpcore
     # via httpx
     # via requests
+    # via sentry-sdk
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via nltk
     # via uvicorn
+    # via wandb
 cohere==5.8.1
     # via langchain-cohere
 coloredlogs==15.0.1
@@ -68,6 +74,10 @@ deprecated==1.2.14
     # via opentelemetry-semantic-conventions
 distro==1.9.0
     # via openai
+docker-pycreds==0.4.0
+    # via wandb
+emoji==2.14.0
+    # via weave
 fastapi==0.115.0
     # via agent
     # via arize-phoenix
@@ -84,10 +94,17 @@ frozenlist==1.4.1
     # via aiosignal
 fsspec==2024.6.1
     # via huggingface-hub
+gitdb==4.0.11
+    # via gitpython
+gitpython==3.1.43
+    # via wandb
 googleapis-common-protos==1.63.2
     # via opentelemetry-exporter-otlp-proto-grpc
     # via opentelemetry-exporter-otlp-proto-http
+gql==3.5.0
+    # via weave
 graphql-core==3.2.3
+    # via gql
     # via strawberry-graphql
 greenlet==3.0.3
     # via sqlalchemy
@@ -192,11 +209,15 @@ loguru==0.7.2
     # via fastembed
 mako==1.3.5
     # via alembic
+markdown-it-py==3.0.0
+    # via rich
 markupsafe==2.1.5
     # via jinja2
     # via mako
 marshmallow==3.21.3
     # via dataclasses-json
+mdurl==0.1.2
+    # via markdown-it-py
 mmh3==4.1.0
     # via fastembed
 mpmath==1.3.0
@@ -230,6 +251,7 @@ numpy==1.26.4
     # via scikit-learn
     # via scipy
     # via umap-learn
+    # via weave
 omegaconf==2.3.0
     # via agent
     # via ultra-simple-config
@@ -308,6 +330,7 @@ packaging==24.1
     # via marshmallow
     # via onnxruntime
     # via pytest
+    # via weave
 pandas==2.2.2
     # via arize-phoenix
     # via arize-phoenix-evals
@@ -316,6 +339,8 @@ parameterized==0.9.0
     # via cohere
 pillow==10.4.0
     # via fastembed
+platformdirs==4.3.6
+    # via wandb
 pluggy==1.5.0
     # via pytest
 portalocker==2.10.1
@@ -327,8 +352,10 @@ protobuf==4.25.4
     # via onnx
     # via onnxruntime
     # via opentelemetry-proto
+    # via wandb
 psutil==6.0.0
     # via arize-phoenix
+    # via wandb
 pyarrow==17.0.0
     # via arize-phoenix
 pydantic==2.8.2
@@ -343,11 +370,14 @@ pydantic==2.8.2
     # via openai
     # via pydantic-settings
     # via qdrant-client
+    # via weave
 pydantic-core==2.20.1
     # via cohere
     # via pydantic
 pydantic-settings==2.5.2
     # via langchain-community
+pygments==2.18.0
+    # via rich
 pyjwt==2.9.0
     # via arize-phoenix
 pynndescent==0.5.13
@@ -374,6 +404,7 @@ pyyaml==6.0.2
     # via langchain-community
     # via langchain-core
     # via omegaconf
+    # via wandb
 qdrant-client==1.11.0
     # via langchain-qdrant
 regex==2024.7.24
@@ -382,12 +413,19 @@ regex==2024.7.24
 requests==2.32.3
     # via cohere
     # via fastembed
+    # via gql
     # via huggingface-hub
     # via langchain
     # via langchain-community
     # via langsmith
     # via opentelemetry-exporter-otlp-proto-http
+    # via requests-toolbelt
     # via tiktoken
+    # via wandb
+requests-toolbelt==1.0.0
+    # via gql
+rich==13.9.3
+    # via weave
 s3transfer==0.10.2
     # via boto3
 scikit-learn==1.5.1
@@ -401,11 +439,19 @@ scipy==1.14.0
     # via pynndescent
     # via scikit-learn
     # via umap-learn
+sentry-sdk==2.17.0
+    # via wandb
+setproctitle==1.3.3
+    # via wandb
 setuptools==72.2.0
     # via grpcio-tools
     # via opentelemetry-instrumentation
+    # via wandb
 six==1.16.0
+    # via docker-pycreds
     # via python-dateutil
+smmap==5.0.1
+    # via gitdb
 sniffio==1.3.1
     # via anyio
     # via httpx
@@ -432,6 +478,7 @@ tenacity==8.5.0
     # via langchain
     # via langchain-community
     # via langchain-core
+    # via weave
 threadpoolctl==3.5.0
     # via scikit-learn
 tiktoken==0.7.0
@@ -470,6 +517,7 @@ typing-extensions==4.12.2
     # via sqlalchemy
     # via strawberry-graphql
     # via typing-inspect
+    # via wandb
 typing-inspect==0.9.0
     # via dataclasses-json
 tzdata==2024.1
@@ -482,10 +530,17 @@ urllib3==2.2.2
     # via botocore
     # via qdrant-client
     # via requests
+    # via sentry-sdk
     # via types-requests
+uuid-utils==0.9.0
+    # via weave
 uvicorn==0.30.6
     # via agent
     # via arize-phoenix
+wandb==0.18.5
+    # via weave
+weave==0.51.17
+    # via agent
 wrapt==1.16.0
     # via arize-phoenix
     # via deprecated
@@ -496,5 +551,6 @@ wrapt==1.16.0
 yappi==1.6.0
 yarl==1.9.4
     # via aiohttp
+    # via gql
 zipp==3.20.0
     # via importlib-metadata

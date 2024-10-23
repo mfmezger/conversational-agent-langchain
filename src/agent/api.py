@@ -1,19 +1,34 @@
 """Main API."""
 
+import os
+from typing import List
 import nltk
+from agent.routes import collection, delete, embeddings, rag, search
+from agent.utils.vdb import initialize_all_vector_dbs
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from loguru import logger
 from phoenix.trace.langchain import LangChainInstrumentor
+from agent.utils.utility import check_env_variables
 
-from agent.routes import collection, delete, embeddings, rag, search
-from agent.utils.vdb import initialize_all_vector_dbs
+
+# Load environment variables
+load_dotenv(override=True)
+
+# Check for required environment variables
+required_env_vars = ['OPENAI_API_KEY', 'COHERE_API_KEY', 'QDRANT_API_KEY']  
+check_env_variables(required_env_vars)
+logger.info("All necessary Environment variables loaded successfully.")
 
 LangChainInstrumentor().instrument()
 nltk.download("punkt")
 nltk.download("punkt_tab")
+
+
 initialize_all_vector_dbs()
+logger.info("Vector Database Connection Initialized.")
+
 logger.info("Startup.")
 
 logger.info(
@@ -49,8 +64,6 @@ def my_schema() -> dict:
 app = FastAPI(debug=True)
 app.openapi = my_schema
 
-load_dotenv(override=True)
-logger.info("Loading REST API Finished.")
 
 app.include_router(collection.router, prefix="/collection")
 app.include_router(embeddings.router, prefix="/embeddings")
@@ -65,10 +78,8 @@ def read_root() -> str:
     return "Welcome to the RAG Backend. Please navigate to /docs for the OpenAPI!"
 
 
-# initialize the databases
 
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=8001)

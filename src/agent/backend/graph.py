@@ -36,7 +36,7 @@ from agent.data_model.request_data_model import LLMProvider
 from agent.utils.utility import format_docs_for_citations
 
 # Constants for model keys
-OPENAI_MODEL_KEY = "openai_gpt_3_5_turbo"
+OPENAI_MODEL_KEY = "gpt-4o"
 COHERE_MODEL_KEY = "cohere_command"
 OLLAMA_MODEL_KEY = "ollama_llama8b3.1"
 

@@ -15,9 +15,9 @@ from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import SearchParams
-from agent.utils.vdb import generate_collection, init_vdb
+from agent.utils.vdb import _generate_collection, init_vdb
 
-load_dotenv()
+load_dotenv(override=True)
 
 
 class CohereService(LLMBase):
@@ -78,7 +78,7 @@ class CohereService(LLMBase):
             bool: True if the collection was created successfully.
 
         """
-        generate_collection(name, self.cfg.cohere_embeddings.size)
+        _generate_collection(name, self.cfg.cohere_embeddings.size)
         return True
 
     def create_search_chain(self, search: SearchParams) -> BaseRetriever:

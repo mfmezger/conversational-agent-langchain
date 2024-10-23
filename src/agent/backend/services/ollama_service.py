@@ -3,7 +3,7 @@
 import os
 
 from dotenv import load_dotenv
-from langchain.document_loaders import PyPDFium2Loader, TextLoader
+from langchain_community.document_loaders import PyPDFium2Loader, TextLoader
 from langchain.document_loaders.base import BaseLoader
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_community.embeddings import OllamaEmbeddings
@@ -17,7 +17,7 @@ from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import SearchParams
-from agent.utils.vdb import generate_collection, init_vdb
+from agent.utils.vdb import _generate_collection, init_vdb
 
 load_dotenv()
 
@@ -97,7 +97,7 @@ class OllamaService(LLMBase):
             bool: True if the collection was created successfully.
 
         """
-        generate_collection(self.vector_db, name, self.cfg.qdrant.embeddings_size)
+        _generate_collection(self.vector_db, name, self.cfg.qdrant.embeddings_size)
         return True
 
     def create_search_chain(self, search: SearchParams) -> BaseRetriever:

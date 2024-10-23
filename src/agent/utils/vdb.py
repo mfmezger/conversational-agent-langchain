@@ -8,6 +8,9 @@ from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient, models
 from ultra_simple_config import load_config
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 # Constants
 SPARSE_MODEL_NAME = "Qdrant/bm25"

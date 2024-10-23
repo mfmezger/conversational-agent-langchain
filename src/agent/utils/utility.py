@@ -1,19 +1,29 @@
 """Utility module."""
 
+import os
 import uuid
 from collections.abc import Sequence
 from pathlib import Path
 
+from agent.data_model.internal_model import RetrievalResults
 from langchain.prompts import PromptTemplate
 from langchain_core.documents import Document
 from lingua import Language, LanguageDetectorBuilder
 from loguru import logger
 
-from agent.data_model.internal_model import RetrievalResults
-
 # Constants
 LANGUAGES = [Language.ENGLISH, Language.GERMAN]
 DETECTOR = LanguageDetectorBuilder.from_languages(*LANGUAGES).with_minimum_relative_distance(0.7).build()
+
+
+class MissingEnvironmentVariableError(Exception):
+    """Custom error for missing environment variables."""
+
+    def __init__(self, missing_vars: list[str]) -> None:
+        """Init the custom Error."""
+        self.missing_vars = missing_vars
+        self.message = f"Missing required environment variables: {', '.join(missing_vars)}"
+        super().__init__(self.message)
 
 
 def combine_text_from_list(input_list: list[str]) -> str:
@@ -56,3 +66,10 @@ def create_tmp_folder() -> Path:
 def format_docs_for_citations(docs: Sequence[Document]) -> str:
     """Format the documents for citations."""
     return "\n".join(f"<doc id='{i}'>{doc.page_content}</doc>" for i, doc in enumerate(docs))
+
+
+def check_env_variables(required_vars: list[str]) -> None | MissingEnvironmentVariableError:
+    """Check if all required environment variables are set."""
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    if missing_vars:
+        raise MissingEnvironmentVariableError(missing_vars)
