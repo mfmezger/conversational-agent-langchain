@@ -26,7 +26,7 @@ def search(search: SearchParams, llm_backend: LLMBackend) -> list[SearchResponse
 
     """
     logger.info("Searching for Documents")
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=llm_backend.token, collection_name=llm_backend.collection_name))
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, collection_name=llm_backend.collection_name))
     docs = service.search(search=search)
 
     if not docs:
