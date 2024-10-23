@@ -31,14 +31,16 @@ from langchain_qdrant import Qdrant
 from langgraph.graph import END, StateGraph, add_messages
 from qdrant_client import QdrantClient
 
-from agent.backend.prompts import COHERE_RESPONSE_TEMPLATE, REPHRASE_TEMPLATE, RESPONSE_TEMPLATE
 from agent.data_model.request_data_model import LLMProvider
+from agent.utils.prompts import load_prompts
 from agent.utils.utility import format_docs_for_citations
 
 # Constants for model keys
 OPENAI_MODEL_KEY = "gpt-4o"
 COHERE_MODEL_KEY = "cohere_command"
 OLLAMA_MODEL_KEY = "ollama_llama8b3.1"
+
+cohere_response_template, rephrase_template, response_template = load_prompts()
 
 
 class AgentState(TypedDict):
@@ -147,8 +149,7 @@ def retrieve_documents(state: AgentState) -> AgentState:
 
 
 def retrieve_documents_with_chat_history(state: AgentState) -> AgentState:
-    """Retrieves relevant documents from the retriever based on the user's query
-    and the chat history.
+    """Retrieves relevant documents from the retriever based on the user's query and the chat history.
 
     Args:
     ----
@@ -162,7 +163,7 @@ def retrieve_documents_with_chat_history(state: AgentState) -> AgentState:
     retriever = get_retriever()
     model = llm.with_config(tags=["nostream"])
 
-    condense_queston_prompt = PromptTemplate.from_template(REPHRASE_TEMPLATE)
+    condense_queston_prompt = PromptTemplate.from_template(rephrase_template)
     condense_question_chain = (condense_queston_prompt | model | StrOutputParser()).with_config(
         run_name="CondenseQuestion",
     )
@@ -254,7 +255,7 @@ def generate_response_default(state: AgentState) -> AgentState:
         AgentState: Updated state with the generated response.
 
     """
-    return generate_response(state, llm, RESPONSE_TEMPLATE)
+    return generate_response(state, llm, response_template)
 
 
 def generate_response_cohere(state: AgentState) -> AgentState:
@@ -270,7 +271,7 @@ def generate_response_cohere(state: AgentState) -> AgentState:
 
     """
     model = llm.bind(documents=state["documents"])
-    return generate_response(state, model, COHERE_RESPONSE_TEMPLATE)
+    return generate_response(state, model, cohere_response_template)
 
 
 def route_to_response_synthesizer(

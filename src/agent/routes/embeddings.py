@@ -72,7 +72,7 @@ async def embedd_text(embedding: EmbeddTextRequest, llm_backend: LLMBackend) -> 
         EmbeddingResponse: A response with Success or Failure Notification.
 
     """
-    logger.info("Embedding Text")
+    logger.info("Starting Embedding Text.")
 
     service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, collection_name=llm_backend.collection_name))
 

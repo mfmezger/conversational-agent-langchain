@@ -40,11 +40,11 @@ class LLMStrategyFactory:
 
         Raises:
         ------
-            ValueError: _description_
+            ValueError: If there is an unkown provider.
 
         Returns:
         -------
-            LLMBase: _description_
+            LLMBase: Selected Strategy.
 
         """
         strategy = LLMStrategyFactory._strategies.get(strategy_type)
