@@ -16,7 +16,7 @@ from ultra_simple_config import load_config
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import SearchParams
 from agent.utils.utility import load_prompt_template
-from agent.utils.vdb import _generate_collection, load_vec_db_conn
+from agent.utils.vdb import load_vec_db_conn
 
 load_dotenv()
 
@@ -61,23 +61,7 @@ class OpenAIService(LLMBase):
 
     def _initialize_vector_db(self) -> None:
         """Initialize the vector database."""
-        self.vector_db, _ = load_vec_db_conn()
-
-    def create_collection(self, name: str) -> bool:
-        """Create a new collection in the Vector Database.
-
-        Args:
-        ----
-            name (str): The name of the new collection.
-
-        Returns:
-        -------
-            bool: True if the collection was created successfully.
-
-        """
-        _generate_collection(qdrant_client=self.vector_db, collection_name=name, embeddings_size=self.cfg.openai_embeddings.size)
-        logger.info(f"SUCCESS: Collection {name} created.")
-        return True
+        self.vector_db = load_vec_db_conn()
 
     def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:
         """Embed documents from the given directory into the vector database.

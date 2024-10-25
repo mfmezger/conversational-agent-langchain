@@ -15,7 +15,7 @@ def test_create_collection(llm_provider: str):
     assert response.json() == {"message": "Collection test created."}
 
     # cleanup
-    conn,_ = load_vec_db_conn()
+    conn = load_vec_db_conn()
     conn.delete_collection("test")
 
 

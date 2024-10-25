@@ -49,26 +49,6 @@ class LLMBase(ABC):
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def create_collection(self, name: str) -> bool:
-        """Create a new collection in the vector database.
-
-        Args:
-        ----
-            name (str): The name of the collection to be created.
-
-        Returns:
-        -------
-            bool: True if the collection was successfully created, False otherwise.
-
-        Raises:
-        ------
-            NotImplementedError: This method should be implemented by subclasses.
-
-        """
-        msg = "Subclasses must implement create_collection method"
-        raise NotImplementedError(msg)
-
-    @abstractmethod
     def create_search_chain(self, search: SearchParams) -> list[dict]:
         """Search the documents in the vector database using semantic search.
 

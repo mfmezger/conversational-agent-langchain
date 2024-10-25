@@ -15,7 +15,7 @@ from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import SearchParams
-from agent.utils.vdb import _generate_collection, load_vec_db_conn
+from agent.utils.vdb import load_vec_db_conn
 
 load_dotenv(override=True)
 
@@ -69,21 +69,6 @@ class CohereService(LLMBase):
         self.vector_db.add_texts(texts=text_list, metadatas=metadata_list)
 
         logger.info("SUCCESS: Texts embedded.")
-
-    def create_collection(self, name: str) -> bool:
-        """Create a new collection in the Vector Database.
-
-        Args:
-        ----
-            name (str): Name of the new collection.
-
-        Returns:
-        -------
-            bool: True if the collection was created successfully.
-
-        """
-        _generate_collection(qdrant_client=self.vec_db_connection, collection_name=name, embeddings_size=self.cfg.cohere_embeddings.size)
-        return True
 
     def create_search_chain(self, search: SearchParams) -> BaseRetriever:
         """Create a search chain for document retrieval.

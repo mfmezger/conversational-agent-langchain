@@ -61,8 +61,7 @@ def load_vec_db_conn(cfg: DictConfig) -> tuple[QdrantClient, DictConfig]:
         Tuple[QdrantClient, DictConfig]: QdrantClient instance and the original config.
 
     """
-    client = _create_qdrant_client(cfg)
-    return client, cfg
+    return _create_qdrant_client(cfg)
 
 
 def initialize_vector_db(collection_name: str, embeddings_size: int) -> None:
@@ -74,7 +73,7 @@ def initialize_vector_db(collection_name: str, embeddings_size: int) -> None:
         embeddings_size (int): Size of the embeddings.
 
     """
-    qdrant_client, _ = load_vec_db_conn()
+    qdrant_client = load_vec_db_conn()
 
     if qdrant_client.collection_exists(collection_name=collection_name):
         logger.info(f"Collection {collection_name} already exists.")

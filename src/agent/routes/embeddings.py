@@ -7,7 +7,7 @@ from fastapi import APIRouter, File, UploadFile
 from loguru import logger
 
 from agent.backend.LLMStrategy import LLMContext, LLMStrategyFactory
-from agent.data_model.request_data_model import EmbeddTextRequest, LLMBackend, LLMProvider
+from agent.data_model.request_data_model import EmbeddTextRequest, LLMBackend
 from agent.data_model.response_data_model import EmbeddingResponse
 from agent.utils.utility import create_tmp_folder
 
@@ -37,7 +37,7 @@ async def post_embed_documents(llm_backend: LLMBackend, files: list[UploadFile] 
     logger.info("Embedding Multiple Documents")
     tmp_dir = create_tmp_folder()
 
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=LLMProvider.ALEPH_ALPHA, collection_name=llm_backend.collection_name))
+    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, collection_name=llm_backend.collection_name))
     file_names = []
 
     # Use asyncio to write files concurrently
