@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from dotenv import load_dotenv
-from langchain_cohere import ChatCohere, CohereEmbeddings
+from langchain_cohere import CohereEmbeddings
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
@@ -15,7 +15,7 @@ from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import SearchParams
-from agent.utils.vdb import load_vec_db_conn
+from agent.utils.vdb import init_vdb
 
 load_dotenv(override=True)
 
@@ -39,12 +39,8 @@ class CohereService(LLMBase):
         self.cfg = cfg
         self.collection_name = collection_name or self.cfg.qdrant.collection_name_cohere
 
-        CohereEmbeddings(model=self.cfg.cohere_embeddings.embedding_model_name)
-        self.vec_db_connection, _ = load_vec_db_conn()
-
-        # self.search_chain = create_search_chain()
-
-        ChatCohere()
+        self.embedding = CohereEmbeddings(model=self.cfg.cohere_embeddings.embedding_model_name)
+        self.vec_db = init_vdb(collection_name=self.collection_name, embedding=self.embedding)
 
     def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:
         """Embed documents from the specified directory into the vector database.

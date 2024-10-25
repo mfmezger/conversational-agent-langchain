@@ -49,7 +49,7 @@ class LLMBase(ABC):
         raise NotImplementedError(msg)
 
     @abstractmethod
-    def create_search_chain(self, search: SearchParams) -> list[dict]:
+    def search(self, search: SearchParams) -> list[dict]:
         """Search the documents in the vector database using semantic search.
 
         Args:
@@ -65,7 +65,7 @@ class LLMBase(ABC):
             NotImplementedError: This method should be implemented by subclasses.
 
         """
-        msg = "Subclasses must implement create_search_chain method"
+        msg = "Subclasses must implement search method"
         raise NotImplementedError(msg)
 
     @abstractmethod

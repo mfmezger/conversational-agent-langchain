@@ -16,7 +16,7 @@ from ultra_simple_config import load_config
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import SearchParams
 from agent.utils.utility import load_prompt_template
-from agent.utils.vdb import load_vec_db_conn
+from agent.utils.vdb import init_vdb
 
 load_dotenv()
 
@@ -43,6 +43,8 @@ class OpenAIService(LLMBase):
         self._initialize_embedding()
         self._initialize_vector_db()
 
+        # initialize the search chain.
+
     def _initialize_prompt(self) -> None:
         """Initialize the chat prompt template."""
         template = load_prompt_template(prompt_name="cohere_chat.j2", task="chat")
@@ -61,7 +63,7 @@ class OpenAIService(LLMBase):
 
     def _initialize_vector_db(self) -> None:
         """Initialize the vector database."""
-        self.vector_db = load_vec_db_conn()
+        self.vector_db = init_vdb(collection_name=self.collection_name, embedding=self.embedding)
 
     def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:
         """Embed documents from the given directory into the vector database.

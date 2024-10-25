@@ -16,7 +16,7 @@ from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
 from agent.data_model.request_data_model import SearchParams
-from agent.utils.vdb import load_vec_db_conn
+from agent.utils.vdb import init_vdb
 
 load_dotenv()
 
@@ -38,7 +38,7 @@ class OllamaService(LLMBase):
         self.cfg = cfg
         self.collection_name = collection_name or self.cfg.qdrant.collection_name_ollama
         self.embedding = OllamaEmbeddings(model=self.cfg.ollama_embeddings.embedding_model_name)
-        self.vector_db_conn, _ = load_vec_db_conn()
+        self.vector_db = init_vdb(collection_name=self.collection_name, embedding=self.embedding)
 
     def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:
         """Embed documents from the given directory into the vector database.

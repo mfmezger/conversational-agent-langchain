@@ -9,6 +9,10 @@ import os
 from collections.abc import Sequence
 from typing import Annotated, Literal, TypedDict
 
+from agent.data_model.request_data_model import LLMProvider
+from agent.utils.prompts import load_prompts
+from agent.utils.utility import format_docs_for_citations
+from agent.utils.vdb import load_vec_db_conn
 from langchain_cohere import ChatCohere, CohereEmbeddings
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
@@ -30,11 +34,6 @@ from langchain_openai import ChatOpenAI
 from langchain_qdrant import Qdrant
 from langgraph.graph import END, StateGraph, add_messages
 from langgraph.graph.state import CompiledStateGraph
-from qdrant_client import QdrantClient
-
-from agent.data_model.request_data_model import LLMProvider
-from agent.utils.prompts import load_prompts
-from agent.utils.utility import format_docs_for_citations
 
 # Constants for model keys
 OPENAI_MODEL_KEY = "gpt-4o"
@@ -72,17 +71,6 @@ llm = gpt4o.configurable_alternatives(
 ).with_fallbacks([cohere_command, ollama_chat])
 
 
-def get_qdrant_client() -> QdrantClient:
-    """Creates and returns a QdrantClient instance.
-
-    Returns
-    -------
-        QdrantClient: Configured Qdrant client.
-
-    """
-    return QdrantClient("http://localhost", port=6333, api_key=os.getenv("QDRANT_API_KEY"), prefer_grpc=False)
-
-
 def get_score_retriever() -> BaseRetriever:
     """Creates a retriever that includes similarity scores with retrieved documents.
 
@@ -92,7 +80,7 @@ def get_score_retriever() -> BaseRetriever:
 
     """
     embedding = CohereEmbeddings(model="embed-multilingual-v3.0")
-    qdrant_client = get_qdrant_client()
+    qdrant_client = load_vec_db_conn()
     vector_db = Qdrant(client=qdrant_client, collection_name="cohere", embeddings=embedding)
 
     @chain
@@ -125,7 +113,7 @@ def get_retriever() -> BaseRetriever:
 
     """
     embedding = CohereEmbeddings(model="embed-multilingual-v3.0")
-    qdrant_client = get_qdrant_client()
+    qdrant_client = load_vec_db_conn()
     vector_db = Qdrant(client=qdrant_client, collection_name="cohere", embeddings=embedding)
     return vector_db.as_retriever(search_kwargs={"k": 4})
 
