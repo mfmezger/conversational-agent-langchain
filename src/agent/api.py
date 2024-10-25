@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from loguru import logger
-from phoenix.trace.langchain import LangChainInstrumentor
+from openinference.instrumentation.langchain import LangChainInstrumentor
+from phoenix.otel import register
 
 from agent.routes import collection, delete, embeddings, rag, search
 from agent.utils.utility import check_env_variables
@@ -14,20 +15,27 @@ from agent.utils.vdb import initialize_all_vector_dbs
 # Load environment variables
 load_dotenv(override=True)
 
+# Initialize OpenTelemetry
+tracer_provider = register(
+    project_name="conv_agent",
+    endpoint="http://localhost:6006/v1/traces",
+)
+
 # Check for required environment variables
 required_env_vars = ["OPENAI_API_KEY", "COHERE_API_KEY", "QDRANT_API_KEY"]
 check_env_variables(required_env_vars)
 logger.info("All necessary Environment variables loaded successfully.")
 
-LangChainInstrumentor().instrument()
+# Instrumenting Phoenix Tracer
+LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+
+# Downloading NLTK data
 nltk.download("punkt")
 nltk.download("punkt_tab")
 
-
+# Initialize Vector Databases
 initialize_all_vector_dbs()
 logger.info("Vector Database Connection Initialized.")
-
-logger.info("Startup.")
 
 logger.info(
     """

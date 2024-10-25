@@ -2,9 +2,6 @@
 
 from pathlib import Path
 
-from agent.backend.LLMBase import LLMBase
-from agent.data_model.request_data_model import SearchParams
-from agent.utils.vdb import _generate_collection, init_vdb
 from dotenv import load_dotenv
 from langchain_cohere import ChatCohere, CohereEmbeddings
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
@@ -15,6 +12,10 @@ from langchain_text_splitters import NLTKTextSplitter
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
+
+from agent.backend.LLMBase import LLMBase
+from agent.data_model.request_data_model import SearchParams
+from agent.utils.vdb import _generate_collection, load_vec_db_conn
 
 load_dotenv(override=True)
 
@@ -38,14 +39,12 @@ class CohereService(LLMBase):
         self.cfg = cfg
         self.collection_name = collection_name or self.cfg.qdrant.collection_name_cohere
 
-        embedding = CohereEmbeddings(model=self.cfg.cohere_embeddings.embedding_model_name)
-        self.vector_db = init_vdb(self.cfg, self.collection_name, embedding=embedding)
+        CohereEmbeddings(model=self.cfg.cohere_embeddings.embedding_model_name)
+        self.vec_db_connection, _ = load_vec_db_conn()
+
         # self.search_chain = create_search_chain()
 
-        chat = ChatCohere()
-        summarization_prompt = "Summarize the following text: {text}"
-
-
+        ChatCohere()
 
     def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:
         """Embed documents from the specified directory into the vector database.
@@ -83,7 +82,7 @@ class CohereService(LLMBase):
             bool: True if the collection was created successfully.
 
         """
-        _generate_collection(name, self.cfg.cohere_embeddings.size)
+        _generate_collection(qdrant_client=self.vec_db_connection, collection_name=name, embeddings_size=self.cfg.cohere_embeddings.size)
         return True
 
     def create_search_chain(self, search: SearchParams) -> BaseRetriever:
@@ -139,7 +138,6 @@ class CohereService(LLMBase):
 
         """
         # TODO: Implement text summarization
-
 
         msg = "Text summarization is not implemented yet."
         raise NotImplementedError(msg)

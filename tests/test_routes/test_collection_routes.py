@@ -1,6 +1,7 @@
 import pytest
 import os
 import requests
+from agent.utils.vdb import load_vec_db_conn
 from fastapi.testclient import TestClient
 from agent.api import app
 
@@ -11,14 +12,17 @@ def test_create_collection(llm_provider: str):
     response = client.post(f"/collection/create/{llm_provider}/test")
 
     assert response.status_code == 200
-    assert response.json == {"message": "Collection test created."}
+    assert response.json() == {"message": "Collection test created."}
 
     # cleanup
-    response = requests.delete(f"http://localhost:6333/collection/delete/test", headers={"api_key": os.getenv("QDRANT_API_KEY")})
+    conn,_ = load_vec_db_conn()
+    conn.delete_collection("test")
+
+
 
 
 
 def test_invalid_provider():
     response = client.post(f"/collection/create/test/test")
 
-    assert response.status_code == 500
+    assert response.status_code == 422

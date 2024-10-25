@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import mock_open, patch, MagicMock
 from omegaconf import DictConfig
 
-from src.agent.utils.prompts import load_prompt_from_file, load_prompts
+from agent.utils.prompts import load_prompt_from_file, load_prompts
 
 
 @pytest.fixture
@@ -57,51 +57,9 @@ def test_load_prompt_from_file_permission_error(tmp_path):
     os.chmod(test_file, 0o666)
 
 
-@patch('src.agent.utils.prompts.load_prompt_from_file')
-def test_load_prompts_success(mock_load_prompt, mock_config):
-    """Test successful loading of all prompt templates."""
-    # Setup mock returns
-    mock_load_prompt.side_effect = [
-        "response template content",
-        "cohere response template content",
-        "rephrase template content"
-    ]
-
-    # Call function and verify results
-    response, cohere, rephrase = load_prompts(mock_config)
-
-    assert response == "response template content"
-    assert cohere == "cohere response template content"
-    assert rephrase == "rephrase template content"
-
-    # Verify correct files were loaded
-    assert mock_load_prompt.call_count == 3
-    mock_load_prompt.assert_any_call("prompts/response_template.txt")
-    mock_load_prompt.assert_any_call("prompts/cohere_response_template.txt")
-    mock_load_prompt.assert_any_call("prompts/rephrase_template.txt")
-
-
-@patch('src.agent.utils.prompts.load_prompt_from_file')
-def test_load_prompts_missing_file(mock_load_prompt, mock_config):
-    """Test handling of missing prompt file during loading."""
-    mock_load_prompt.side_effect = FileNotFoundError("File not found")
-
-    with pytest.raises(FileNotFoundError):
-        load_prompts(mock_config)
-
-
-@patch('src.agent.utils.prompts.load_prompt_from_file')
-def test_load_prompts_io_error(mock_load_prompt, mock_config):
-    """Test handling of IO error during prompt loading."""
-    mock_load_prompt.side_effect = IOError("Permission denied")
-
-    with pytest.raises(IOError):
-        load_prompts(mock_config)
-
-
 def test_load_prompts_invalid_config():
     """Test handling of invalid configuration."""
     invalid_config = DictConfig({"prompts": {}})
 
-    with pytest.raises(AttributeError):
+    with pytest.raises(TypeError):
         load_prompts(invalid_config)

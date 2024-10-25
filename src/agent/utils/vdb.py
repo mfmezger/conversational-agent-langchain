@@ -2,13 +2,13 @@
 
 import os
 
+from dotenv import load_dotenv
 from langchain_core.embeddings import Embeddings
 from langchain_qdrant import FastEmbedSparse, QdrantVectorStore, RetrievalMode
 from loguru import logger
 from omegaconf import DictConfig
 from qdrant_client import QdrantClient, models
 from ultra_simple_config import load_config
-from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
@@ -36,7 +36,6 @@ def init_vdb(cfg: DictConfig, collection_name: str, embedding: Embeddings) -> Qd
     """
     qdrant_client = _create_qdrant_client(cfg)
     logger.info(f"Using collection: {collection_name}")
-
     vector_db = QdrantVectorStore(
         client=qdrant_client,
         collection_name=collection_name,
@@ -46,7 +45,6 @@ def init_vdb(cfg: DictConfig, collection_name: str, embedding: Embeddings) -> Qd
         sparse_vector_name="fast-sparse-bm25",
     )
     logger.info("Qdrant DB initialized successfully.")
-
     return vector_db
 
 

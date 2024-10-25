@@ -14,8 +14,9 @@ from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
 from agent.backend.LLMBase import LLMBase
+from agent.data_model.request_data_model import SearchParams
 from agent.utils.utility import load_prompt_template
-from agent.utils.vdb import _generate_collection, init_vdb
+from agent.utils.vdb import _generate_collection, load_vec_db_conn
 
 load_dotenv()
 
@@ -38,7 +39,7 @@ class OpenAIService(LLMBase):
         self.cfg = cfg
         self.collection_name = collection_name or self.cfg.qdrant.collection_name_openai
 
-        self._initialize_prompt()
+        # self._initialize_prompt()
         self._initialize_embedding()
         self._initialize_vector_db()
 
@@ -60,7 +61,7 @@ class OpenAIService(LLMBase):
 
     def _initialize_vector_db(self) -> None:
         """Initialize the vector database."""
-        self.vector_db = init_vdb(self.cfg, self.collection_name, embedding=self.embedding)
+        self.vector_db, _ = load_vec_db_conn()
 
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database.
@@ -74,7 +75,7 @@ class OpenAIService(LLMBase):
             bool: True if the collection was created successfully.
 
         """
-        _generate_collection(name, self.cfg.openai_embeddings.size)
+        _generate_collection(qdrant_client=self.vector_db, collection_name=name, embeddings_size=self.cfg.openai_embeddings.size)
         logger.info(f"SUCCESS: Collection {name} created.")
         return True
 
@@ -154,5 +155,5 @@ class OpenAIService(LLMBase):
 
         return response.choices[0].messages.content
 
-
-# ... (rest of the code remains unchanged)
+    def create_search_chain(self, search: SearchParams) -> list[dict]:
+        pass

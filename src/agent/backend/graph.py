@@ -10,7 +10,6 @@ from collections.abc import Sequence
 from typing import Annotated, Literal, TypedDict
 
 from langchain_cohere import ChatCohere, CohereEmbeddings
-from langchain_community.chat_models.ollama import ChatOllama
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.messages import (
@@ -26,9 +25,11 @@ from langchain_core.prompts import (
 )
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import ConfigurableField, RunnableConfig, chain
+from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 from langchain_qdrant import Qdrant
 from langgraph.graph import END, StateGraph, add_messages
+from langgraph.graph.state import CompiledStateGraph
 from qdrant_client import QdrantClient
 
 from agent.data_model.request_data_model import LLMProvider
@@ -294,7 +295,7 @@ def route_to_response_synthesizer(
     return "response_synthesizer_cohere" if model_name == COHERE_MODEL_KEY else "response_synthesizer"
 
 
-def build_graph() -> StateGraph:
+def build_graph() -> CompiledStateGraph:
     """Constructs the conversation flow graph for the agent.
 
     Returns
