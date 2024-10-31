@@ -1,16 +1,15 @@
 """Main API."""
 
 import nltk
+from agent.routes import collection, delete, embeddings, rag, search
+from agent.utils.utility import check_env_variables
+from agent.utils.vdb import initialize_all_vector_dbs
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from loguru import logger
 from openinference.instrumentation.langchain import LangChainInstrumentor
 from phoenix.otel import register
-
-from agent.routes import collection, delete, embeddings, rag, search
-from agent.utils.utility import check_env_variables
-from agent.utils.vdb import initialize_all_vector_dbs
 
 # Load environment variables
 load_dotenv(override=True)

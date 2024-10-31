@@ -3,13 +3,12 @@
 import asyncio
 from pathlib import Path
 
-from fastapi import APIRouter, File, UploadFile
-from loguru import logger
-
 from agent.backend.LLMStrategy import LLMContext, LLMStrategyFactory
 from agent.data_model.request_data_model import EmbeddTextRequest, LLMBackend
 from agent.data_model.response_data_model import EmbeddingResponse
 from agent.utils.utility import create_tmp_folder
+from fastapi import APIRouter, File, UploadFile
+from loguru import logger
 
 router = APIRouter()
 
