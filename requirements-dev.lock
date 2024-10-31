@@ -64,6 +64,8 @@ deprecated==1.2.14
     # via opentelemetry-exporter-otlp-proto-grpc
     # via opentelemetry-exporter-otlp-proto-http
     # via opentelemetry-semantic-conventions
+diagrams==0.23.4
+    # via agent
 distro==1.9.0
     # via openai
 fastapi==0.112.1
@@ -87,6 +89,8 @@ googleapis-common-protos==1.63.2
     # via opentelemetry-exporter-otlp-proto-http
 graphql-core==3.2.3
     # via strawberry-graphql
+graphviz==0.20.3
+    # via diagrams
 greenlet==3.0.3
     # via sqlalchemy
 grpcio==1.65.5
@@ -132,6 +136,7 @@ iniconfig==2.0.0
     # via pytest
 jinja2==3.1.4
     # via arize-phoenix
+    # via diagrams
 jiter==0.5.0
     # via openai
 jmespath==1.0.1
@@ -429,6 +434,8 @@ tqdm==4.66.5
     # via nltk
     # via openai
     # via umap-learn
+typed-ast==1.5.5
+    # via diagrams
 types-requests==2.32.0.20240712
     # via cohere
 typing-extensions==4.12.2
