@@ -89,7 +89,7 @@ emoji==2.14.0
     # via weave
 fast-hdbscan==0.2.0
     # via arize-phoenix
-fastapi==0.115.3
+fastapi==0.115.4
     # via agent
     # via arize-phoenix
 fastavro==1.9.5
@@ -285,7 +285,7 @@ onnx==1.16.2
     # via fastembed
 onnxruntime==1.19.0
     # via fastembed
-openai==1.52.1
+openai==1.53.0
     # via agent
     # via langchain-openai
 openinference-instrumentation==0.1.18
@@ -396,6 +396,10 @@ pydantic-settings==2.5.2
     # via langchain-community
 pygments==2.18.0
     # via rich
+pymupdf==1.24.13
+    # via pymupdf4llm
+pymupdf4llm==0.0.17
+    # via agent
 pynndescent==0.5.13
     # via umap-learn
 pypdfium2==4.30.0

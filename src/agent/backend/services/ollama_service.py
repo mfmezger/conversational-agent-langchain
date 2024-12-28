@@ -2,6 +2,9 @@
 
 import os
 
+from agent.backend.LLMBase import LLMBase
+from agent.data_model.request_data_model import SearchParams
+from agent.utils.vdb import init_vdb
 from dotenv import load_dotenv
 from langchain.document_loaders.base import BaseLoader
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
@@ -13,10 +16,6 @@ from langchain_text_splitters import NLTKTextSplitter, TextSplitter
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
-
-from agent.backend.LLMBase import LLMBase
-from agent.data_model.request_data_model import SearchParams
-from agent.utils.vdb import init_vdb
 
 load_dotenv()
 
