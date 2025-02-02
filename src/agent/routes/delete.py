@@ -5,21 +5,20 @@ from loguru import logger
 from qdrant_client import models
 from qdrant_client.http.models.models import UpdateResult
 
-from agent.data_model.request_data_model import LLMProvider
 from agent.utils.vdb import load_vec_db_conn
 
 router = APIRouter()
 
 
 @router.delete("/delete/{llm_provider}/{page}/{source}", tags=["embeddings"])
-def delete(page: int, source: str, llm_provider: LLMProvider = LLMProvider.OPENAI) -> UpdateResult:
+def delete(page: int, source: str, collection_name: str) -> UpdateResult:
     """Delete a vector from the database.
 
     Args:
     ----
         page (int): Number of the page in the document
         source (str): Name of the Document
-        llm_provider (LLMProvider, optional): Which Large Language Model Provider. Defaults to LLMProvider.OPENAI.
+        collection_name (str): Large Language Model Provider. Defaults to LLMProvider.OPENAI.
 
     Raises:
     ------
@@ -31,18 +30,9 @@ def delete(page: int, source: str, llm_provider: LLMProvider = LLMProvider.OPENA
 
     """
     logger.info("Deleting Vector from Database")
-    if llm_provider == LLMProvider.ALEPH_ALPHA:
-        collection = "aleph-alpha"
-    elif llm_provider == LLMProvider.OPENAI:
-        collection = "openai"
-    elif llm_provider == LLMProvider.GPT4ALL:
-        collection = "gpt4all"
-    else:
-        msg = f"Unsupported LLM provider: {llm_provider}"
-        raise ValueError(msg)
     qdrant_client, _ = load_vec_db_conn()
     result = qdrant_client.delete(
-        collection_name=collection,
+        collection_name=collection_name,
         points_selector=models.FilterSelector(
             filter=models.Filter(
                 must=[

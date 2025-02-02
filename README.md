@@ -17,9 +17,11 @@ At the moment i am reworking to langgraph, therefore not all versions on main wi
   - [Table of Contects](#table-of-contects)
   - [LLMs and Backend Providers](#llms-and-backend-providers)
   - [Recent Updates](#recent-updates)
+  - [Future (Planned) Updates](#future-planned-updates)
   - [Quickstart](#quickstart)
   - [Project Description](#project-description)
   - [Semantic Search](#semantic-search)
+    - [Hybrid Search](#hybrid-search)
   - [Architecture](#architecture)
   - [Components](#components)
   - [Secret Management](#secret-management)
@@ -35,19 +37,21 @@ At the moment i am reworking to langgraph, therefore not all versions on main wi
 
 ## LLMs and Backend Providers
 
-- [Cohere](https://cohere.com/)
-- [Ollama](https://ollama.com/)
-- [(Azure) OpenAI](https://openai.com/)
+I have decided to stop creating different services for different provider and switchting to LiteLLM which allows to use basically every provider you want.
 
+Some providers i would recommend are:
+
+- [Cohere](https://cohere.com/) Awesome models and great free tier.
+- [Ollama](https://ollama.com/) If you want to keep your data your data.
+- [Google AI Studio](aistudio.google.com) The Google Integration that is not really suited for enterprise but perfect for everybody else.
 
 
 ## Recent Updates
-- Complete Rework to Langgraph
-- Adding Cohere
-- Adding Ollama
+- Moving to LiteLLM
 
-If you want to use an Aleph Alpha only backend i would recommend my other backend: https://github.com/mfmezger/aleph-alpha-rag.
-
+## Future (Planned) Updates
+- Integration of SQL Agents
+- GUI rework
 
 ## Quickstart
 To run the complete system with docker use this command:
@@ -74,7 +78,7 @@ Qdrant Dashboard: localhost:6333/dashboard
 This project is a conversational agent that uses Aleph Alpha and OpenAI Large Language Models to generate responses to user queries. The agent also includes a vector database and a REST API built with FastAPI.
 
 Features
-- Uses Aleph Alpha and OpenAI Large Language Models to generate responses to user queries.
+- Uses Large Language Models to generate responses to user queries.
 - Includes a vector database to store and retrieve information.
 - Provides a REST API built with FastAPI for easy integration with other applications.
 - Has a basic gui.
@@ -83,6 +87,10 @@ Features
 ![Semantic Search Architecture](resources/search_flow.png)
 
 Semantic search is an advanced search technique that aims to understand the meaning and context of a user's query, rather than matching keywords. It involves natural language processing (NLP) and machine learning algorithms to analyze and interpret user intent, synonyms, relationships between words, and the structure of content. By considering these factors, semantic search improves the accuracy and relevance of search results, providing a more intuitive and personalized user experience.
+
+### Hybrid Search
+
+For Hybrid Search the BM25 FastEmbedd from Qdrant is used.
 
 ## Architecture
 ![Semantic Search Architecture](resources/Architecture.png)

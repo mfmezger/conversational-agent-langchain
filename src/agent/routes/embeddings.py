@@ -6,8 +6,8 @@ from pathlib import Path
 from fastapi import APIRouter, File, UploadFile
 from loguru import logger
 
-from agent.backend.LLMStrategy import LLMContext, LLMStrategyFactory
-from agent.data_model.request_data_model import EmbeddTextRequest, LLMBackend, LLMProvider
+from agent.backend.services.embedding_management import EmbeddingManagement
+from agent.data_model.request_data_model import EmbeddTextRequest
 from agent.data_model.response_data_model import EmbeddingResponse
 from agent.utils.utility import create_tmp_folder
 
@@ -15,12 +15,16 @@ router = APIRouter()
 
 
 @router.post("/documents", tags=["embeddings"])
-async def post_embed_documents(llm_backend: LLMBackend, files: list[UploadFile] = File(...), file_ending: str = ".pdf") -> EmbeddingResponse:
+async def post_embed_documents(
+    collection_name: str,
+    files: list[UploadFile] = File(...),
+    file_ending: str = ".pdf",
+) -> EmbeddingResponse:
     """Embeds multiple documents from files.
 
     Args:
     ----
-        llm_backend (LLMBackend): Which LLM backend to use.
+        collection_name (str): Which collection to embedd the documents in.
         files (list[UploadFile], optional): The uploaded files. Defaults to File(...).
         file_ending (str, optional): The file ending of the uploaded file. Defaults to ".pdf".
 
@@ -37,7 +41,7 @@ async def post_embed_documents(llm_backend: LLMBackend, files: list[UploadFile] 
     logger.info("Embedding Multiple Documents")
     tmp_dir = create_tmp_folder()
 
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=LLMProvider.ALEPH_ALPHA, collection_name=llm_backend.collection_name))
+    service = EmbeddingManagement(collection_name=collection_name)
     file_names = []
 
     # Use asyncio to write files concurrently
@@ -59,10 +63,10 @@ async def post_embed_documents(llm_backend: LLMBackend, files: list[UploadFile] 
 
 
 @router.post("/string/", tags=["embeddings"])
-async def embedd_text(embedding: EmbeddTextRequest, llm_backend: LLMBackend) -> EmbeddingResponse:
+async def embedd_text(embedding: EmbeddTextRequest, collection_name: str) -> EmbeddingResponse:
     """Embedding text."""
     logger.info("Embedding Text")
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, collection_name=llm_backend.collection_name))
+    service = EmbeddingManagement(collection_name=collection_name)
     tmp_dir = create_tmp_folder()
     with (Path(tmp_dir) / (embedding.file_name + ".txt")).open("w") as f:
         f.write(embedding.text)

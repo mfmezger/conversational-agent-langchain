@@ -1,4 +1,4 @@
-"""Script that contains the Pydantic Models for the Rest Response."""
+"""Script that contains the Pydantic Models for the Rest API Response."""
 
 from enum import Enum
 

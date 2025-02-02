@@ -1,0 +1,8 @@
+generation_llm:
+  model_name: 'gemini/gemini-2.0-flash-exp'
+
+
+# depends on which embedding model you want to use.
+embedding:
+  model_name: 'gemini/embedding-005'
+  size: 768
