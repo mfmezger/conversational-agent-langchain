@@ -54,8 +54,8 @@ def load_vec_db_conn() -> tuple[QdrantClient, DictConfig]:
     Returns
     -------
         Tuple[QdrantClient, DictConfig]: A tuple containing the created
-                                         QdrantClient instance and the
-                                         original configuration object.
+                                        QdrantClient instance and the
+                                        original configuration object.
 
     """
     return qdrant_client
