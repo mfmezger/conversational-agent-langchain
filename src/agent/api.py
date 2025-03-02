@@ -5,17 +5,26 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from loguru import logger
-from phoenix.trace.langchain import LangChainInstrumentor
+from openinference.instrumentation.langchain import LangChainInstrumentor
+from phoenix.otel import register
 
 from agent.routes import collection, delete, embeddings, rag, search
 from agent.utils.vdb import initialize_all_vector_dbs
 
-LangChainInstrumentor().instrument()
+load_dotenv(override=True)
+
+
 nltk.download("punkt")
 nltk.download("punkt_tab")
 initialize_all_vector_dbs()
 logger.info("Startup.")
 
+# configure the Phoenix tracer
+tracer_provider = register(
+    project_name="rag",  # Default is 'default'
+)
+
+LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
 logger.info(
     """
 

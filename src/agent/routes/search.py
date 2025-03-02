@@ -4,18 +4,18 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from loguru import logger
 
-from agent.backend.LLMStrategy import LLMContext, LLMStrategyFactory
-from agent.data_model.request_data_model import LLMBackend, SearchParams
+from agent.backend.services.embedding_management import EmbeddingManagement
+from agent.data_model.request_data_model import SearchParams
 from agent.data_model.response_data_model import SearchResponse
 
 router = APIRouter()
 
 
 @router.post("/search", tags=["search"])
-def search(search: SearchParams, llm_backend: LLMBackend) -> list[SearchResponse]:
+def search(search: SearchParams, collection_name: str) -> list[SearchResponse]:
     """Search for documents."""
     logger.info("Searching for Documents")
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, token=llm_backend.token, collection_name=llm_backend.collection_name))
+    service = EmbeddingManagement(collection_name=collection_name)
     docs = service.search(search=search)
 
     if not docs:

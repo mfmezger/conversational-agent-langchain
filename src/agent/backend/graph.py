@@ -37,7 +37,7 @@ class AgentState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
 
 
-@load_config("config/litellm.yaml")
+@load_config("config/litellm.yml")
 def load_litellm_config(cfg: DictConfig) -> DictConfig:
     """Wrapper to load the config.
 
@@ -62,7 +62,7 @@ class Graph:
         self.cfg = load_litellm_config()
 
         # define models
-        self.llm = ChatLiteLLM(model=self.cfg.litellm.generation_llm.model)
+        self.llm = ChatLiteLLM(model=self.cfg.generation_llm.model_name)
 
     def get_score_retriever(self) -> BaseRetriever:
         """Get the Retriever.

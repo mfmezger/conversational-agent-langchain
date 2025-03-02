@@ -6,11 +6,12 @@ from collections.abc import AsyncGenerator
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from agent.backend.graph import build_graph
+from agent.backend.graph import Graph
 from agent.data_model.request_data_model import RAGRequest
 from agent.data_model.response_data_model import QAResponse
 
-graph = build_graph()
+graph = Graph().build_graph()
+
 
 router = APIRouter()
 

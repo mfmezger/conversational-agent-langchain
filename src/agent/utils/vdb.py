@@ -43,7 +43,6 @@ def init_vdb(collection_name: str, embedding: Embeddings) -> QdrantVectorStore:
     return vector_db
 
 
-@load_config("config/main.yml")
 def load_vec_db_conn() -> tuple[QdrantClient, DictConfig]:
     """Load the Vector Database Connection.
 
@@ -70,7 +69,7 @@ def initialize_vector_db(collection_name: str, embeddings_size: int) -> None:
         embeddings_size (int): Size of the Embeddings
 
     """
-    qdrant_client, _ = load_vec_db_conn()
+    qdrant_client = load_vec_db_conn()
 
     if qdrant_client.collection_exists(collection_name=collection_name):
         logger.info(f"SUCCESS: Collection {collection_name} already exists.")
