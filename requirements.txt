@@ -707,9 +707,9 @@ langchain-cohere==0.1.9 ; python_version >= "3.11" and python_version < "3.12" \
 langchain-community==0.2.11 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:465c03ba1603975d141533424185e09546ecf09e379c93aee2671bdc9b325cda \
     --hash=sha256:ede261ff8202f1433f004ee90baf89f371cee37cb1abfc16dd0f8392db10b23e
-langchain-core==0.2.28 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:0728761d02ce696a1c6a57cfad18b874cf6c9566ba86120e2f542e442cb77a06 \
-    --hash=sha256:589f907fcb1f15acea55ea3f451a37faaa61c2e68b3d39d436cf73ca3dd23ef5
+langchain-core==0.2.43 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:42c2ef6adedb911f4254068b6adc9eb4c4075f6c8cb3d83590d3539a815695f5 \
+    --hash=sha256:619601235113298ebf8252a349754b7c28d3cf7166c7c922da24944b78a9363a
 langchain-experimental==0.0.64 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:453f77f2126e058052900a62406e1fb58721a37763f5865327e466ddcf4d6779 \
     --hash=sha256:c1a06a1198f05e17e4ce97832004ba4716f7920d0d68ff57f29158e93b198360
