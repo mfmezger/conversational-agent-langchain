@@ -6,26 +6,26 @@ authors = [
     { name = "Marc Fabian Mezger", email = "marc.mezger@gmail.com" }
 ]
 dependencies = [
-    "arize-phoenix-otel>=0.7.1",
-    "openinference-instrumentation-langchain>=0.1.33",
-    "uvicorn>=0.34.0",
-    "pypdfium2>=4.30.1",
-    "langchain-openai>=0.3.3",
-    "langchain-community>=0.3.16",
-    "tiktoken>=0.8.0",
-    "loguru>=0.7.3",
-    "omegaconf>=2.3.0",
-    "langchain-cohere>=0.4.2",
-    "python-dotenv>=1.0.1",
-    "fastapi>=0.115.8",
-    "openai>=1.60.2",
-    "langchain-qdrant>=0.2.0",
-    "arize-phoenix>=7.9.4",
-    "fastembed>=0.5.1",
-    "nltk>=3.9.1",
-    "ultra-simple-config>=0.1.0",
-    "litellm>=1.61.20",
-    "langgraph>=0.3.31",
+    "arize-phoenix-otel",
+    "openinference-instrumentation-langchain",
+    "uvicorn",
+    "pypdfium2",
+    "langchain-openai",
+    "langchain-community",
+    "tiktoken",
+    "loguru",
+    "omegaconf",
+    "langchain-cohere",
+    "python-dotenv",
+    "fastapi",
+    "openai",
+    "langchain-qdrant",
+    "arize-phoenix",
+    "fastembed",
+    "nltk",
+    "ultra-simple-config",
+    "litellm",
+    "langgraph",
 ]
 
 readme = "README.md"
@@ -38,8 +38,8 @@ build-backend = "hatchling.build"
 [tool.rye]
 managed = true
 dev-dependencies = [
-    "pytest>=8.3.2",
-    "yappi>=1.6.0",
+    "pytest",
+    "yappi",
 ]
 
 [tool.hatch.metadata]
