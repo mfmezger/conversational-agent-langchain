@@ -6,7 +6,6 @@ authors = [
     { name = "Marc Fabian Mezger", email = "marc.mezger@gmail.com" }
 ]
 dependencies = [
-    "pydantic-settings>=2.7.1",
     "arize-phoenix-otel>=0.7.1",
     "openinference-instrumentation-langchain>=0.1.33",
     "langgraph>=0.2.69",
