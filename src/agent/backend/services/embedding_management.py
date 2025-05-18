@@ -23,7 +23,7 @@ class EmbeddingManagement:
     @load_config(location="config/litellm.yml")
     def __init__(self, cfg: DictConfig, collection_name: str | None) -> None:
         """Init the Litellm Service."""
-        super().__init__(collection_name=collection_name)
+        super().__init__()
 
         self.cfg = cfg
 
@@ -31,21 +31,21 @@ class EmbeddingManagement:
             self.collection_name = collection_name
 
         # unfortunately, the embedding is not working with litellm directly an can only be used directly with a litellm prox server.
-        match self.cfg.litellm.embedding_model_name:
+        match self.cfg.embedding.provider:
             case "cohere":
-                embedding = CohereEmbeddings(model=self.cfg.litellm.embedding_model_name)
+                embedding = CohereEmbeddings(model=self.cfg.embedding.model_name)
             case "google":
-                # TODO: init
+                # TODO: add
 
                 pass
             case "openai":
-                # TODO: init
+                # TODO: add
                 pass
             case _:
                 msg = "No suitable embedding Model configured!"
                 raise KeyError(msg)
 
-        self.vector_db = init_vdb(self.cfg, self.collection_name, embedding=embedding)
+        self.vector_db = init_vdb(collection_name=self.collection_name, embedding=embedding)
 
     def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:
         """Embeds the documents in the given directory.

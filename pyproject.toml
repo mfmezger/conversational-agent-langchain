@@ -22,10 +22,9 @@ dependencies = [
     "langchain-qdrant",
     "arize-phoenix",
     "fastembed",
-    "nltk",
-    "ultra-simple-config",
     "litellm",
     "langgraph",
+    "ultra-simple-config>=0.1.0",
 ]
 
 readme = "README.md"

@@ -87,7 +87,7 @@ def generate_collection(collection_name: str, embeddings_size: int) -> None:
         embeddings_size (int): Size of the Embeddings
 
     """
-    qdrant_client, _ = load_vec_db_conn()
+    qdrant_client = load_vec_db_conn()
     qdrant_client.set_sparse_model("Qdrant/bm25")
     qdrant_client.create_collection(
         collection_name=collection_name,

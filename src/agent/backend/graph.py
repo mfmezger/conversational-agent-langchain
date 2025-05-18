@@ -124,7 +124,7 @@ class Graph:
         vector_db = Qdrant(client=qdrant_client, collection_name="cohere", embeddings=embedding)
         return vector_db.as_retriever(search_kwargs={"k": 4})
 
-    def retrieve_documents(self: AgentState) -> AgentState:
+    def retrieve_documents(self, state: AgentState) -> AgentState:
         """Retrieve documents from the retriever.
 
         Args:
@@ -137,12 +137,12 @@ class Graph:
 
         """
         retriever = self.get_retriever()
-        messages = convert_to_messages(self["messages"])
+        messages = convert_to_messages(messages=state["messages"])
         query = messages[-1].content
         relevant_documents = retriever.invoke(query)
         return {"query": query, "documents": relevant_documents}
 
-    def retrieve_documents_with_chat_history(self: AgentState) -> AgentState:
+    def retrieve_documents_with_chat_history(self, state: AgentState) -> AgentState:
         """Retrieve documents from the retriever with chat history.
 
         Args:
@@ -162,14 +162,15 @@ class Graph:
             run_name="CondenseQuestion",
         )
 
-        messages = convert_to_messages(self["messages"])
+        messages = convert_to_messages(messages=state["messages"])
         query = messages[-1].content
         retriever_with_condensed_question = condense_question_chain | retriever
         relevant_documents = retriever_with_condensed_question.invoke({"question": query, "chat_history": self.get_chat_history(messages[:-1])})
         return {"query": query, "documents": relevant_documents}
 
     def route_to_retriever(
-        self: AgentState,
+        self,
+        state: AgentState,
     ) -> Literal["retriever", "retriever_with_chat_history"]:
         """Route to the appropriate retriever based on the state.
 
@@ -180,7 +181,7 @@ class Graph:
         """
         # at this point in the graph execution there is exactly one (i.e. first) message from the user,
         # so use basic retriever without chat history
-        if len(self["messages"]) == 1:
+        if len(state["messages"]) == 1:
             return "retriever"
         else:
             return "retriever_with_chat_history"
@@ -203,7 +204,7 @@ class Graph:
             if (isinstance(message, AIMessage) and not message.tool_calls) or isinstance(message, HumanMessage)
         ]
 
-    def generate_response(self: AgentState, model: LanguageModelLike, prompt_template: str) -> AgentState:
+    def generate_response(self, state: AgentState, model: LanguageModelLike, prompt_template: str) -> AgentState:
         """Create a response from the model.
 
         Args:
@@ -231,14 +232,14 @@ class Graph:
                 "context": format_docs_for_citations(self["documents"]),
                 # NOTE: we're ignoring the last message here, as it's going to contain the most recent
                 # query and we don't want that to be included in the chat history
-                "chat_history": self.get_chat_history(convert_to_messages(self["messages"][:-1])),
+                "chat_history": self.get_chat_history(convert_to_messages(state["messages"][:-1])),
             }
         )
         return {
             "messages": [synthesized_response],
         }
 
-    def generate_response_default(self: AgentState) -> AgentState:
+    def generate_response_default(self, state: AgentState) -> AgentState:
         """Generate a response using non cohere model.
 
         Args:
@@ -250,9 +251,9 @@ class Graph:
             AgentState: Modified Graph State.
 
         """
-        return self.generate_response(self, self.llm, RESPONSE_TEMPLATE)
+        return self.generate_response(state, self.llm, RESPONSE_TEMPLATE)
 
-    def generate_response_cohere(self: AgentState) -> AgentState:
+    def generate_response_cohere(self, state: AgentState) -> AgentState:  # noqa: ARG002
         """Generate a response using the Cohere model.
 
         Args:
@@ -267,7 +268,7 @@ class Graph:
         model = self.llm.bind(documents=self["documents"])
         return self.generate_response(self, model, COHERE_RESPONSE_TEMPLATE)
 
-    def route_to_response_synthesizer(self: AgentState, config: RunnableConfig) -> Literal["response_synthesizer", "response_synthesizer_cohere"]:
+    def route_to_response_synthesizer(self, state: AgentState, config: RunnableConfig) -> Literal["response_synthesizer", "response_synthesizer_cohere"]:  # noqa: ARG002
         """Route to the appropriate response synthesizer based on the config.
 
         Args:
@@ -295,7 +296,7 @@ class Graph:
             Graph: The generated graph for RAG.
 
         """
-        workflow = StateGraph(AgentState)
+        workflow = StateGraph(state_schema=AgentState)
 
         # define nodes
         workflow.add_node("retriever", self.retrieve_documents)
@@ -304,15 +305,15 @@ class Graph:
         workflow.add_node("response_synthesizer_cohere", self.generate_response_cohere)
 
         # set entry point to retrievers
-        workflow.set_conditional_entry_point(self.route_to_retriever)
+        workflow.set_conditional_entry_point(path=self.route_to_retriever)
 
         # connect retrievers and response synthesizers
-        workflow.add_conditional_edges("retriever", self.route_to_response_synthesizer)
-        workflow.add_conditional_edges("retriever_with_chat_history", self.route_to_response_synthesizer)
+        workflow.add_conditional_edges(source="retriever", path=self.route_to_response_synthesizer)
+        workflow.add_conditional_edges(source="retriever_with_chat_history", path=self.route_to_response_synthesizer)
 
         # connect synthesizers to terminal node
-        workflow.add_edge("response_synthesizer", END)
-        workflow.add_edge("response_synthesizer_cohere", END)
+        workflow.add_edge(start_key="response_synthesizer", end_key=END)
+        workflow.add_edge(start_key="response_synthesizer_cohere", end_key=END)
 
         return workflow.compile()
 

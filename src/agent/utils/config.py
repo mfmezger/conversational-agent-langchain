@@ -20,3 +20,4 @@ class Settings(BaseSettings):
     qdrant_api_key: str = Field(validation_alias=AliasChoices("qdrant_api_key", "qdrant_cloud_api_key"))
     qdrant_port: int = 6333
     qdrant_prefer_http: bool = False
+    phoenix_collector_endpoint: str

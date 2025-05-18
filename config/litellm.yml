@@ -4,5 +4,6 @@ generation_llm:
 
 # depends on which embedding model you want to use.
 embedding:
-  model_name: 'gemini/embedding-005'
+  provider: 'cohere'
+  model_name: 'embed-v4.0'
   size: 768

@@ -1,6 +1,5 @@
 """Main API."""
 
-import nltk
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
@@ -14,8 +13,6 @@ from agent.utils.vdb import initialize_all_vector_dbs
 load_dotenv(override=True)
 
 
-nltk.download("punkt")
-nltk.download("punkt_tab")
 initialize_all_vector_dbs()
 logger.info("Startup.")
 
@@ -48,7 +45,7 @@ def my_schema() -> dict:
     openapi_schema = get_openapi(
         title="Conversational AI API",
         version="1.0",
-        description="Chat with your Documents using Conversational AI by Aleph Alpha, GPT4ALL and OpenAI.",
+        description="Chat with your Documents using Large Language Models.",
         routes=app.routes,
     )
     app.openapi_schema = openapi_schema
@@ -61,11 +58,11 @@ app.openapi = my_schema
 load_dotenv(override=True)
 logger.info("Loading REST API Finished.")
 
-app.include_router(collection.router, prefix="/collection")
-app.include_router(embeddings.router, prefix="/embeddings")
-app.include_router(search.router, prefix="/semantic")
-app.include_router(rag.router, prefix="/rag")
-app.include_router(delete.router, prefix="/embeddings")
+app.include_router(router=collection.router, prefix="/collection")
+app.include_router(router=embeddings.router, prefix="/embeddings")
+app.include_router(router=search.router, prefix="/semantic")
+app.include_router(router=rag.router, prefix="/rag")
+app.include_router(router=delete.router, prefix="/embeddings")
 
 
 @app.get("/", tags=["root"])

@@ -3,25 +3,24 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from agent.backend.services.embedding_management import EmbeddingManagement
+from agent.utils.vdb import initialize_vector_db
 
 router = APIRouter()
 
 
-@router.post("/create/{collection_name}", tags=["collection"])
-def create_collection(collection_name: str) -> JSONResponse:
+@router.post(path="/create/{collection_name}", tags=["collection"])
+def create_collection(collection_name: str, embeddings_size: int) -> JSONResponse:
     """Create a new collection.
 
     Args:
     ----
-        llm_provider (LLMProvider): The LLM provider.
         collection_name (str): Name of the Qdrant Collection
+        embeddings_size (int): The size of the embeddings.
 
     Returns:
     -------
         JSONResponse: Success Message.
 
     """
-    service = EmbeddingManagement(collection_name=collection_name)
-    service.createe_collection_collection(name=collection_name)
+    initialize_vector_db(collection_name=collection_name, embeddings_size=embeddings_size)
     return JSONResponse(content={"message": f"Collection {collection_name} created."})
