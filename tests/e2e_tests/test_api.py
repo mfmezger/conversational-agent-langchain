@@ -8,11 +8,10 @@ from typing import TYPE_CHECKING
 import httpx
 import pytest
 from fastapi.testclient import TestClient
+from httpx import Response
 
 from agent.api import app
 
-if TYPE_CHECKING:
-    from httpx._models import Response
 http_ok = 200
 client: TestClient = TestClient(app)
 
@@ -35,6 +34,17 @@ def test_create_collection(provider: str) -> None:
         f"/collection/create/{provider}/{uuid.uuid4()!s}",
     )
     assert response.status_code == http_ok
+
+
+def test_create_collection_route() -> None:
+    """Test the create_collection route."""
+    collection_name = "test_collection"
+    embeddings_size = 1536
+    response: Response = client.post(
+        f"/collection/create/{collection_name}", params={"embeddings_size": embeddings_size}
+    )
+    assert response.status_code == http_ok
+    assert response.json() == {"message": f"Collection {collection_name} created."}
 
 
 @pytest.mark.parametrize("provider", ["aa", "gpt4all", "openai"])
@@ -70,7 +80,7 @@ def test_embeddings_text(provider: str) -> None:
 @pytest.mark.parametrize("provider", ["aa", "openai", "gpt4all"])
 async def test_upload_documents(provider: str) -> None:
     """Testing the upload of multiple documents."""
-    async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
+    async with httpx.AsyncClient(base_url="http://test") as ac:
         with Path("tests/resources/1706.03762v5.pdf").open("rb") as file1, Path("tests/resources/1912.01703v1.pdf").open("rb") as file2:
             files = [file1, file2]
             response: Response = await ac.post(
@@ -96,7 +106,7 @@ async def test_upload_documents(provider: str) -> None:
 @pytest.mark.parametrize("provider", ["aa", "openai", "gpt4all"])
 async def test_embedd_one_document(provider: str) -> None:
     """Testing the upload of one document."""
-    async with httpx.AsyncClient(app=app, base_url="http://test") as ac:
+    async with httpx.AsyncClient(base_url="http://test") as ac:
         with Path("tests/resources/1706.03762v5.pdf").open("rb") as tmp_file:
             # Use tmp_file here
             response: Response = await ac.post(

@@ -6,25 +6,24 @@ authors = [
     { name = "Marc Fabian Mezger", email = "marc.mezger@gmail.com" }
 ]
 dependencies = [
-    "arize-phoenix-otel",
-    "openinference-instrumentation-langchain",
-    "uvicorn",
-    "pypdfium2",
-    "langchain-openai",
-    "langchain-community",
-    "tiktoken",
-    "loguru",
-    "omegaconf",
-    "langchain-cohere",
-    "python-dotenv",
-    "fastapi",
-    "openai",
-    "langchain-qdrant",
-    "arize-phoenix",
-    "fastembed",
-    "litellm",
-    "langgraph",
     "ultra-simple-config>=0.1.0",
+    "langgraph>=0.4.5",
+    "litellm>=1.70.2",
+    "fastembed>=0.5.1",
+    "arize-phoenix>=7.9.4",
+    "openai>=1.65.2",
+    "fastapi>=0.115.12",
+    "python-dotenv>=1.0.1",
+    "langchain-cohere>=0.4.4",
+    "omegaconf>=2.3.0",
+    "loguru>=0.7.3",
+    "tiktoken>=0.8.0",
+    "langchain-community>=0.3.16",
+    "langchain-openai>=0.3.17",
+    "pypdfium2>=4.30.1",
+    "uvicorn>=0.34.0",
+    "arize-phoenix-otel>=0.7.1",
+    "openinference-instrumentation-langchain>=0.1.43",
 ]
 
 readme = "README.md"
@@ -46,3 +45,13 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/agent"]
+
+
+[tool.mypy]
+disallow_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true

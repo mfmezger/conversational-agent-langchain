@@ -33,7 +33,7 @@ class EmbeddingManagement:
         # unfortunately, the embedding is not working with litellm directly an can only be used directly with a litellm prox server.
         match self.cfg.embedding.provider:
             case "cohere":
-                embedding = CohereEmbeddings(model=self.cfg.embedding.model_name)
+                embedding = CohereEmbeddings(model=self.cfg.embedding.model_name)  # type: ignore
             case "google":
                 # TODO: add
 
@@ -45,7 +45,7 @@ class EmbeddingManagement:
                 msg = "No suitable embedding Model configured!"
                 raise KeyError(msg)
 
-        self.vector_db = init_vdb(collection_name=self.collection_name, embedding=embedding)
+        self.vector_db = init_vdb(collection_name=self.collection_name, embedding=embedding)  # type: ignore  # noqa: PGH003
 
     def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:
         """Embeds the documents in the given directory.
