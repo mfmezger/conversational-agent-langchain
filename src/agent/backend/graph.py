@@ -19,14 +19,14 @@ from qdrant_client import QdrantClient
 from ultra_simple_config import load_config
 
 from agent.backend.prompts import COHERE_RESPONSE_TEMPLATE, REPHRASE_TEMPLATE, RESPONSE_TEMPLATE
-from agent.utils.config import Settings
+from agent.utils.config import Config
 from agent.utils.utility import format_docs_for_citations
 
 OPENAI_MODEL_KEY = "openai_gpt_3_5_turbo"
 COHERE_MODEL_KEY = "cohere_command"
 OLLAMA_MODEL_KEY = "ollama_llama8b3.1"
 
-settings = Settings()
+settings = Config()
 
 
 class AgentState(TypedDict):

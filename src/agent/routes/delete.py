@@ -10,7 +10,7 @@ from agent.utils.vdb import load_vec_db_conn
 router = APIRouter()
 
 
-@router.delete("/delete/{llm_provider}/{page}/{source}", tags=["embeddings"])
+@router.delete("/delete/{page}/{source}", tags=["embeddings"])
 def delete(page: int, source: str, collection_name: str) -> UpdateResult:
     """Delete a vector from the database.
 

@@ -2,6 +2,7 @@
 
 import asyncio
 from pathlib import Path
+from typing import Annotated
 
 from fastapi import APIRouter, File, UploadFile
 from loguru import logger
@@ -17,7 +18,7 @@ router = APIRouter()
 @router.post("/documents", tags=["embeddings"])
 async def post_embed_documents(
     collection_name: str,
-    files: list[UploadFile] = File(...),
+    files: Annotated[list[UploadFile], File()] = ...,
     file_ending: str = ".pdf",
 ) -> EmbeddingResponse:
     """Embeds multiple documents from files.

@@ -8,12 +8,14 @@ from openinference.instrumentation.langchain import LangChainInstrumentor
 from phoenix.otel import register
 
 from agent.routes import collection, delete, embeddings, rag, search
+from agent.utils.config import Config
 from agent.utils.vdb import initialize_all_vector_dbs
 
 load_dotenv(override=True)
+config = Config()
 
 
-initialize_all_vector_dbs()
+initialize_all_vector_dbs(config=config)
 logger.info("Startup.")
 
 # configure the Phoenix tracer

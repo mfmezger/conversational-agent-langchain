@@ -4,7 +4,7 @@ from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings(BaseSettings):
+class Config(BaseSettings):
     """Loading the settings with pydantic."""
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
@@ -16,8 +16,10 @@ class Settings(BaseSettings):
     cohere_api_key: str
 
     # QDRANT
-    qdrant_url: str = "http://qdrant"
+    qdrant_url: str = "http://localhost"
     qdrant_api_key: str = Field(validation_alias=AliasChoices("qdrant_api_key", "qdrant_cloud_api_key"))
     qdrant_port: int = 6333
     qdrant_prefer_http: bool = False
     phoenix_collector_endpoint: str
+    qdrant_collection_name: str = "default"
+    qdrant_embedding_size: int = 1024

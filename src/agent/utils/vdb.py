@@ -3,15 +3,13 @@
 from langchain_core.embeddings import Embeddings
 from langchain_qdrant import FastEmbedSparse, QdrantVectorStore, RetrievalMode
 from loguru import logger
-from omegaconf import DictConfig
 from qdrant_client import QdrantClient, models
-from ultra_simple_config import load_config
 
-from agent.utils.config import Settings
+from agent.utils.config import Config
 
 sparse_embeddings = FastEmbedSparse(model_name="Qdrant/bm25")
 
-settings = Settings()
+settings = Config()
 qdrant_client = QdrantClient(settings.qdrant_url, port=settings.qdrant_port, api_key=settings.qdrant_api_key, prefer_grpc=settings.qdrant_prefer_http)
 
 
@@ -43,7 +41,7 @@ def init_vdb(collection_name: str, embedding: Embeddings) -> QdrantVectorStore:
     return vector_db
 
 
-def load_vec_db_conn() -> tuple[QdrantClient, DictConfig]:
+def load_vec_db_conn() -> QdrantClient:
     """Load the Vector Database Connection.
 
     This function creates a new QdrantClient instance using the configuration
@@ -97,10 +95,6 @@ def generate_collection(collection_name: str, embeddings_size: int) -> None:
     logger.info(f"SUCCESS: Collection {collection_name} created.")
 
 
-@load_config("config/main.yml")
-def initialize_all_vector_dbs(cfg: DictConfig) -> None:
+def initialize_all_vector_dbs(config: Config) -> None:
     """Initializes all vector dbs."""
-    # TODO: How do i do the initialization.
-    initialize_vector_db(cfg.qdrant.collection_name_openai, cfg.openai_embeddings.size)
-    initialize_vector_db(cfg.qdrant.collection_name_cohere, cfg.cohere_embeddings.size)
-    initialize_vector_db(cfg.qdrant.collection_name_ollama, cfg.ollama_embeddings.size)
+    initialize_vector_db(collection_name=config.qdrant_collection_name, embeddings_size=config.qdrant_embedding_size)
