@@ -1742,9 +1742,9 @@ regex==2024.5.10 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:eda3dd46df535da787ffb9036b5140f941ecb91701717df91c9daf64cabef953 \
     --hash=sha256:f03b1dbd4d9596dd84955bb40f7d885204d6aac0d56a919bb1e0ff2fb7e1735a \
     --hash=sha256:fa9335674d7c819674467c7b46154196c51efbaf5f5715187fd366814ba3fa39
-requests==2.31.0 ; python_version >= "3.11" and python_version < "3.12" \
-    --hash=sha256:58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f \
-    --hash=sha256:942c5a758f98d790eaed1a29cb6eefc7ffb0d1cf7af05c3d2791656dbd6ad1e1
+requests==2.32.4 ; python_version >= "3.11" and python_version < "3.12" \
+    --hash=sha256:27babd3cda2a6d50b30443204ee89830707d396671944c998b5975b031ac2b2c \
+    --hash=sha256:27d0316682c8a29834d3264820024b62a36942083d52caf2f14c0591336d3422
 s3transfer==0.10.1 ; python_version >= "3.11" and python_version < "3.12" \
     --hash=sha256:5683916b4c724f799e600f41dd9e10a9ff19871bf87623cc8f491cb4f5fa0a19 \
     --hash=sha256:ceb252b11bcf87080fb7850a224fb6e05c8a776bab8f2b64b7f25b969464839d
