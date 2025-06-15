@@ -10,8 +10,8 @@ from agent.utils.vdb import load_vec_db_conn
 router = APIRouter()
 
 
-@router.delete("/delete/{page}/{source}", tags=["embeddings"])
-def delete(page: int, source: str, collection_name: str) -> UpdateResult:
+@router.delete("/delete/{source}", tags=["embeddings"])
+def delete(source: str, collection_name: str) -> UpdateResult:
     """Delete a vector from the database.
 
     Args:
@@ -30,13 +30,12 @@ def delete(page: int, source: str, collection_name: str) -> UpdateResult:
 
     """
     logger.info("Deleting Vector from Database")
-    qdrant_client, _ = load_vec_db_conn()
+    qdrant_client = load_vec_db_conn()
     result = qdrant_client.delete(
         collection_name=collection_name,
         points_selector=models.FilterSelector(
             filter=models.Filter(
                 must=[
-                    models.FieldCondition(key="metadata.page", match=models.MatchValue(value=page)),
                     models.FieldCondition(key="metadata.source", match=models.MatchValue(value=source)),
                 ],
             )
