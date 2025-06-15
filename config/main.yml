@@ -1,6 +1,6 @@
 qdrant:
-  url: http://qdrant
-  # url: http://localhost
+  # url: http://qdrant
+  url: http://localhost
   port: 6334
   prefer_grpc: True
   collection_name_openai: openai

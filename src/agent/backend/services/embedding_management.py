@@ -1,43 +1,51 @@
-"""Ollama Backend."""
+"""LiteLLM Backend."""
 
 from dotenv import load_dotenv
+from langchain_cohere import CohereEmbeddings
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
-from langchain_community.embeddings import OllamaEmbeddings
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import chain
-from langchain_text_splitters import NLTKTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
-from agent.backend.LLMBase import LLMBase
-from agent.data_model.request_data_model import (
-    SearchParams,
-)
+from agent.data_model.request_data_model import SearchParams
 from agent.utils.vdb import generate_collection, init_vdb
 
 load_dotenv()
 
 
-class OllamaService(LLMBase):
-    """Wrapper for Ollama llms."""
+class EmbeddingManagement:
+    """Wrapper for cohere llms."""
 
-    @load_config(location="config/main.yml")
+    @load_config(location="config/litellm.yml")
     def __init__(self, cfg: DictConfig, collection_name: str | None) -> None:
-        """Init the Ollama Service."""
-        super().__init__(collection_name=collection_name)
+        """Init the Litellm Service."""
+        super().__init__()
 
         self.cfg = cfg
 
         if collection_name:
             self.collection_name = collection_name
-        else:
-            self.collection_name = self.cfg.qdrant.collection_name_ollama
 
-        embedding = OllamaEmbeddings(model=self.cfg.ollama_embeddings.embedding_model_name)
+        # unfortunately, the embedding is not working with litellm directly an can only be used directly with a litellm prox server.
+        match self.cfg.embedding.provider:
+            case "cohere":
+                embedding = CohereEmbeddings(model=self.cfg.embedding.model_name)
+            case "google":
+                # TODO: add
 
-        self.vector_db = init_vdb(self.cfg, self.collection_name, embedding=embedding)
+                pass
+            case "openai":
+                # TODO: add
+                pass
+            case _:
+                msg = "No suitable embedding Model configured!"
+                raise KeyError(msg)
+
+        self.vector_db = init_vdb(collection_name=self.collection_name, embedding=embedding)
 
     def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:
         """Embeds the documents in the given directory.
@@ -48,6 +56,7 @@ class OllamaService(LLMBase):
             file_ending (str): File ending of the documents.
 
         """
+        # TODO: refactor to use markdownit
         if file_ending == ".pdf":
             loader = DirectoryLoader(directory, glob="*" + file_ending, loader_cls=PyPDFium2Loader)
         elif file_ending == ".txt":
@@ -56,7 +65,7 @@ class OllamaService(LLMBase):
             msg = "File ending not supported."
             raise ValueError(msg)
 
-        splitter = NLTKTextSplitter(length_function=len, chunk_size=500, chunk_overlap=75)
+        splitter = RecursiveCharacterTextSplitter(chunk_size=750, chunk_overlap=200, length_function=len, separators=["\n\n", "\n", ".", "!"])
 
         docs = loader.load_and_split(splitter)
 
@@ -75,7 +84,7 @@ class OllamaService(LLMBase):
 
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database."""
-        generate_collection(self.vector_db, name, self.cfg.qdrant.embeddings_size)
+        generate_collection(name, self.cfg.embeddings.size)
         return True
 
     def create_search_chain(self, search: SearchParams) -> BaseRetriever:
@@ -95,7 +104,13 @@ class OllamaService(LLMBase):
 
             """
             docs, scores = zip(
-                *self.vector_db.similarity_search_with_score(query, k=search.k, filter=search.filter, score_threshold=search.score_threshold), strict=False
+                *self.vector_db.similarity_search_with_score(
+                    query,
+                    k=search.k,
+                    filter=search.filter_settings,
+                    score_threshold=search.score_threshold,
+                ),
+                strict=False,
             )
             for doc, score in zip(docs, scores, strict=False):
                 doc.metadata["score"] = score
@@ -104,19 +119,10 @@ class OllamaService(LLMBase):
 
         return retriever_with_score
 
-    def summarize_text(self, text: str) -> str:
-        """Summarize text."""
-
 
 if __name__ == "__main__":
     query = "Was ist Attention?"
 
-    ollama_service = OllamaService(collection_name="")
+    cohere_service = EmbeddingManagement(collection_name="")
 
-    ollama_service.embed_documents(directory="tests/resources/")
-
-    chain = ollama_service.create_search_chain(query)
-
-    answer = chain.invoke(query)
-
-    logger.info(answer)
+    cohere_service.embed_documents(directory="tests/resources/")

@@ -6,14 +6,11 @@ from pathlib import Path
 
 from langchain.prompts import PromptTemplate
 from langchain_core.documents import Document
-from lingua import Language, LanguageDetectorBuilder
 from loguru import logger
 
 from agent.data_model.internal_model import RetrievalResults
 
 # add new languages to detect here
-languages = [Language.ENGLISH, Language.GERMAN]
-detector = LanguageDetectorBuilder.from_languages(*languages).with_minimum_relative_distance(0.7).build()
 
 
 def combine_text_from_list(input_list: list) -> str:

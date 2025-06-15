@@ -1,0 +1,9 @@
+generation_llm:
+  model_name: 'gemini/gemini-2.0-flash-exp'
+
+
+# depends on which embedding model you want to use.
+embedding:
+  provider: 'cohere'
+  model_name: 'embed-v4.0'
+  size: 1536

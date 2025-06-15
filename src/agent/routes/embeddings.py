@@ -2,69 +2,121 @@
 
 import asyncio
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import APIRouter, File, UploadFile
+import aiofiles
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from loguru import logger
 
-from agent.backend.LLMStrategy import LLMContext, LLMStrategyFactory
-from agent.data_model.request_data_model import EmbeddTextRequest, LLMBackend, LLMProvider
+from agent.backend.services.embedding_management import EmbeddingManagement
+from agent.data_model.request_data_model import EmbeddTextRequest
 from agent.data_model.response_data_model import EmbeddingResponse
 from agent.utils.utility import create_tmp_folder
 
 router = APIRouter()
 
 
-@router.post("/documents", tags=["embeddings"])
-async def post_embed_documents(llm_backend: LLMBackend, files: list[UploadFile] = File(...), file_ending: str = ".pdf") -> EmbeddingResponse:
-    """Embeds multiple documents from files.
+async def _write_file_to_disk(file_path: Path, file_content: bytes) -> None:
+    """Asynchronously writes file content to a specified path using aiofiles.
 
-    Args:
-    ----
-        llm_backend (LLMBackend): Which LLM backend to use.
-        files (list[UploadFile], optional): The uploaded files. Defaults to File(...).
-        file_ending (str, optional): The file ending of the uploaded file. Defaults to ".pdf".
-
-    Raises:
-    ------
-        ValueError: If a temporary folder to save the files is not provided.
-        ValueError: If a file is not provided to save.
-
-    Returns:
-    -------
-        EmbeddingResponse: Response containing the status and a list of file names.
-
+    This avoids blocking the event loop.
     """
-    logger.info("Embedding Multiple Documents")
+    try:
+        async with aiofiles.open(file_path, "wb") as f:
+            await f.write(file_content)
+        logger.info(f"Successfully wrote file: {file_path}")
+    except OSError as e:
+        logger.error(f"Error writing file {file_path}: {e}")
+        # Re-raising allows the global exception handler to catch it
+        raise
+
+
+@router.post(
+    "/documents",
+    tags=["embeddings"],
+    summary="Embeds multiple documents from uploaded files.",
+)
+async def post_embed_documents(
+    collection_name: str,
+    files: Annotated[list[UploadFile], File(description="A list of files to be embedded.")],
+    file_ending: str = ".pdf",
+) -> EmbeddingResponse:
+    """Endpoint concurrently processes and embeds multiple uploaded documents.
+
+    - **collection_name**: The target collection for the document embeddings.
+    - **files**: A list of uploaded files.
+    - **file_ending**: The expected file extension for filtering documents.
+    """
+    if not files:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No files were uploaded.",
+        )
+
+    logger.info(f"Starting embedding process for {len(files)} documents.")
     tmp_dir = create_tmp_folder()
-
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=LLMProvider.ALEPH_ALPHA, collection_name=llm_backend.collection_name))
     file_names = []
-
-    # Use asyncio to write files concurrently
     write_tasks = []
+
     for file in files:
-        file_name = file.filename
-        if not file_name:
-            msg = "Please provide a file to save."
-            raise ValueError(msg)
+        if not file.filename:
+            # This case is unlikely with FastAPI's UploadFile but good for safety
+            logger.warning("Skipping an upload that had no filename.")
+            continue
 
-        file_path = Path(tmp_dir) / file_name
-        write_tasks.append(asyncio.to_thread(file.save, file_path))
-        file_names.append(file_name)
+        file_path = Path(tmp_dir) / file.filename
+        file_names.append(file.filename)
+        # Create a coroutine to read the file and then write it to disk
+        task = asyncio.create_task(_process_and_write_file(file, file_path))
+        write_tasks.append(task)
 
-    await asyncio.gather(*write_tasks)
+    try:
+        await asyncio.gather(*write_tasks)
+    except OSError as e:
+        # This catches errors from _write_file_to_disk
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="A file writing error occurred on the server.",
+        ) from e
 
-    service.embed_documents(folder=tmp_dir, file_ending=file_ending)
+    # Consider running this in a thread if it's a blocking CPU-bound operation
+    service = EmbeddingManagement(collection_name=collection_name)
+    try:
+        # This part remains synchronous as per the original code.
+        # If embed_documents is I/O bound, it should be made async.
+        # If it's CPU-bound, run it in a threadpool.
+        await asyncio.to_thread(service.embed_documents, directory=tmp_dir, file_ending=file_ending)
+    except Exception as e:
+        logger.error(f"Embedding failed for collection '{collection_name}': {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to embed the documents.",
+        ) from e
+
     return EmbeddingResponse(status="success", files=file_names)
 
 
+async def _process_and_write_file(file: UploadFile, file_path: Path) -> None:
+    """Reads the content of an uploaded file and writes it to disk."""
+    file_content = await file.read()
+    await _write_file_to_disk(file_path, file_content)
+
+
 @router.post("/string/", tags=["embeddings"])
-async def embedd_text(embedding: EmbeddTextRequest, llm_backend: LLMBackend) -> EmbeddingResponse:
+async def embedd_text(embedding: EmbeddTextRequest, collection_name: str) -> EmbeddingResponse:
     """Embedding text."""
     logger.info("Embedding Text")
-    service = LLMContext(LLMStrategyFactory.get_strategy(strategy_type=llm_backend.llm_provider, collection_name=llm_backend.collection_name))
+    service = EmbeddingManagement(collection_name=collection_name)
     tmp_dir = create_tmp_folder()
-    with (Path(tmp_dir) / (embedding.file_name + ".txt")).open("w") as f:
+    from werkzeug.utils import secure_filename
+    sanitized_file_name = secure_filename(embedding.file_name + ".txt")
+    full_path = Path(tmp_dir) / sanitized_file_name
+    if not str(full_path).startswith(str(tmp_dir)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file name provided."
+        )
+    with full_path.open("w") as f:
         f.write(embedding.text)
     service.embed_documents(directory=tmp_dir, file_ending=".txt")
     return EmbeddingResponse(status="success", files=[embedding.file_name])
