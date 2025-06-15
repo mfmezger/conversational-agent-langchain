@@ -108,7 +108,15 @@ async def embedd_text(embedding: EmbeddTextRequest, collection_name: str) -> Emb
     logger.info("Embedding Text")
     service = EmbeddingManagement(collection_name=collection_name)
     tmp_dir = create_tmp_folder()
-    with (Path(tmp_dir) / (embedding.file_name + ".txt")).open("w") as f:
+    from werkzeug.utils import secure_filename
+    sanitized_file_name = secure_filename(embedding.file_name + ".txt")
+    full_path = Path(tmp_dir) / sanitized_file_name
+    if not str(full_path).startswith(str(tmp_dir)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file name provided."
+        )
+    with full_path.open("w") as f:
         f.write(embedding.text)
     service.embed_documents(directory=tmp_dir, file_ending=".txt")
     return EmbeddingResponse(status="success", files=[embedding.file_name])
