@@ -22,4 +22,7 @@ class Config(BaseSettings):
     qdrant_prefer_http: bool = False
     phoenix_collector_endpoint: str
     qdrant_collection_name: str = "default"
-    qdrant_embedding_size: int = 1024
+    qdrant_embedding_size: int = 1536
+
+
+config = Config()

@@ -4,23 +4,26 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from loguru import logger
 
-from agent.backend.services.embedding_management import EmbeddingManagement
 from agent.data_model.request_data_model import SearchParams
 from agent.data_model.response_data_model import SearchResponse
+from agent.utils.retriever import get_retriever
 
 router = APIRouter()
 
 
 @router.post("/search", tags=["search"])
-def search(search: SearchParams, collection_name: str) -> list[SearchResponse]:
+def search(search: SearchParams) -> list[SearchResponse]:
     """Search for documents."""
     logger.info("Searching for Documents")
-    service = EmbeddingManagement(collection_name=collection_name)
-    docs = service.search(search=search)
+    retriever = get_retriever(
+        collection_name=search.collection_name,
+        k=search.k,
+    )
+    docs = retriever.invoke(search.query)
 
     if not docs:
         logger.info("No Documents found.")
         return JSONResponse(content={"message": "No documents found."})
 
     logger.info(f"Found {len(docs)} documents.")
-    return [SearchResponse(text=d[0].page_content, page=d[0].metadata["page"], source=d[0].metadata["source"], score=d[1]) for d in docs]
+    return [SearchResponse(text=d.page_content, page=d.metadata["page"], source=d.metadata["source"]) for d in docs]

@@ -3,19 +3,15 @@
 from collections.abc import Sequence
 from typing import Annotated, Literal, TypedDict
 
-from langchain_cohere import CohereEmbeddings
 from langchain_community.chat_models import ChatLiteLLM
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, convert_to_messages
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
-from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import RunnableConfig, chain
-from langchain_qdrant import Qdrant
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, StateGraph, add_messages
 from omegaconf import DictConfig
-from qdrant_client import QdrantClient
 from ultra_simple_config import load_config
 
 from agent.backend.prompts import COHERE_RESPONSE_TEMPLATE, REPHRASE_TEMPLATE, RESPONSE_TEMPLATE
@@ -63,66 +59,6 @@ class Graph:
 
         # define models
         self.llm = ChatLiteLLM(model=self.cfg.generation_llm.model_name)
-
-    def get_score_retriever(self) -> BaseRetriever:
-        """Get the Retriever.
-
-        Returns
-        -------
-            BaseRetriever: _description_
-
-        """
-        embedding = CohereEmbeddings(model="embed-multilingual-v3.0")
-
-        qdrant_client = QdrantClient(
-            settings.qdrant_url,
-            port=settings.qdrant_port,
-            api_key=settings.qdrant_api_key,
-            prefer_grpc=settings.qdrant_prefer_http,
-        )
-
-        vector_db = Qdrant(client=qdrant_client, collection_name="cohere", embeddings=embedding)
-
-        @chain
-        def retriever_with_score(query: str) -> list[Document]:
-            """Defines a retriever that returns the score.
-
-            Args:
-            ----
-                query (str): Query the user asks.
-
-            Returns:
-            -------
-                list[Document]: List of Langchain Documents.
-
-            """
-            docs, scores = zip(*vector_db.similarity_search_with_score(query), strict=False)
-            for doc, score in zip(docs, scores, strict=False):
-                doc.metadata["score"] = score
-
-            return docs
-
-        return retriever_with_score
-
-    def get_retriever() -> BaseRetriever:
-        """Create a Vector Database retriever.
-
-        Returns
-        -------
-            BaseRetriever: Qdrant + Cohere Embeddings Retriever
-
-        """
-        embedding = CohereEmbeddings(model="embed-multilingual-v3.0")
-
-        qdrant_client = QdrantClient(
-            settings.qdrant_url,
-            port=settings.qdrant_port,
-            api_key=settings.qdrant_api_key,
-            prefer_grpc=False,
-        )
-
-        vector_db = Qdrant(client=qdrant_client, collection_name="cohere", embeddings=embedding)
-        return vector_db.as_retriever(search_kwargs={"k": 4})
 
     def retrieve_documents(self, state: AgentState) -> AgentState:
         """Retrieve documents from the retriever.

@@ -18,7 +18,6 @@ class SearchResponse(BaseModel):
     text: str = Field(..., title="Text", description="The text of the document.")
     page: int = Field(..., title="Page", description="The page of the document.")
     source: str = Field(..., title="Source", description="The source of the document.")
-    score: float = Field(..., title="Score", description="The score of the document.")
 
 
 class EmbeddingResponse(BaseModel):

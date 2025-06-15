@@ -16,12 +16,10 @@ class SearchParams(BaseModel):
 
     query: str = Field(..., title="Query", description="The search query.")
     k: int = Field(3, title="Amount", description="The number of search results to return.")
-    score_threshold: float = Field(0.0, title="Threshold", description="The threshold to use for the search.")
-    # TODO: renaming due to python keyword
-    filter_settings: dict | None = Field(
-        None,
-        title="Filter Settings",
-        description="Filter Settings for the database search with metadata.",
+    collection_name: str = Field(
+        default="default",
+        title="Collection Name",
+        description="The name of the collection to search in.",
     )
 
 
@@ -33,7 +31,7 @@ class ChatMessages(BaseModel):
         title="Role",
         description="The role of the sender can be either user or assistant.",
     )
-    content: str = Field(..., title="Content", description="The content of the message.")
+    content: str = Field(default=..., title="Content", description="The content of the message.")
 
 
 class RAGRequest(BaseModel):

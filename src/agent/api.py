@@ -25,7 +25,9 @@ tracer_provider = register(
 )
 
 LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
-f = pyfiglet.figlet_format("Conversational Agent", font="univers")
+
+# Show startup message
+f = pyfiglet.figlet_format("Conv. Agent", font="univers")
 logger.info(f"Welcome to {f}")
 
 
@@ -44,7 +46,6 @@ def my_schema() -> dict:
 app = FastAPI(debug=True)
 app.openapi = my_schema
 
-load_dotenv(override=True)
 logger.info("Loading REST API Finished.")
 
 app.include_router(router=collection.router, prefix="/collection")
@@ -58,9 +59,6 @@ app.include_router(router=delete.router, prefix="/embeddings")
 def read_root() -> str:
     """Returning the Root."""
     return "Welcome to the RAG Backend. Please navigate to /docs for the OpenAPI!"
-
-
-# initialize the databases
 
 
 if __name__ == "__main__":
