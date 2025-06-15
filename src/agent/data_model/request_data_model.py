@@ -39,9 +39,19 @@ class RAGRequest(BaseModel):
 
     # language: Language | None = Field(Language.DETECT, title="Language", description="The language to use for the answer.")
     messages: list[ChatMessages] | None = Field(
-        [],
+        default=[
+            {
+                "role": "user",
+                "content": "What is the capital of France?",
+            }
+        ],
         title="History",
         description="A list of previous questions and answers to include in the context.",
+    )
+    collection_name: str = Field(
+        default="default",
+        title="Collection Name",
+        description="The name of the collection to search in.",
     )
 
 

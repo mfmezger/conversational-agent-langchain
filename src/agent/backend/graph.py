@@ -11,11 +11,13 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, StateGraph, add_messages
+from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
 
 from agent.backend.prompts import COHERE_RESPONSE_TEMPLATE, REPHRASE_TEMPLATE, RESPONSE_TEMPLATE
 from agent.utils.config import Config
+from agent.utils.retriever import get_retriever
 from agent.utils.utility import format_docs_for_citations
 
 OPENAI_MODEL_KEY = "openai_gpt_3_5_turbo"
@@ -58,39 +60,44 @@ class Graph:
         self.cfg = load_litellm_config()
 
         # define models
-        self.llm = ChatLiteLLM(model=self.cfg.generation_llm.model_name)
+        self.llm = ChatLiteLLM(model_name=self.cfg.generation_llm.model_name)
 
-    def retrieve_documents(self, state: AgentState) -> AgentState:
+    def retrieve_documents(self, state: AgentState, config: RunnableConfig) -> AgentState:
         """Retrieve documents from the retriever.
 
         Args:
         ----
             state (AgentState): Graph State.
+            config (RunnableConfig): Runnable Config.
 
         Returns:
         -------
             AgentState: Modified Graph State.
 
         """
-        retriever = self.get_retriever()
+        retriever = get_retriever(collection_name=config["metadata"]["collection_name"])
         messages = convert_to_messages(messages=state["messages"])
         query = messages[-1].content
         relevant_documents = retriever.invoke(query)
+        # log if relevant documents are empty
+        if not relevant_documents:
+            logger.info("No relevant documents found for the query:", query)
         return {"query": query, "documents": relevant_documents}
 
-    def retrieve_documents_with_chat_history(self, state: AgentState) -> AgentState:
+    def retrieve_documents_with_chat_history(self, state: AgentState, config: RunnableConfig) -> AgentState:
         """Retrieve documents from the retriever with chat history.
 
         Args:
         ----
             state (AgentState): Graph State.
+            config (RunnableConfig): Runnable Config.
 
         Returns:
         -------
             AgentState: Modified Graph State.
 
         """
-        retriever = self.get_retriever()
+        retriever = get_retriever(collection_name=config["metadata"]["collection_name"])
         model = self.llm.with_config(tags=["nostream"])
 
         condense_queston_prompt = PromptTemplate.from_template(REPHRASE_TEMPLATE)
@@ -122,7 +129,7 @@ class Graph:
         else:
             return "retriever_with_chat_history"
 
-    def get_chat_history(self: Sequence[BaseMessage]) -> Sequence[BaseMessage]:
+    def get_chat_history(self, messages: Sequence[BaseMessage]) -> list:
         """Append the chat history to the messages.
 
         Args:
@@ -136,7 +143,7 @@ class Graph:
         """
         return [
             {"content": message.content, "role": message.type}
-            for message in self
+            for message in messages
             if (isinstance(message, AIMessage) and not message.tool_calls) or isinstance(message, HumanMessage)
         ]
 
@@ -164,8 +171,8 @@ class Graph:
         response_synthesizer = prompt | model
         synthesized_response = response_synthesizer.invoke(
             {
-                "question": self["query"],
-                "context": format_docs_for_citations(self["documents"]),
+                "question": state["query"],
+                "context": format_docs_for_citations(state["documents"]),
                 # NOTE: we're ignoring the last message here, as it's going to contain the most recent
                 # query and we don't want that to be included in the chat history
                 "chat_history": self.get_chat_history(convert_to_messages(state["messages"][:-1])),
@@ -189,7 +196,7 @@ class Graph:
         """
         return self.generate_response(state, self.llm, RESPONSE_TEMPLATE)
 
-    def generate_response_cohere(self, state: AgentState) -> AgentState:  # noqa: ARG002
+    def generate_response_cohere(self, state: AgentState) -> AgentState:
         """Generate a response using the Cohere model.
 
         Args:
@@ -201,8 +208,8 @@ class Graph:
             AgentState: Modified Graph State.
 
         """
-        model = self.llm.bind(documents=self["documents"])
-        return self.generate_response(self, model, COHERE_RESPONSE_TEMPLATE)
+        model = self.llm.bind(documents=state["documents"])
+        return self.generate_response(state, model, COHERE_RESPONSE_TEMPLATE)
 
     def route_to_response_synthesizer(self, state: AgentState, config: RunnableConfig) -> Literal["response_synthesizer", "response_synthesizer_cohere"]:  # noqa: ARG002
         """Route to the appropriate response synthesizer based on the config.

@@ -20,7 +20,7 @@ router = APIRouter()
 def question_answer(rag: RAGRequest) -> QAResponse:
     """Answering the Question."""
     messages = [dict(m) for m in rag.messages]
-    chain_result = graph.invoke({"messages": messages})
+    chain_result = graph.with_config({"collection_name": rag.collection_name}).invoke({"messages": messages})
 
     documents = [{"document": [doc.page_content], "metadata": [doc.metadata]} for doc in chain_result["documents"]]
     return QAResponse(answer=chain_result["messages"][-1].content, meta_data=documents)
@@ -34,7 +34,7 @@ def question_answer_stream(rag: RAGRequest) -> None:
     async def stream() -> AsyncGenerator:
         documents = []
 
-        async for chunk in graph.with_config().astream_events({"messages": messages}, version="v2"):
+        async for chunk in graph.with_config({"collection_name": rag.collection_name}).astream_events({"messages": messages}, version="v2"):
             if chunk["event"] == "on_chat_model_stream" and chunk["metadata"]["langgraph_step"] == 2:
                 yield json.dumps({"done": False, "content": chunk["data"]["chunk"].content}) + "\n"
             if chunk["name"] == "LangGraph" and chunk["event"] == "on_chain_end":
