@@ -22,6 +22,7 @@ This is a Rest-Backend for a Conversational Agent, that allows to embedd Documen
     - [Hybrid Search](#hybrid-search)
   - [Architecture](#architecture)
   - [Installation \& Development Backend](#installation--development-backend)
+    - [Load Demo Data](#load-demo-data)
   - [Development Frontend](#development-frontend)
     - [Mypy](#mypy)
   - [Vector Database](#vector-database)
@@ -69,6 +70,8 @@ Frontend: localhost:8501
 Qdrant Dashboard: localhost:6333/dashboard
 
 
+
+
 ## Project Description
 This project is a conversational rag agent that uses Google Gemini Large Language Models to generate responses to user queries. The agent also includes a vector database and a REST API built with FastAPI.
 
@@ -107,6 +110,11 @@ You need to install uv if you want to use it for syncing the requirements.lock f
 ```bash
 uv sync
 ```
+
+### Load Demo Data
+
+In src/agent/scripts use the load dummy data script to load some example data in the rag.
+
 
 Start the complete system with:
 
