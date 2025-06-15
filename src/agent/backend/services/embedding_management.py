@@ -6,7 +6,7 @@ from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loade
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import chain
-from langchain_text_splitters import NLTKTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from loguru import logger
 from omegaconf import DictConfig
 from ultra_simple_config import load_config
@@ -33,7 +33,7 @@ class EmbeddingManagement:
         # unfortunately, the embedding is not working with litellm directly an can only be used directly with a litellm prox server.
         match self.cfg.embedding.provider:
             case "cohere":
-                embedding = CohereEmbeddings(model=self.cfg.embedding.model_name)  # type: ignore
+                embedding = CohereEmbeddings(model=self.cfg.embedding.model_name)
             case "google":
                 # TODO: add
 
@@ -45,7 +45,7 @@ class EmbeddingManagement:
                 msg = "No suitable embedding Model configured!"
                 raise KeyError(msg)
 
-        self.vector_db = init_vdb(collection_name=self.collection_name, embedding=embedding)  # type: ignore  # noqa: PGH003
+        self.vector_db = init_vdb(collection_name=self.collection_name, embedding=embedding)
 
     def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:
         """Embeds the documents in the given directory.
@@ -65,7 +65,7 @@ class EmbeddingManagement:
             msg = "File ending not supported."
             raise ValueError(msg)
 
-        splitter = NLTKTextSplitter(length_function=len, chunk_size=500, chunk_overlap=75)
+        splitter = RecursiveCharacterTextSplitter(chunk_size=750, chunk_overlap=200, length_function=len, separators=["\n\n", "\n", ".", "!"])
 
         docs = loader.load_and_split(splitter)
 

@@ -6,4 +6,4 @@ generation_llm:
 embedding:
   provider: 'cohere'
   model_name: 'embed-v4.0'
-  size: 768
+  size: 1536
