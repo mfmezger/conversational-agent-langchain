@@ -25,7 +25,6 @@ tracer_provider = register(
 )
 
 LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
-logger.info()
 f = pyfiglet.figlet_format("Conversational Agent", font="univers")
 logger.info(f"Welcome to {f}")
 

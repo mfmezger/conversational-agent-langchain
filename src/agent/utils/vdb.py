@@ -10,7 +10,7 @@ from agent.utils.config import Config
 sparse_embeddings = FastEmbedSparse(model_name="Qdrant/bm25")
 
 settings = Config()
-qdrant_client = QdrantClient(settings.qdrant_url, port=settings.qdrant_port, api_key=settings.qdrant_api_key, prefer_grpc=settings.qdrant_prefer_http)
+qdrant_client = QdrantClient(location=settings.qdrant_url, port=settings.qdrant_port, api_key=settings.qdrant_api_key, prefer_grpc=settings.qdrant_prefer_http)
 
 
 def init_vdb(collection_name: str, embedding: Embeddings) -> QdrantVectorStore:
@@ -86,7 +86,7 @@ def generate_collection(collection_name: str, embeddings_size: int) -> None:
 
     """
     qdrant_client = load_vec_db_conn()
-    qdrant_client.set_sparse_model("Qdrant/bm25")
+    qdrant_client.set_sparse_model(embedding_model_name="Qdrant/bm25")
     qdrant_client.create_collection(
         collection_name=collection_name,
         vectors_config=models.VectorParams(size=embeddings_size, distance=models.Distance.COSINE),

@@ -6,7 +6,7 @@ from agent.utils.vdb import generate_collection
 
 def main() -> None:
     """Generating test collection and uploading data for testing."""
-    generate_collection(collection_name="test", embeddings_size=1536)
+    generate_collection(collection_name="asdf", embeddings_size=1536)
     vdb = EmbeddingManagement(collection_name="test")
     vdb.embed_documents(directory="resources")
 

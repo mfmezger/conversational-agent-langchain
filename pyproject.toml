@@ -7,10 +7,10 @@ authors = [
 ]
 dependencies = [
     "ultra-simple-config>=0.1.0",
-    "langgraph>=0.4.5",
+    "langgraph>=0.4.8",
     "litellm>=1.70.2",
-    "fastembed>=0.5.1",
-    "arize-phoenix>=7.9.4",
+    "fastembed>=0.7.0",
+    "arize-phoenix>=10.12.0",
     "openai>=1.65.2",
     "fastapi>=0.115.12",
     "python-dotenv>=1.0.1",
@@ -24,6 +24,9 @@ dependencies = [
     "uvicorn>=0.34.0",
     "arize-phoenix-otel>=0.7.1",
     "openinference-instrumentation-langchain>=0.1.43",
+    "pyfiglet>=1.0.3",
+    "langchain-qdrant>=0.2.0",
+    "aiofiles>=24.1.0",
 ]
 
 readme = "README.md"
