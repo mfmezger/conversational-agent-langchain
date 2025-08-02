@@ -30,21 +30,16 @@ def combine_text_from_list(input_list: list) -> str:
 
     """
     # iterate through list and combine all strings to one
-    combined_text = ""
 
     logger.info(f"List: {input_list}")
 
     for text in input_list:
         # verify that text is a string
-        if isinstance(text, str):
-            # combine the text in a new line
-            combined_text += "\n".join(text)
-
-        else:
+        if not isinstance(text, str):
             msg = "Input list must contain only strings"
             raise TypeError(msg)
 
-    return combined_text
+    return "\n".join(input_list)
 
 
 def load_prompt_template(prompt_name: str, task: str) -> PromptTemplate:
@@ -71,7 +66,7 @@ def load_prompt_template(prompt_name: str, task: str) -> PromptTemplate:
         msg = f"Prompt file '{prompt_name}' not found."
         raise FileNotFoundError(msg) from e
 
-    return prompt_template
+    return PromptTemplate.from_template(prompt_template)
 
 
 def convert_qdrant_result_to_retrieval_results(docs: list) -> list[RetrievalResults]:

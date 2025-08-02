@@ -1,5 +1,7 @@
 """Route to handle the delection of a vector from the database."""
 
+import asyncio
+
 from fastapi import APIRouter
 from loguru import logger
 from qdrant_client import models
@@ -11,7 +13,7 @@ router = APIRouter()
 
 
 @router.delete("/delete/{source}", tags=["embeddings"])
-def delete(source: str, collection_name: str) -> UpdateResult:
+async def delete(source: str, collection_name: str) -> UpdateResult:
     """Delete a vector from the database.
 
     Args:
@@ -31,7 +33,8 @@ def delete(source: str, collection_name: str) -> UpdateResult:
     """
     logger.info("Deleting Vector from Database")
     qdrant_client = load_vec_db_conn()
-    result = qdrant_client.delete(
+    result = await asyncio.to_thread(
+        qdrant_client.delete,
         collection_name=collection_name,
         points_selector=models.FilterSelector(
             filter=models.Filter(

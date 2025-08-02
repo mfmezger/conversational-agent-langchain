@@ -27,7 +27,7 @@ tracer_provider = register(
 LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
 
 # Show startup message
-f = pyfiglet.figlet_format("Conv. Agent", font="univers")
+f = pyfiglet.figlet_format("Conv Agent", font="univers")
 logger.info(f"Welcome to {f}")
 
 
@@ -55,7 +55,7 @@ app.include_router(router=rag.router, prefix="/rag")
 app.include_router(router=delete.router, prefix="/embeddings")
 
 
-@app.get("/", tags=["root"])
+@app.get(path="/", tags=["root"])
 def read_root() -> str:
     """Returning the Root."""
     return "Welcome to the RAG Backend. Please navigate to /docs for the OpenAPI!"

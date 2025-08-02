@@ -1,5 +1,7 @@
 """Routes for the collection management."""
 
+import asyncio
+
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
@@ -9,7 +11,7 @@ router = APIRouter()
 
 
 @router.post(path="/create/{collection_name}", tags=["collection"])
-def create_collection(collection_name: str, embeddings_size: int) -> JSONResponse:
+async def create_collection(collection_name: str, embeddings_size: int) -> JSONResponse:
     """Create a new collection.
 
     Args:
@@ -22,5 +24,5 @@ def create_collection(collection_name: str, embeddings_size: int) -> JSONRespons
         JSONResponse: Success Message.
 
     """
-    initialize_vector_db(collection_name=collection_name, embeddings_size=embeddings_size)
+    await asyncio.to_thread(initialize_vector_db, collection_name=collection_name, embeddings_size=embeddings_size)
     return JSONResponse(content={"message": f"Collection {collection_name} created."})

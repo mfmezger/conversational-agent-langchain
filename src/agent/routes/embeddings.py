@@ -7,6 +7,7 @@ from typing import Annotated
 import aiofiles
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from loguru import logger
+from werkzeug.utils import secure_filename
 
 from agent.backend.services.embedding_management import EmbeddingManagement
 from agent.data_model.request_data_model import EmbeddTextRequest
@@ -108,15 +109,12 @@ async def embedd_text(embedding: EmbeddTextRequest, collection_name: str) -> Emb
     logger.info("Embedding Text")
     service = EmbeddingManagement(collection_name=collection_name)
     tmp_dir = create_tmp_folder()
-    from werkzeug.utils import secure_filename
+
     sanitized_file_name = secure_filename(embedding.file_name + ".txt")
     full_path = Path(tmp_dir) / sanitized_file_name
     if not str(full_path).startswith(str(tmp_dir)):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid file name provided."
-        )
-    with full_path.open("w") as f:
-        f.write(embedding.text)
-    service.embed_documents(directory=tmp_dir, file_ending=".txt")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file name provided.")
+    async with aiofiles.open(full_path, "w") as f:
+        await f.write(embedding.text)
+    await asyncio.to_thread(service.embed_documents, directory=tmp_dir, file_ending=".txt")
     return EmbeddingResponse(status="success", files=[embedding.file_name])

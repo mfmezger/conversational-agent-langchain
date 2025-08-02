@@ -17,17 +17,17 @@ router = APIRouter()
 
 
 @router.post("/", tags=["rag"])
-def question_answer(rag: RAGRequest) -> QAResponse:
+async def question_answer(rag: RAGRequest) -> QAResponse:
     """Answering the Question."""
     messages = [dict(m) for m in rag.messages]
-    chain_result = graph.with_config({"collection_name": rag.collection_name}).invoke({"messages": messages})
+    chain_result = await graph.with_config({"collection_name": rag.collection_name}).ainvoke({"messages": messages})
 
     documents = [{"document": [doc.page_content], "metadata": [doc.metadata]} for doc in chain_result["documents"]]
     return QAResponse(answer=chain_result["messages"][-1].content, meta_data=documents)
 
 
 @router.post("/stream", tags=["rag"])
-def question_answer_stream(rag: RAGRequest) -> None:
+async def question_answer_stream(rag: RAGRequest) -> StreamingResponse:
     """Stream the Answering."""
     messages = [dict(m) for m in rag.messages]
 
