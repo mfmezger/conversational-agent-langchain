@@ -11,15 +11,15 @@ from agent.utils.retriever import get_retriever
 router = APIRouter()
 
 
-@router.post("/search", tags=["search"])
-def search(search: SearchParams) -> list[SearchResponse]:
+@router.post("/search", tags=["search"], response_model=list[SearchResponse])
+async def search(search: SearchParams) -> list[SearchResponse] | JSONResponse:
     """Search for documents."""
     logger.info("Searching for Documents")
     retriever = get_retriever(
         collection_name=search.collection_name,
         k=search.k,
     )
-    docs = retriever.invoke(search.query)
+    docs = await retriever.ainvoke(search.query)
 
     if not docs:
         logger.info("No Documents found.")
