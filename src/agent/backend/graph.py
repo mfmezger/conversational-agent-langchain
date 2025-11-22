@@ -3,13 +3,13 @@
 from collections.abc import Sequence
 from typing import Annotated, Literal, TypedDict
 
-from langchain_community.chat_models import ChatLiteLLM
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, convert_to_messages
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_core.runnables import RunnableConfig
+from langchain_litellm import ChatLiteLLM
 from langgraph.graph import END, StateGraph, add_messages
 from loguru import logger
 from omegaconf import DictConfig

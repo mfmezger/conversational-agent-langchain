@@ -23,14 +23,26 @@ def test_combine_text_from_list_with_non_string():
     with pytest.raises(TypeError):
         combine_text_from_list(input_list)
 
-def test_load_prompt_template():
+def test_load_prompt_template(tmp_path, monkeypatch):
     """Test that load_prompt_template returns the correct prompt template."""
+    # Setup
+    d = tmp_path / "prompts" / "chat"
+    d.mkdir(parents=True)
+    p = d / "cohere_chat.j2"
+    p.write_text("Context: {{ context }}\nQuestion: {{ question }}", encoding="utf-8")
+
+    monkeypatch.chdir(tmp_path)
+
+    # Execute
     prompt_template = load_prompt_template(prompt_name="cohere_chat.j2", task="chat")
+
+    # Verify
     assert "Context" in prompt_template.template
     assert "Question" in prompt_template.template
 
-def test_load_prompt_template_not_found():
+def test_load_prompt_template_not_found(tmp_path, monkeypatch):
     """Test that load_prompt_template raises a FileNotFoundError if the prompt template is not found."""
+    monkeypatch.chdir(tmp_path)
     with pytest.raises(FileNotFoundError):
         load_prompt_template(prompt_name="not_found.j2", task="chat")
 

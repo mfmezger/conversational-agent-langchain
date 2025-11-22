@@ -22,7 +22,7 @@ services:
       - "8501:8501"
 
   qdrant:
-    image: qdrant/qdrant
+    image: qdrant/qdrant:v1.16.1
     container_name: qdrant
     command: ["./qdrant", "--config-path", "config/qdrant.yaml"]
     volumes:
