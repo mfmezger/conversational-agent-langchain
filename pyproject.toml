@@ -1,6 +1,6 @@
 [project]
 name = "agent"
-version = "3.2.0"
+version = "3.2.1"
 description = "Add your description here"
 authors = [
     { name = "Marc Fabian Mezger", email = "57255687+mfmezger@users.noreply.github.com" }

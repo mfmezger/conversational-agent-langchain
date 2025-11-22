@@ -1,3 +1,9 @@
+## 3.2.1 (2025-11-22)
+
+### Fix
+
+- **LiteLLM**: Fixing deprectation warning.s
+
 ## 3.2.0 (2025-11-22)
 
 ### Feat
