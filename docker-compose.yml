@@ -13,13 +13,13 @@ services:
     env_file:
       - .env
 
-  # streamlit_app:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.frontend
-  #   platform: linux/amd64
-  #   ports:
-  #     - "8501:8501"
+  streamlit_app:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    platform: linux/amd64
+    ports:
+      - "8501:8501"
 
   qdrant:
     image: qdrant/qdrant

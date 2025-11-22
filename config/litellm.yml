@@ -1,5 +1,5 @@
 generation_llm:
-  model_name: 'gemini/gemini-2.0-flash-exp'
+  model_name: 'gemini/gemini-2.5-flash'
 
 
 # depends on which embedding model you want to use.

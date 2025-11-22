@@ -4,8 +4,8 @@ import uuid
 from collections.abc import Sequence
 from pathlib import Path
 
-from langchain.prompts import PromptTemplate
 from langchain_core.documents import Document
+from langchain_core.prompts import PromptTemplate
 from loguru import logger
 
 from agent.data_model.internal_model import RetrievalResults
