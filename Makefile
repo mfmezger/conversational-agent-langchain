@@ -16,13 +16,13 @@ clean:
 	rm -rf .coverage*
 
 start_backend:
-	poetry run uvicorn app.main:app --reload --port 8001
+	uv run uvicorn agent.api:app --reload --port 8001
 
 start_vectordb:
 	docker compose up --build -d qdrant
 
 setup:
-	poetry install
+	uv sync
 
 start_docker:
 	docker compose up --build -d
@@ -31,9 +31,9 @@ down:
 	docker compose down --remove-orphans
 
 start_frontend:
-	poetry run streamlit run asdf.py --theme.base="dark"
+	uv run streamlit run frontend/assistant.py --theme.base="dark"
 
 test:
-	poetry run coverage run -m pytest -o log_cli=true -vvv tests/
-	poetry run coverage report
-	poetry run coverage html
+	uv run coverage run -m pytest -o log_cli=true -vvv tests/
+	uv run coverage report
+	uv run coverage html

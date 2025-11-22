@@ -34,11 +34,34 @@ async def question_answer_stream(rag: RAGRequest) -> StreamingResponse:
     async def stream() -> AsyncGenerator:
         documents = []
 
+        # Yield initial status
+        yield json.dumps({"type": "status", "data": "Starting request..."}) + "\n"
+
         async for chunk in graph.with_config({"collection_name": rag.collection_name}).astream_events({"messages": messages}, version="v2"):
-            if chunk["event"] == "on_chat_model_stream" and chunk["metadata"]["langgraph_step"] == 2:
-                yield json.dumps({"done": False, "content": chunk["data"]["chunk"].content}) + "\n"
-            if chunk["name"] == "LangGraph" and chunk["event"] == "on_chain_end":
+            # Status updates for Retrieval
+            if chunk["event"] == "on_chain_start" and chunk["name"] in ["retriever", "retriever_with_chat_history"]:
+                yield json.dumps({"type": "status", "data": "Searching documents..."}) + "\n"
+
+            elif chunk["event"] == "on_chain_end" and chunk["name"] in ["retriever", "retriever_with_chat_history"]:
+                num_docs = len(chunk["data"]["output"].get("documents", []))
+                yield json.dumps({"type": "status", "data": f"Found {num_docs} documents."}) + "\n"
+
+            # Status updates for Generation
+            elif chunk["event"] == "on_chat_model_start":
+                yield json.dumps({"type": "status", "data": "Generating answer..."}) + "\n"
+
+            # Content streaming
+            elif chunk["event"] == "on_chat_model_stream" and chunk["metadata"].get("langgraph_node") in ["response_synthesizer", "response_synthesizer_cohere"]:
+                content = chunk["data"]["chunk"].content
+                if content:
+                    yield json.dumps({"type": "content", "data": content}) + "\n"
+
+            # Final Citations
+            elif chunk["name"] == "LangGraph" and chunk["event"] == "on_chain_end" and "documents" in chunk["data"]["output"]:
                 documents = [{"document": [doc.page_content], "metadata": [doc.metadata]} for doc in chunk["data"]["output"]["documents"]]
-                yield json.dumps({"done": True, "content": "", "citations": documents}) + "\n"
+                yield json.dumps({"type": "citation", "data": documents}) + "\n"
+
+        # Done event
+        yield json.dumps({"type": "status", "data": "Done."}) + "\n"
 
     return StreamingResponse(stream(), media_type="application/x-ndjson")
