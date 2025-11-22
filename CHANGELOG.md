@@ -1,3 +1,9 @@
+## 3.2.0 (2025-11-22)
+
+### Feat
+
+- **Frontend**: Reworking frontend to support streaming
+
 ## 3.1.0 (2025-11-22)
 
 ### Feat
