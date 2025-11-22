@@ -60,7 +60,7 @@ class Graph:
         self.cfg = load_litellm_config()
 
         # define models
-        self.llm = ChatLiteLLM(model_name=self.cfg.generation_llm.model_name)
+        self.llm = ChatLiteLLM(model_name=self.cfg.generation_llm.model_name, streaming=True)
 
     def retrieve_documents(self, state: AgentState, config: RunnableConfig) -> AgentState:
         """Retrieve documents from the retriever.
