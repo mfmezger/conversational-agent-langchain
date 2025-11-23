@@ -21,8 +21,6 @@ class EmbeddingManagement:
 
     def __init__(self, collection_name: str | None) -> None:
         """Init the Litellm Service."""
-        super().__init__()
-
         self.cfg = config
 
         if collection_name:
