@@ -8,10 +8,9 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import chain
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from loguru import logger
-from omegaconf import DictConfig
-from ultra_simple_config import load_config
 
 from agent.data_model.request_data_model import SearchParams
+from agent.utils.config import config
 from agent.utils.vdb import generate_collection, init_vdb
 
 load_dotenv()
@@ -20,20 +19,19 @@ load_dotenv()
 class EmbeddingManagement:
     """Wrapper for cohere llms."""
 
-    @load_config(location="config/litellm.yml")
-    def __init__(self, cfg: DictConfig, collection_name: str | None) -> None:
+    def __init__(self, collection_name: str | None) -> None:
         """Init the Litellm Service."""
         super().__init__()
 
-        self.cfg = cfg
+        self.cfg = config
 
         if collection_name:
             self.collection_name = collection_name
 
         # unfortunately, the embedding is not working with litellm directly an can only be used directly with a litellm prox server.
-        match self.cfg.embedding.provider:
+        match self.cfg.embedding_provider:
             case "cohere":
-                embedding = CohereEmbeddings(model=self.cfg.embedding.model_name)
+                embedding = CohereEmbeddings(model=self.cfg.embedding_model_name)
             case "google":
                 # TODO: add
 
@@ -84,7 +82,7 @@ class EmbeddingManagement:
 
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database."""
-        generate_collection(name, self.cfg.embeddings.size)
+        generate_collection(name, self.cfg.embedding_size)
         return True
 
     def create_search_chain(self, search: SearchParams) -> BaseRetriever:

@@ -12,8 +12,6 @@ from langchain_core.runnables import RunnableConfig
 from langchain_litellm import ChatLiteLLM
 from langgraph.graph import END, StateGraph, add_messages
 from loguru import logger
-from omegaconf import DictConfig
-from ultra_simple_config import load_config
 
 from agent.backend.prompts import COHERE_RESPONSE_TEMPLATE, REPHRASE_TEMPLATE, RESPONSE_TEMPLATE
 from agent.utils.config import Config
@@ -35,32 +33,16 @@ class AgentState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
 
 
-@load_config("config/litellm.yml")
-def load_litellm_config(cfg: DictConfig) -> DictConfig:
-    """Wrapper to load the config.
-
-    Args:
-    ----
-        cfg (DictConfig): The Config as dict.
-
-    Returns:
-    -------
-        DictConfig: The configutration for Litellm.
-
-    """
-    return cfg
-
-
 class Graph:
     """The LangGraph Graph."""
 
     def __init__(self) -> None:
         """Initialize the Graph."""
-        # first load the config
-        self.cfg = load_litellm_config()
+        self.cfg = settings
 
         # define models
-        self.llm = ChatLiteLLM(model_name=self.cfg.generation_llm.model_name, streaming=True)
+        # define models
+        self.llm = ChatLiteLLM(model_name=self.cfg.model_name, streaming=True)
 
     def retrieve_documents(self, state: AgentState, config: RunnableConfig) -> AgentState:
         """Retrieve documents from the retriever.

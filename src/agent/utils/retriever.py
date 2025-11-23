@@ -3,15 +3,12 @@
 from langchain_cohere import CohereEmbeddings
 from langchain_core.retrievers import BaseRetriever
 from langchain_qdrant import QdrantVectorStore
-from omegaconf import DictConfig
 from qdrant_client import QdrantClient
-from ultra_simple_config import load_config
 
 from agent.utils.config import config
 
 
-@load_config("config/litellm.yml")
-def get_retriever(cfg: DictConfig, k: int = 4, collection_name: str = "default") -> BaseRetriever:
+def get_retriever(k: int = 4, collection_name: str = "default") -> BaseRetriever:
     """Create a Vector Database retriever.
 
     Returns
@@ -19,7 +16,7 @@ def get_retriever(cfg: DictConfig, k: int = 4, collection_name: str = "default")
         BaseRetriever: Qdrant + Cohere Embeddings Retriever
 
     """
-    embedding = CohereEmbeddings(model=cfg.embedding.model_name)
+    embedding = CohereEmbeddings(model=config.embedding_model_name)
 
     qdrant_client = QdrantClient(
         location=config.qdrant_url,
