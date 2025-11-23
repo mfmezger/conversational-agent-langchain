@@ -4,17 +4,17 @@
 <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
 # Conversational Agent
-This is a Rest-Backend for a Conversational Agent, that allows to embedd Documentes, search for them using Semantic Search, to QA based on Documents and do document processing with Large Language Models.
+This is a Rest-Backend for a Conversational Agent, that allows you to embed Documents, search for them using Semantic Search, to QA based on Documents and do document processing with Large Language Models.
 
 
 ## Latest Changes
 - Changed to LiteLLM to allow for every model provider. Default is Cohere for Embedding and Google AI Studio Gemini for Generation.
 
 
-## Table of Contects
+## Table of Contents
 - [Conversational Agent](#conversational-agent)
   - [Latest Changes](#latest-changes)
-  - [Table of Contects](#table-of-contects)
+  - [Table of Contents](#table-of-contents)
   - [LLMs and Backend Providers](#llms-and-backend-providers)
   - [Quickstart](#quickstart)
   - [Project Description](#project-description)
@@ -40,7 +40,10 @@ Some providers i would recommend are:
 
 - [Cohere](https://cohere.com/) Awesome models and great free tier.
 - [Ollama](https://ollama.com/) If you want to keep your data your data.
-- [Google AI Studio](aistudio.google.com) The Google Integration that is not really suited for enterprise but perfect for everybody else.
+- [Google AI Studio](https://aistudio.google.com) The Google Integration that is not really suited for enterprise but perfect for everybody else.
+
+> [!NOTE]
+> The `EmbeddingManagement` class in `src/agent/backend/services/embedding_management.py` contains placeholders for Google and OpenAI embedding providers. These are intended as extension points for you to implement if you wish to use these specific providers directly.
 
 
 ## Quickstart
@@ -52,7 +55,7 @@ cd conversational-agent-langchain
 ```
 
 
-Create a .env file from the .env-template and set the necessary API Keys.
+Create a .env file from the `template.env` and set the necessary API Keys.
 Absolutely necessary are:
 - GEMINI_API_KEY
 - COHERE_API_KEY
@@ -79,7 +82,7 @@ Features
 - Uses Large Language Models to generate responses to user queries.
 - Includes a vector database to store and retrieve information.
 - Provides a REST API built with FastAPI for easy integration with other applications.
-- Has a basic gui.
+- Has a basic GUI.
 
 ## Semantic Search
 ![Semantic Search Architecture](resources/search_flow.png)
@@ -88,7 +91,7 @@ Semantic search is an advanced search technique that aims to understand the mean
 
 ### Hybrid Search
 
-For Hybrid Search the BM25 FastEmbedd from Qdrant is used.
+For Hybrid Search the BM25 FastEmbed from Qdrant is used.
 
 ## Architecture
 ![Semantic Search Architecture](resources/Architecture.png)
@@ -151,7 +154,7 @@ poetry run streamlit run gui.py --theme.base="dark"
 
 ### Mypy
 
-mypy rag --explicit-package-bases
+mypy src/agent --explicit-package-bases
 
 ## Vector Database
 
