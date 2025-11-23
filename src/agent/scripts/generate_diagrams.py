@@ -1,8 +1,10 @@
 """Generate a diagram of the architecture."""
 
+from pathlib import Path
+
 from diagrams import Cluster, Diagram, Edge
 from diagrams.custom import Custom
-from diagrams.onprem.client import Client, Users
+from diagrams.onprem.client import Users
 from diagrams.programming.flowchart import Database
 from diagrams.programming.framework import FastAPI
 
@@ -10,31 +12,47 @@ graph_attr = {"fontsize": "45", "bgcolor": "white"}
 node_attr = {"fontsize": "20"}
 edge_attr = {"fontsize": "32"}
 
+resources_dir = Path(__file__).parent / "resources"
+
 with Diagram(
-    "Conversational Agent Diagram", show=False, graph_attr=graph_attr, edge_attr=edge_attr, node_attr=node_attr, outformat="png", filename="resources/Architecture"
+    "Conversational Agent Diagram",
+    show=False,
+    graph_attr=graph_attr,
+    edge_attr=edge_attr,
+    node_attr=node_attr,
+    outformat="png",
+    filename=str(resources_dir / "Architecture"),
 ):
-    with Cluster("Local PC/Docker/Ollama Server"):
-        ollama = Custom("Ollama", "../src/agent/scripts/resources/ollama.png")
-    with Cluster("Database Docker Container"):
-        db = Database("Qdrant")
+    with Cluster("Local PC / Cloud"):
+        with Cluster("Frontend"):
+            streamlit = Custom("Streamlit", str(resources_dir / "streamlit.png"))
 
-    with Cluster("Conversational Backend  Docker Container"):
-        fastapi = FastAPI("Rest API")
+        with Cluster("Backend Services"):
+            fastapi = FastAPI("FastAPI Backend")
+            langgraph = Custom("LangGraph", str(resources_dir / "langchain.png"))
+            qdrant = Database("Qdrant Vector DB")
+            phoenix = Custom("Arize Phoenix", str(resources_dir / "phoenix.png"))
 
-        fastapi >> Edge(label="API Call", reverse=True, style="bold") >> ollama
-        fastapi >> Edge(label="retrieve Documents", reverse=True, style="bold") >> db
-
-    with Cluster("Frontend"):
-        client = Client("Frontend")
-
-    with Cluster("LLM APIs"):
-        cohere = Custom("Cohere", "../src/agent/scripts/resources/cohere.png")
-        openai = Custom("OpenAI", "../src/agent/scripts/resources/openai.png")
+    with Cluster("External LLM APIs"):
+        cohere = Custom("Cohere", str(resources_dir / "cohere.png"))
+        openai = Custom("OpenAI", str(resources_dir / "openai.png"))
+        gemini = Custom("Google Gemini", str(resources_dir / "gemini.png"))
 
     users = Users("Users")
 
-    users >> Edge(label="Access Frontend", reverse=True, style="bold") >> client >> Edge(label="API Call", reverse=True, style="bold") >> fastapi
-    users >> Edge(label="API Call", reverse=True, style="bold") >> fastapi
+    # User interactions
+    users >> Edge(label="Interacts with", style="bold") >> streamlit
+    streamlit >> Edge(label="API Requests", style="bold") >> fastapi
 
-    fastapi >> Edge(label="API Call", reverse=True, style="bold") >> cohere
-    fastapi >> Edge(label="API Call", reverse=True, style="bold") >> openai
+    # Backend flow
+    fastapi >> Edge(label="Orchestrates", style="bold") >> langgraph
+    langgraph >> Edge(label="Retrieves Context", style="bold") >> qdrant
+
+    # LLM Calls
+    langgraph >> Edge(label="Generates/Embeds", style="bold") >> cohere
+    langgraph >> Edge(label="Generates", style="bold") >> openai
+    langgraph >> Edge(label="Generates", style="bold") >> gemini
+
+    # Observability
+    fastapi >> Edge(label="Traces", style="dashed") >> phoenix
+    langgraph >> Edge(label="Traces", style="dashed") >> phoenix
