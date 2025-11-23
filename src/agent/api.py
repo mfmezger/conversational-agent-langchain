@@ -2,7 +2,7 @@
 
 import pyfiglet
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.openapi.utils import get_openapi
 from loguru import logger
 from openinference.instrumentation.langchain import LangChainInstrumentor
@@ -45,6 +45,14 @@ def my_schema() -> dict:
 
 app = FastAPI(debug=True)
 app.openapi = my_schema
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(_request: Request, exc: Exception) -> dict:
+    """Global exception handler."""
+    logger.error(f"Global error: {exc}")
+    return {"error": "Internal Server Error", "details": str(exc)}
+
 
 logger.info("Loading REST API Finished.")
 

@@ -16,12 +16,18 @@ class Config(BaseSettings):
     cohere_api_key: str
     gemini_api_key: str
 
+    # Model Configuration
+    model_name: str = "gemini/gemini-2.5-flash"
+    embedding_provider: str = "cohere"
+    embedding_model_name: str = "embed-v4.0"
+    embedding_size: int = 1536
+
     # QDRANT
     qdrant_url: str = "http://localhost"
-    qdrant_api_key: str = Field(validation_alias=AliasChoices("qdrant_api_key", "qdrant_cloud_api_key"))
+    qdrant_api_key: str | None = Field(default=None, validation_alias=AliasChoices("qdrant_api_key", "qdrant_cloud_api_key"))
     qdrant_port: int = 6333
     qdrant_prefer_http: bool = False
-    phoenix_collector_endpoint: str
+    phoenix_collector_endpoint: str = "http://localhost:6006"
     qdrant_collection_name: str = "default"
     qdrant_embedding_size: int = 1536
 

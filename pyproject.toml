@@ -59,6 +59,7 @@ tag_format = "$version"
 version_scheme = "pep440"
 version_provider = "uv"
 update_changelog_on_bump = true
+
 [dependency-groups]
 dev = [
     "coverage>=7.12.0",
