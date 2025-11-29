@@ -3,13 +3,9 @@
 from dotenv import load_dotenv
 from langchain_cohere import CohereEmbeddings
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
-from langchain_core.documents import Document
-from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import chain
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from loguru import logger
 
-from agent.data_model.request_data_model import SearchParams
 from agent.utils.config import config
 from agent.utils.vdb import generate_collection, init_vdb
 
@@ -82,38 +78,6 @@ class EmbeddingManagement:
         """Create a new collection in the Vector Database."""
         generate_collection(name, self.cfg.embedding_size)
         return True
-
-    def create_search_chain(self, search: SearchParams) -> BaseRetriever:
-        """Searches the documents in the Qdrant DB with semantic search."""
-
-        @chain
-        def retriever_with_score(query: str) -> list[Document]:
-            """Defines a retriever that returns the score.
-
-            Args:
-            ----
-                query (str): Query the user asks.
-
-            Returns:
-            -------
-                list[Document]: List of Langchain Documents.
-
-            """
-            docs, scores = zip(
-                *self.vector_db.similarity_search_with_score(
-                    query,
-                    k=search.k,
-                    filter=search.filter_settings,
-                    score_threshold=search.score_threshold,
-                ),
-                strict=False,
-            )
-            for doc, score in zip(docs, scores, strict=False):
-                doc.metadata["score"] = score
-
-            return docs
-
-        return retriever_with_score
 
 
 if __name__ == "__main__":
