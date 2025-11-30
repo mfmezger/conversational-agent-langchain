@@ -12,8 +12,9 @@ from langchain_core.runnables import RunnableConfig
 from langchain_litellm import ChatLiteLLM
 from langgraph.graph import END, StateGraph, add_messages
 from loguru import logger
+from pydantic import BaseModel, Field
 
-from agent.backend.prompts import COHERE_RESPONSE_TEMPLATE, REPHRASE_TEMPLATE, RESPONSE_TEMPLATE
+from agent.backend.prompts import COHERE_RESPONSE_TEMPLATE, GRADER_TEMPLATE, REPHRASE_TEMPLATE, RESPONSE_TEMPLATE, REWRITE_TEMPLATE
 from agent.utils.config import Config
 from agent.utils.retriever import get_retriever
 from agent.utils.utility import format_docs_for_citations
@@ -31,6 +32,13 @@ class AgentState(TypedDict):
     query: str
     documents: list[Document]
     messages: Annotated[list[BaseMessage], add_messages]
+    retry_count: int
+
+
+class Grade(BaseModel):
+    """Binary score for relevance check."""
+
+    is_relevant: bool = Field(description="True if the documents are relevant to the question, False otherwise")
 
 
 class Graph:
@@ -44,41 +52,29 @@ class Graph:
         self.llm = ChatLiteLLM(model_name=self.cfg.model_name, streaming=True)
 
     def retrieve_documents(self, state: AgentState, config: RunnableConfig) -> AgentState:
-        """Retrieve documents from the retriever.
+        """Retrieve documents from the retriever."""
+        # Dynamic k: Increase k if retrying
+        retry_count = state.get("retry_count", 0)
+        k = 4 if retry_count == 0 else 10
 
-        Args:
-        ----
-            state (AgentState): Graph State.
-            config (RunnableConfig): Runnable Config.
-
-        Returns:
-        -------
-            AgentState: Modified Graph State.
-
-        """
-        retriever = get_retriever(collection_name=config["metadata"]["collection_name"])
+        retriever = get_retriever(k=k, collection_name=config["metadata"]["collection_name"])
         messages = convert_to_messages(messages=state["messages"])
-        query = messages[-1].content
+        # If query was rewritten, use state["query"], otherwise use last message
+        query = state.get("query") or messages[-1].content
+
         relevant_documents = retriever.invoke(query)
-        # log if relevant documents are empty
         if not relevant_documents:
-            logger.info("No relevant documents found for the query:", query)
-        return {"query": query, "documents": relevant_documents}
+            logger.info(f"No relevant documents found for the query: {query}")
+
+        return {"query": query, "documents": relevant_documents, "retry_count": retry_count}
 
     def retrieve_documents_with_chat_history(self, state: AgentState, config: RunnableConfig) -> AgentState:
-        """Retrieve documents from the retriever with chat history.
+        """Retrieve documents from the retriever with chat history."""
+        # Dynamic k: Increase k if retrying
+        retry_count = state.get("retry_count", 0)
+        k = 4 if retry_count == 0 else 10
 
-        Args:
-        ----
-            state (AgentState): Graph State.
-            config (RunnableConfig): Runnable Config.
-
-        Returns:
-        -------
-            AgentState: Modified Graph State.
-
-        """
-        retriever = get_retriever(collection_name=config["metadata"]["collection_name"])
+        retriever = get_retriever(k=k, collection_name=config["metadata"]["collection_name"])
         model = self.llm.with_config(tags=["nostream"])
 
         condense_queston_prompt = PromptTemplate.from_template(REPHRASE_TEMPLATE)
@@ -87,41 +83,63 @@ class Graph:
         )
 
         messages = convert_to_messages(messages=state["messages"])
-        query = messages[-1].content
-        retriever_with_condensed_question = condense_question_chain | retriever
-        relevant_documents = retriever_with_condensed_question.invoke({"question": query, "chat_history": self.get_chat_history(messages[:-1])})
-        return {"query": query, "documents": relevant_documents}
+        # If query was rewritten, use state["query"], otherwise use last message
+        if not state.get("query"):
+            query = messages[-1].content
+            retriever_with_condensed_question = condense_question_chain | retriever
+            relevant_documents = retriever_with_condensed_question.invoke({"question": query, "chat_history": self.get_chat_history(messages[:-1])})
+            return {"query": query, "documents": relevant_documents, "retry_count": retry_count}
+        else:
+            # If we are looping, we already have a rewritten query in state["query"]
+            # So we just use basic retrieval on that
+            return self.retrieve_documents(state, config)
+
+    def grade_documents(self, state: AgentState, config: RunnableConfig) -> Literal["response_synthesizer", "response_synthesizer_cohere", "rewrite_query"]:
+        """Grade the retrieved documents holistically."""
+        model = self.llm.with_config(tags=["nostream"])
+        structured_model = model.with_structured_output(Grade)
+
+        prompt = PromptTemplate(
+            template=GRADER_TEMPLATE,
+            input_variables=["documents", "question"],
+        )
+        chain = prompt | structured_model
+
+        # Format documents for the grader
+        docs_text = "\n\n".join([f"Document {i + 1}:\n{doc.page_content}" for i, doc in enumerate(state["documents"])])
+
+        grade: Grade = chain.invoke({"documents": docs_text, "question": state["query"]})
+
+        # If graded as relevant, or we hit max retries, generate
+        if grade.is_relevant or state.get("retry_count", 0) >= 3:
+            return self.route_to_response_synthesizer(state, config)
+
+        return "rewrite_query"
+
+    def rewrite_query(self, state: AgentState) -> AgentState:
+        """Rewrite the query to improve retrieval."""
+        model = self.llm.with_config(tags=["nostream"])
+        prompt = PromptTemplate(
+            template=REWRITE_TEMPLATE,
+            input_variables=["question"],
+        )
+        chain = prompt | model | StrOutputParser()
+        new_query = chain.invoke({"question": state["query"]})
+        logger.info(f"Rewritten query: {new_query}")
+        return {"query": new_query, "retry_count": state.get("retry_count", 0) + 1}
 
     def route_to_retriever(
         self,
         state: AgentState,
     ) -> Literal["retriever", "retriever_with_chat_history"]:
-        """Route to the appropriate retriever based on the state.
-
-        Returns
-        -------
-            Literal["retriever", "retriever_with_chat_history"]: Choosen retriever method.
-
-        """
-        # at this point in the graph execution there is exactly one (i.e. first) message from the user,
-        # so use basic retriever without chat history
+        """Route to the appropriate retriever based on the state."""
         if len(state["messages"]) == 1:
             return "retriever"
         else:
             return "retriever_with_chat_history"
 
     def get_chat_history(self, messages: Sequence[BaseMessage]) -> list:
-        """Append the chat history to the messages.
-
-        Args:
-        ----
-            messages (Sequence[BaseMessage]): Messages from the frontend.
-
-        Returns:
-        -------
-            Sequence[BaseMessage]: Chat history as Langchain messages.
-
-        """
+        """Append the chat history to the messages."""
         return [
             {"content": message.content, "role": message.type}
             for message in messages
@@ -129,19 +147,7 @@ class Graph:
         ]
 
     def generate_response(self, state: AgentState, model: LanguageModelLike, prompt_template: str) -> AgentState:
-        """Create a response from the model.
-
-        Args:
-        ----
-            state (AgentState): Graph State.
-            model (LanguageModelLike): Language Model.
-            prompt_template (str): Template for the prompt.
-
-        Returns:
-        -------
-            AgentState: Modified Graph State.
-
-        """
+        """Create a response from the model."""
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", prompt_template),
@@ -154,8 +160,6 @@ class Graph:
             {
                 "question": state["query"],
                 "context": format_docs_for_citations(state["documents"]),
-                # NOTE: we're ignoring the last message here, as it's going to contain the most recent
-                # query and we don't want that to be included in the chat history
                 "chat_history": self.get_chat_history(convert_to_messages(state["messages"][:-1])),
             }
         )
@@ -164,48 +168,16 @@ class Graph:
         }
 
     def generate_response_default(self, state: AgentState) -> AgentState:
-        """Generate a response using non cohere model.
-
-        Args:
-        ----
-            state (AgentState): Graph State.
-
-        Returns:
-        -------
-            AgentState: Modified Graph State.
-
-        """
+        """Generate a response using non cohere model."""
         return self.generate_response(state, self.llm, RESPONSE_TEMPLATE)
 
     def generate_response_cohere(self, state: AgentState) -> AgentState:
-        """Generate a response using the Cohere model.
-
-        Args:
-        ----
-            state (AgentState): Graph State.
-
-        Returns:
-        -------
-            AgentState: Modified Graph State.
-
-        """
+        """Generate a response using the Cohere model."""
         model = self.llm.bind(documents=state["documents"])
         return self.generate_response(state, model, COHERE_RESPONSE_TEMPLATE)
 
     def route_to_response_synthesizer(self, state: AgentState, config: RunnableConfig) -> Literal["response_synthesizer", "response_synthesizer_cohere"]:  # noqa: ARG002
-        """Route to the appropriate response synthesizer based on the config.
-
-        Args:
-        ----
-            state (AgentState): Graph State.
-            config (RunnableConfig): Runnable Config.
-
-
-        Returns:
-        -------
-            Literal["response_synthesizer", "response_synthesizer_cohere"]: Choosen response synthesizer method.
-
-        """
+        """Route to the appropriate response synthesizer based on the config."""
         model_name = config.get("configurable", {}).get("model_name", GEMINI_MODEL_KEY)
         if model_name == COHERE_MODEL_KEY:
             return "response_synthesizer_cohere"
@@ -213,27 +185,34 @@ class Graph:
             return "response_synthesizer"
 
     def build_graph(self) -> StateGraph:
-        """Build the graph for the agent.
-
-        Returns
-        -------
-            Graph: The generated graph for RAG.
-
-        """
+        """Build the graph for the agent."""
         workflow = StateGraph(state_schema=AgentState)
 
         # define nodes
         workflow.add_node("retriever", self.retrieve_documents)
         workflow.add_node("retriever_with_chat_history", self.retrieve_documents_with_chat_history)
+        workflow.add_node("rewrite_query", self.rewrite_query)
         workflow.add_node("response_synthesizer", self.generate_response_default)
         workflow.add_node("response_synthesizer_cohere", self.generate_response_cohere)
 
         # set entry point to retrievers
         workflow.set_conditional_entry_point(path=self.route_to_retriever)
 
-        # connect retrievers and response synthesizers
-        workflow.add_conditional_edges(source="retriever", path=self.route_to_response_synthesizer)
-        workflow.add_conditional_edges(source="retriever_with_chat_history", path=self.route_to_response_synthesizer)
+        # connect retrievers to grader
+        workflow.add_conditional_edges(
+            source="retriever",
+            path=self.grade_documents,
+            path_map={"response_synthesizer": "response_synthesizer", "response_synthesizer_cohere": "response_synthesizer_cohere", "rewrite_query": "rewrite_query"},
+        )
+        workflow.add_conditional_edges(
+            source="retriever_with_chat_history",
+            path=self.grade_documents,
+            path_map={"response_synthesizer": "response_synthesizer", "response_synthesizer_cohere": "response_synthesizer_cohere", "rewrite_query": "rewrite_query"},
+        )
+
+        # connect rewriter back to retriever (loop)
+        # Note: We always route back to basic retriever because we have a standalone query now
+        workflow.add_edge("rewrite_query", "retriever")
 
         # connect synthesizers to terminal node
         workflow.add_edge(start_key="response_synthesizer", end_key=END)
