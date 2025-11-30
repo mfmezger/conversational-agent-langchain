@@ -10,22 +10,20 @@ This is a Rest-Backend for a Conversational Agent, that allows you to embed Docu
 
 
 ## Table of Contents
-- [Conversational Agent](#conversational-agent)
-  - [Latest Changes](#latest-changes)
+- [Conversational RAG Agent](#conversational-rag-agent)
   - [Table of Contents](#table-of-contents)
   - [LLMs and Backend Providers](#llms-and-backend-providers)
   - [Quickstart](#quickstart)
   - [Project Description](#project-description)
+  - [What is RAG?](#what-is-rag)
+  - [Tracing](#tracing)
   - [Semantic Search](#semantic-search)
     - [Hybrid Search](#hybrid-search)
   - [Architecture](#architecture)
   - [Installation \& Development Backend](#installation--development-backend)
     - [Load Demo Data](#load-demo-data)
   - [Development Frontend](#development-frontend)
-    - [Mypy](#mypy)
-  - [Vector Database](#vector-database)
   - [Qdrant API Key](#qdrant-api-key)
-
   - [Testing the API](#testing-the-api)
   - [Star History](#star-history)
 
