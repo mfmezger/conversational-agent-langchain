@@ -15,7 +15,7 @@ dependencies = [
     "fastembed>=0.7.3",
     "arize-phoenix>=12.18.0",
     "openai>=2.8.1",
-    "fastapi>=0.122.0",
+    "fastapi>=0.123.0",
     "python-dotenv>=1.2.1",
     "langchain-cohere>=0.5.0",
     "omegaconf>=2.3.0",
@@ -70,3 +70,9 @@ dev = [
 
 [tool.coverage.run]
 omit = ["tests/*"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:`json_encoders` is deprecated:pydantic.warnings.PydanticDeprecatedSince20",
+    "ignore:Support for class-based `config` is deprecated:pydantic.warnings.PydanticDeprecatedSince20"
+]

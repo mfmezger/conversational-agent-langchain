@@ -1,5 +1,7 @@
 """Vector Database Utilities."""
 
+import warnings
+
 from langchain_core.embeddings import Embeddings
 from langchain_qdrant import FastEmbedSparse, QdrantVectorStore, RetrievalMode
 from loguru import logger
@@ -10,7 +12,15 @@ from agent.utils.config import Config
 sparse_embeddings = FastEmbedSparse(model_name="Qdrant/bm25")
 
 settings = Config()
-qdrant_client = QdrantClient(location=settings.qdrant_url, port=settings.qdrant_port, api_key=settings.qdrant_api_key, prefer_grpc=settings.qdrant_prefer_http)
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=UserWarning, message="Api key is used with an insecure connection")
+    qdrant_client = QdrantClient(
+        location=settings.qdrant_url,
+        port=settings.qdrant_port,
+        api_key=settings.qdrant_api_key,
+        prefer_grpc=settings.qdrant_prefer_http,
+    )
 
 
 def init_vdb(collection_name: str, embedding: Embeddings) -> QdrantVectorStore:
