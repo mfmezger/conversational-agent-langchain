@@ -1,3 +1,16 @@
+## 5.3.0 (2025-11-30)
+
+### Feat
+
+- **Graph**: Retry logik if question can not be answered (#131)
+
+### Refactor
+
+- **Warnings**: Supress warnings that can not be fixed
+- **Frontend**: Refactor to httpx
+- **Backend**: Fixing minor stuff
+- **Frontend**: Refactoring the Frontend into client and assistant
+
 ## 5.2.0 (2025-11-30)
 
 ### Feat
