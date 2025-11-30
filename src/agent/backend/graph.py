@@ -18,9 +18,9 @@ from agent.utils.config import Config
 from agent.utils.retriever import get_retriever
 from agent.utils.utility import format_docs_for_citations
 
-OPENAI_MODEL_KEY = "openai_gpt_3_5_turbo"
+GEMINI_MODEL_KEY = "gemini"
 COHERE_MODEL_KEY = "cohere_command"
-OLLAMA_MODEL_KEY = "ollama_llama8b3.1"
+
 
 settings = Config()
 
@@ -207,7 +207,7 @@ class Graph:
             Literal["response_synthesizer", "response_synthesizer_cohere"]: Choosen response synthesizer method.
 
         """
-        model_name = config.get("configurable", {}).get("model_name", OPENAI_MODEL_KEY)
+        model_name = config.get("configurable", {}).get("model_name", GEMINI_MODEL_KEY)
         if model_name == COHERE_MODEL_KEY:
             return "response_synthesizer_cohere"
         else:
