@@ -63,12 +63,12 @@ Then start the system with
   docker compose up -d
 ```
 
-| Service | URL |
-| --- | --- |
-| **API Documentation** | http://127.0.0.1:8001/docs |
-| **Frontend** | http://localhost:8501 |
-| **Qdrant Dashboard** | http://localhost:6333/dashboard |
-| **Phoenix Dashboard** | http://localhost:6006 |
+| Service               | URL                               |
+| --------------------- | --------------------------------- |
+| **API Documentation** | `http://127.0.0.1:8001/docs`      |
+| **Frontend**          | `http://localhost:8501`           |
+| **Qdrant Dashboard**  | `http://localhost:6333/dashboard` |
+| **Phoenix Dashboard** | `http://localhost:6006`           |
 
 
 
