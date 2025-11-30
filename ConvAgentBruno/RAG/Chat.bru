@@ -5,24 +5,19 @@ meta {
 }
 
 post {
-  url: http://agent:8001/rag
+  url: http://localhost:8001/rag/
   body: json
   auth: none
 }
 
 body:json {
   {
-    "rag": {
-      "messages": [
-        {
-          "role": "user",
-          "content": "What is attention?"
-        }
-      ]
-    },
-    "llm_backend": {
-      "llm_provider": "cohere",
-      "collection_name": ""
-    }
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is attention?"
+      }
+    ],
+    "collection_name": "default"
   }
 }

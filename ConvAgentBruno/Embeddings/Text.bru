@@ -5,7 +5,15 @@ meta {
 }
 
 post {
-  url:
-  body: none
+  url: http://localhost:8001/embeddings/string/?collection_name=default
+  body: json
   auth: none
+}
+
+body:json {
+  {
+    "text": "Some text to embed",
+    "file_name": "test_file",
+    "seperator": "###"
+  }
 }

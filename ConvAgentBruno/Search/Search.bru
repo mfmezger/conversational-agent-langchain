@@ -5,22 +5,15 @@ meta {
 }
 
 post {
-  url:
+  url: http://localhost:8001/semantic/search
   body: json
   auth: none
 }
 
 body:json {
   {
-    "search": {
-      "query": "string",
-      "k": 3,
-      "score_threshold": 0,
-      "filter": {}
-    },
-    "llm_backend": {
-      "llm_provider": "aa",
-      "collection_name": ""
-    }
+    "query": "attention",
+    "k": 3,
+    "collection_name": "default"
   }
 }

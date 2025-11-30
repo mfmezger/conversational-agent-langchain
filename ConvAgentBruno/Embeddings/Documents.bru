@@ -5,7 +5,11 @@ meta {
 }
 
 post {
-  url:
-  body: none
+  url: http://localhost:8001/embeddings/documents?collection_name=default
+  body: multipartForm
   auth: none
+}
+
+body:multipart-form {
+  files: @file()
 }
