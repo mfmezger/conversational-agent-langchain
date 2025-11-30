@@ -6,15 +6,13 @@ COPY ./README.md ./README.md
 COPY ./uv.lock ./uv.lock
 
 # installing python dependencies
+RUN uv sync --frozen --no-install-project
+
+COPY ./src /src
+
 RUN uv sync --frozen
 
-# copy code and config files.
-COPY ./config /config
-COPY ./prompts /prompts
-COPY ./src/agent /agent
-
-
-ENTRYPOINT ["uv", "run", "uvicorn", "agent.api:app", "--host", "0.0.0.0", "--port", "8001"]
+ENTRYPOINT ["uv", "run", "uvicorn", "src.agent.api:app", "--host", "0.0.0.0", "--port", "8001"]
 
 # watch the logs
 # CMD ["tail", "-f", "/dev/null"]

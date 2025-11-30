@@ -22,6 +22,7 @@ logger.info("Startup.")
 # configure the Phoenix tracer
 tracer_provider = register(
     project_name="rag",
+    endpoint=config.phoenix_collector_endpoint,
 )
 
 LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
