@@ -66,3 +66,25 @@ Chat History:
 {chat_history}
 Follow Up Input: {question}
 Standalone Question:"""
+
+GRADER_TEMPLATE = """\
+You are a grader assessing whether a set of retrieved documents contains sufficient information to answer a user question. \
+If the documents contain keywords or semantic meaning related to the question that would allow answering it, grade it as relevant. \
+If the documents are completely irrelevant or do not contain enough information, grade it as irrelevant.
+
+Retrieved documents:
+{documents}
+
+User Question:
+{question}
+"""
+
+REWRITE_TEMPLATE = """\
+Look at the input and try to reason about the underlying semantic intent / meaning. \
+The initial search for this query returned no relevant results. \
+Please rewrite the query to be more specific or use different keywords to improve search results.
+
+Initial Query:
+{question}
+
+Rewritten Query:"""

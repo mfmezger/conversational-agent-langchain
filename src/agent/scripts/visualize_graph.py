@@ -4,9 +4,10 @@ from pathlib import Path
 
 from langchain_core.runnables.graph import MermaidDrawMethod
 
-from agent.backend.graph import build_graph
+from agent.backend.graph import Graph
 
-workflow = build_graph()
+graph = Graph()
+workflow = graph.build_graph()
 
 
 mermaid_graph = workflow.get_graph().draw_mermaid_png(draw_method=MermaidDrawMethod.API)
