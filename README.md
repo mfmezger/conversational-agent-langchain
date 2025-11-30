@@ -84,6 +84,8 @@ Features
 - Provides a REST API built with FastAPI for easy integration with other applications.
 - Has a basic GUI.
 
+![UI](resources/ui.png)
+
 ## Semantic Search
 ![Semantic Search Architecture](resources/search_flow.png)
 

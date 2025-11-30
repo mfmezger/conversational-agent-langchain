@@ -130,8 +130,41 @@ def handle_rag_response(prompt: str) -> None:
             logger.error(f"Unexpected error: {e}")
 
 
+def sidebar() -> None:
+    """Create the sidebar for document ingestion."""
+    with st.sidebar:
+        st.header("Document Ingestion")
+        collection_name = st.text_input("Collection Name", value="default")
+        file_ending = st.selectbox("Document Type", options=[".pdf", ".txt"])
+
+        uploaded_files = st.file_uploader("Choose files", type=["pdf"] if file_ending == ".pdf" else ["txt"], accept_multiple_files=True)
+
+        if st.button("Upload & Embed"):
+            if uploaded_files:
+                with st.spinner("Uploading and embedding documents..."):
+                    try:
+                        files = [("files", (file.name, file, file.type)) for file in uploaded_files]
+                        params = {"collection_name": collection_name, "file_ending": file_ending}
+
+                        response = requests.post(f"{BASE_URL}/embeddings/documents", params=params, files=files, timeout=6000)
+                        response.raise_for_status()
+
+                        st.success(f"Successfully uploaded {len(uploaded_files)} files!")
+                        logger.info(f"Uploaded {len(uploaded_files)} files to collection {collection_name}")
+
+                    except requests.exceptions.HTTPError as err:
+                        st.error(f"Error uploading files: {err}")
+                        logger.error(f"Upload error: {err}")
+                    except Exception as e:
+                        st.error(f"An unexpected error occurred: {e}")
+                        logger.error(f"Unexpected upload error: {e}")
+            else:
+                st.warning("Please upload at least one file.")
+
+
 def initialize() -> None:
     """Initialize the GUI."""
+    sidebar()
     init_chat_history()
     display_chat_history()
 
