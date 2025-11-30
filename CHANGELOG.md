@@ -1,3 +1,9 @@
+## 5.2.0 (2025-11-30)
+
+### Feat
+
+- **Frontend**: Moving frontend to own uv project
+
 ## 5.1.0 (2025-11-30)
 
 ### Feat
