@@ -1,3 +1,14 @@
+## 4.0.0 (2025-11-30)
+
+### Feat
+
+- **Langchain-1.0**: Migration to Langchain & Langgraph 1.0, fixing docker problems
+
+### Refactor
+
+- **Embeddings**: Removing unnessary calls and cleanup
+- **Config**: Converting to Pydantic Settings and removing yml config files (#128)
+
 ## 3.2.1 (2025-11-22)
 
 ### Fix
