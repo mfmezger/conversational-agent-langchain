@@ -1,3 +1,9 @@
+## 5.0.0 (2025-11-30)
+
+### Feat
+
+- **Upload**: Adding upload sidebar in frontend
+
 ## 4.0.0 (2025-11-30)
 
 ### Feat
