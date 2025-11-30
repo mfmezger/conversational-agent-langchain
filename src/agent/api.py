@@ -4,6 +4,7 @@ import pyfiglet
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.openapi.utils import get_openapi
+from fastapi.responses import JSONResponse
 from loguru import logger
 from openinference.instrumentation.langchain import LangChainInstrumentor
 from phoenix.otel import register
@@ -49,10 +50,13 @@ app.openapi = my_schema
 
 
 @app.exception_handler(Exception)
-async def global_exception_handler(_request: Request, exc: Exception) -> dict:
+async def global_exception_handler(_request: Request, exc: Exception) -> JSONResponse:
     """Global exception handler."""
     logger.error(f"Global error: {exc}")
-    return {"error": "Internal Server Error", "details": str(exc)}
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Internal Server Error", "details": str(exc)},
+    )
 
 
 logger.info("Loading REST API Finished.")

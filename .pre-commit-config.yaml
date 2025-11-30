@@ -3,7 +3,7 @@
 repos:
     - repo: https://github.com/astral-sh/ruff-pre-commit
       # Ruff version.
-      rev: v0.12.7
+      rev: v0.14.7
       hooks:
           # Run the linter.
           - id: ruff-check
@@ -12,7 +12,7 @@ repos:
           - id: ruff-format
 
     - repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: v5.0.0
+      rev: v6.0.0
       hooks:
           - id: trailing-whitespace
           - id: end-of-file-fixer
@@ -26,7 +26,7 @@ repos:
           - id: detect-private-key
 
     - repo: https://github.com/adamchainz/blacken-docs
-      rev: 1.19.1 # replace with latest tag on GitHub
+      rev: 1.20.0 # replace with latest tag on GitHub
       hooks:
           - id: blacken-docs
             additional_dependencies:
@@ -34,20 +34,20 @@ repos:
 
     # shows old code and how to update it
     - repo: https://github.com/asottile/pyupgrade
-      rev: v3.20.0
+      rev: v3.21.2
       hooks:
           - id: pyupgrade
             args: [--py310-plus]
 
     - repo: https://github.com/shellcheck-py/shellcheck-py
-      rev: v0.10.0.1
+      rev: v0.11.0.1
       hooks:
         - id: shellcheck
           name: shellcheck
           args: ["--severity=warning"]
 
     - repo: https://github.com/sirosen/check-jsonschema
-      rev: 0.33.2
+      rev: 0.35.0
       hooks:
         - id: check-github-workflows
           args: ["--verbose"]
@@ -59,7 +59,7 @@ repos:
         args: ["-L", "nin"]
         stages: [manual]
     - repo: https://github.com/tcort/markdown-link-check
-      rev: v3.13.7
+      rev: v3.14.2
       hooks:
         - id: markdown-link-check
           args: [-q]

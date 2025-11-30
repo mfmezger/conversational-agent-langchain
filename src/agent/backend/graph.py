@@ -41,7 +41,6 @@ class Graph:
         self.cfg = settings
 
         # define models
-        # define models
         self.llm = ChatLiteLLM(model_name=self.cfg.model_name, streaming=True)
 
     def retrieve_documents(self, state: AgentState, config: RunnableConfig) -> AgentState:
@@ -241,7 +240,3 @@ class Graph:
         workflow.add_edge(start_key="response_synthesizer_cohere", end_key=END)
 
         return workflow.compile()
-
-    # answer = graph.invoke({"messages": [{"role": "human", "content": "wer ist der vater von luke skywalker?"}, {"role": "assistant", "content": "Der Vater von Luke
-    # Skywalker war Anakin Skywalker."}, {"role": "human", "content": "und wer ist seine mutter?"}]})
-    # logger.info(answer)

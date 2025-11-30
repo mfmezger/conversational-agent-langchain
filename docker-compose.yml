@@ -46,7 +46,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 10Gb
+          memory: 2Gb
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6333/livez"]
       interval: 30s
