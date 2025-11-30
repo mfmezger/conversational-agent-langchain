@@ -111,7 +111,7 @@ class Graph:
         grade: Grade = chain.invoke({"documents": docs_text, "question": state["query"]})
 
         # If graded as relevant, or we hit max retries, generate
-        if grade.is_relevant or state.get("retry_count", 0) >= 3:
+        if grade.is_relevant or state.get("retry_count", 0) >= 2:
             return self.route_to_response_synthesizer(state, config)
 
         return "rewrite_query"
