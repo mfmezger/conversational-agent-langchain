@@ -27,7 +27,7 @@ class Config(BaseSettings):
     qdrant_api_key: str | None = Field(default=None, validation_alias=AliasChoices("qdrant_api_key", "qdrant_cloud_api_key"))
     qdrant_port: int = 6333
     qdrant_prefer_http: bool = False
-    phoenix_collector_endpoint: str = "http://localhost:6006"
+    phoenix_collector_endpoint: str = "http://phoenix:4318/v1/traces"
     qdrant_collection_name: str = "default"
     qdrant_embedding_size: int = 1536
 

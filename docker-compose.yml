@@ -12,17 +12,24 @@ services:
       - "8001:8001"
     env_file:
       - .env
+    environment:
+      - QDRANT_URL=http://qdrant
+      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
 
   streamlit_app:
     build:
       context: .
       dockerfile: Dockerfile.frontend
     platform: linux/amd64
+    depends_on:
+      - agent
     ports:
       - "8501:8501"
+    environment:
+      - BACKEND_HOST=agent
 
   qdrant:
-    image: qdrant/qdrant:v1.16.1
+    image: qdrant/qdrant:latest
     container_name: qdrant
     command: ["./qdrant", "--config-path", "config/qdrant.yaml"]
     volumes:
@@ -52,7 +59,8 @@ services:
     ports:
       - 6006:6006  # PHOENIX_PORT
       - 4317:4317  # PHOENIX_GRPC_PORT
-      - 9090:9090  # [Optional] PROMETHEUS PORT IF ENABLED
+      # - 9090:9090  # [Optional] PROMETHEUS PORT IF ENABLED
+      - 4318:4318  # OTLP HTTP PORT
     environment:
       - PHOENIX_WORKING_DIR=/mnt/data
     volumes:
