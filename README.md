@@ -3,12 +3,10 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
-# Conversational Agent
+# Conversational RAG Agent
 This is a Rest-Backend for a Conversational Agent, that allows you to embed Documents, search for them using Semantic Search, to QA based on Documents and do document processing with Large Language Models.
 
-
-## Latest Changes
-- Changed to LiteLLM to allow for every model provider. Default is Cohere for Embedding and Google AI Studio Gemini for Generation.
+![UI](resources/ui.png)
 
 
 ## Table of Contents
@@ -27,14 +25,14 @@ This is a Rest-Backend for a Conversational Agent, that allows you to embed Docu
     - [Mypy](#mypy)
   - [Vector Database](#vector-database)
   - [Qdrant API Key](#qdrant-api-key)
-  - [Bulk Ingestion](#bulk-ingestion)
+
   - [Testing the API](#testing-the-api)
   - [Star History](#star-history)
 
 
 ## LLMs and Backend Providers
 
-I have decided to stop creating different services for different provider and switchting to LiteLLM which allows to use basically every provider you want.
+I have decided to stop creating different services for different provider and switching to LiteLLM which allows to use basically every provider you want.
 
 Some providers i would recommend are:
 
@@ -67,10 +65,12 @@ Then start the system with
   docker compose up -d
 ```
 
-Then go to http://127.0.0.1:8001/docs or http://127.0.0.1:8001/redoc to see the API documentation.
-
-Frontend: localhost:8501
-Qdrant Dashboard: localhost:6333/dashboard
+| Service | URL |
+| --- | --- |
+| **API Documentation** | http://127.0.0.1:8001/docs |
+| **Frontend** | http://localhost:8501 |
+| **Qdrant Dashboard** | http://localhost:6333/dashboard |
+| **Phoenix Dashboard** | http://localhost:6006 |
 
 
 
@@ -78,13 +78,24 @@ Qdrant Dashboard: localhost:6333/dashboard
 ## Project Description
 This project is a conversational rag agent that uses Google Gemini Large Language Models to generate responses to user queries. The agent also includes a vector database and a REST API built with FastAPI.
 
+## What is RAG?
+Retrieval-Augmented Generation (RAG) is a technique that enhances Large Language Models (LLMs) by providing them with relevant information from an external knowledge base. Instead of relying solely on its pre-trained knowledge, the model retrieves specific documents related to the user's query and uses them as context to generate more accurate, up-to-date, and domain-specific responses. This approach reduces hallucinations and allows the model to answer questions about private or proprietary data.
+
+
+
 Features
 - Uses Large Language Models to generate responses to user queries.
 - Includes a vector database to store and retrieve information.
 - Provides a REST API built with FastAPI for easy integration with other applications.
 - Has a basic GUI.
+- Includes Phoenix Tracing for observability.
 
-![UI](resources/ui.png)
+## Tracing
+This project uses [Phoenix](https://github.com/Arize-AI/phoenix) for tracing and observability. It allows you to monitor the execution of your RAG pipeline, inspect retrieved documents, and debug the generation process.
+
+![Tracing](resources/tracing.png)
+
+
 
 ## Semantic Search
 ![Semantic Search Architecture](resources/search_flow.png)
@@ -105,8 +116,6 @@ On Linux or Mac you need to adjust your /etc/hosts file to include the following
 ```bash
 127.0.0.1 qdrant
 ```
-
-
 
 First install Python Dependencies:
 
@@ -137,13 +146,14 @@ docker compose up qdrant
 To run the Backend use this command in the root directory:
 
 ```bash
-poetry run uvicorn agent.api:app --reload
+```bash
+uv run uvicorn agent.api:app --reload
 ```
 
 To run the tests you can use this command:
 
 ```bash
-poetry run coverage run -m pytest -o log_cli=true -vvv tests
+uv run coverage run -m pytest -o log_cli=true -vvv tests
 ```
 
 ## Development Frontend
@@ -151,24 +161,15 @@ poetry run coverage run -m pytest -o log_cli=true -vvv tests
 To run the Frontend use this command in the root directory:
 
 ```bash
-poetry run streamlit run gui.py --theme.base="dark"
+```bash
+uv run streamlit run frontend/assistant.py --theme.base="dark"
 ```
 
-### Mypy
-
-mypy src/agent --explicit-package-bases
-
-## Vector Database
-
-Qdrant Dashboard is available at http://127.0.0.1:6333/dashboard. There you need to enter the api key.
 
 ## Qdrant API Key
 To use the Qdrant API you need to set the correct parameters in the .env file.
 QDRANT_API_KEY is the API key for the Qdrant API.
 And you need to change it in the qdrant.yaml file in the config folder.
-
-## Bulk Ingestion
-If you want to ingest large amount of data i would recommend you use the scripts located in agent/ingestion.
 
 
 ## Testing the API
