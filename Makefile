@@ -16,6 +16,7 @@ help:
 setup:
 	uv sync
 	uv run pre-commit install
+	cd frontend && uv sync
 
 style:
 	uv run pre-commit run --all-files
@@ -29,7 +30,7 @@ start_backend:
 	uv run uvicorn agent.api:app --reload --port 8001
 
 start_frontend:
-	uv run streamlit run frontend/assistant.py --theme.base="dark"
+	cd frontend && uv run streamlit run assistant.py --theme.base="dark"
 
 start_vectordb:
 	docker compose up --build -d qdrant

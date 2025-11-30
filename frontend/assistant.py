@@ -1,11 +1,11 @@
 """The main gui."""
 
 import json
-import os
 from pathlib import Path
 
 import requests
 import streamlit as st
+from client import AgentClient
 from loguru import logger
 
 # Constants
@@ -13,13 +13,7 @@ PDF_FILE_TYPE = "pdf"
 META_DATA_HEIGHT = 500
 EXPLANATION_HEIGHT = 300
 
-BACKEND_HOST = os.getenv("BACKEND_HOST", "localhost")
-BACKEND_PORT = os.getenv("BACKEND_PORT", "8001")
-BASE_URL = f"http://{BACKEND_HOST}:{BACKEND_PORT}"
-
-url_search = f"{BASE_URL}/semantic/search"
-url_qa = f"{BASE_URL}/rag/"
-
+client = AgentClient()
 
 logger.info("Starting Application.")
 
@@ -90,16 +84,13 @@ def display_sources(documents: list) -> None:
 
 def handle_rag_response(prompt: str) -> None:
     """Handle the RAG response generation and display."""
-    payload_rag = {"messages": [{"role": "user", "content": prompt}], "collection_name": "default"}
-    headers = {"accept": "application/json", "Content-Type": "application/json"}
-
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
         status_container = st.status("Processing...", expanded=True)
 
         try:
-            # Use the streaming endpoint
-            response = requests.post(f"{BASE_URL}/rag/stream", json=payload_rag, headers=headers, stream=True, timeout=600)
+            # Use the streaming endpoint via client
+            response = client.chat_stream(messages=[{"role": "user", "content": prompt}], collection_name="default")
             response.raise_for_status()
 
             full_response, documents = process_rag_stream(response, status_container, message_placeholder)
@@ -144,9 +135,8 @@ def sidebar() -> None:
                 with st.spinner("Uploading and embedding documents..."):
                     try:
                         files = [("files", (file.name, file, file.type)) for file in uploaded_files]
-                        params = {"collection_name": collection_name, "file_ending": file_ending}
 
-                        response = requests.post(f"{BASE_URL}/embeddings/documents", params=params, files=files, timeout=6000)
+                        response = client.upload_documents(files=files, collection_name=collection_name, file_ending=file_ending)
                         response.raise_for_status()
 
                         st.success(f"Successfully uploaded {len(uploaded_files)} files!")
