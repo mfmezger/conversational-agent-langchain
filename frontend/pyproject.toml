@@ -1,0 +1,13 @@
+[project]
+name = "frontend"
+version = "0.1.0"
+description = "Frontend for Conversational Agent"
+requires-python = ">=3.13"
+dependencies = [
+    "loguru>=0.7.3",
+    "requests>=2.32.5",
+    "streamlit>=1.51.0",
+]
+
+[tool.uv]
+dev-dependencies = []
