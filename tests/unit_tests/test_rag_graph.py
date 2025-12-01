@@ -58,7 +58,7 @@ def test_retrieve_documents(mock_get_retriever, graph_instance):
     assert result["query"] == "query"
     assert len(result["documents"]) == 1
     assert result["documents"][0].page_content == "doc1"
-    mock_get_retriever.assert_called_with(collection_name="test_coll")
+    mock_get_retriever.assert_called_with(collection_name="test_coll", k=4)
 
 @patch("agent.backend.graph.get_retriever")
 def test_retrieve_documents_with_chat_history(mock_get_retriever, graph_instance):
