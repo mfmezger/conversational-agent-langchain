@@ -16,11 +16,6 @@ jobs:
           - 6333:6333
         env:
           QDRANT__SERVICE__API_KEY: test_api_key
-        options: >-
-          --health-cmd "curl -f http://localhost:6333/livez"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     env:
       QDRANT_URL: http://localhost
@@ -46,6 +41,13 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --all-extras --dev
+
+      - name: Wait for Qdrant
+        run: |
+          until curl -f http://localhost:6333/livez; do
+            echo "Waiting for Qdrant..."
+            sleep 1
+          done
 
       - name: Run tests
         run: make test
