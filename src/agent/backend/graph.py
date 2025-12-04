@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from agent.backend.prompts import COHERE_RESPONSE_TEMPLATE, GRADER_TEMPLATE, REPHRASE_TEMPLATE, RESPONSE_TEMPLATE, REWRITE_TEMPLATE
 from agent.utils.config import Config
+from agent.utils.reranker import get_reranker
 from agent.utils.retriever import get_retriever
 from agent.utils.utility import format_docs_for_citations
 
@@ -51,11 +52,18 @@ class Graph:
         # define models
         self.llm = ChatLiteLLM(model_name=self.cfg.model_name, streaming=True)
 
+        # Initialize reranker
+        self.reranker = get_reranker(
+            provider=self.cfg.rerank_provider,
+            top_k=self.cfg.rerank_top_k,
+            cohere_api_key=self.cfg.cohere_api_key,
+        )
+
     def retrieve_documents(self, state: AgentState, config: RunnableConfig) -> AgentState:
         """Retrieve documents from the retriever."""
         # Dynamic k: Increase k if retrying
         retry_count = state.get("retry_count", 0)
-        k = 4 if retry_count == 0 else 10
+        k = self.cfg.retrieval_k if retry_count == 0 else self.cfg.retrieval_k_retry
 
         retriever = get_retriever(k=k, collection_name=config["metadata"]["collection_name"])
         messages = convert_to_messages(messages=state["messages"])
@@ -72,7 +80,7 @@ class Graph:
         """Retrieve documents from the retriever with chat history."""
         # Dynamic k: Increase k if retrying
         retry_count = state.get("retry_count", 0)
-        k = 4 if retry_count == 0 else 10
+        k = self.cfg.retrieval_k if retry_count == 0 else self.cfg.retrieval_k_retry
 
         retriever = get_retriever(k=k, collection_name=config["metadata"]["collection_name"])
         model = self.llm.with_config(tags=["nostream"])
@@ -93,6 +101,15 @@ class Graph:
             # If we are looping, we already have a rewritten query in state["query"]
             # So we just use basic retrieval on that
             return self.retrieve_documents(state, config)
+
+    def rerank_documents(self, state: AgentState) -> AgentState:
+        """Rerank retrieved documents to improve relevance."""
+        if not state["documents"]:
+            return state
+
+        reranked_docs = self.reranker(state["documents"], state["query"])
+        logger.info(f"Reranked documents: {len(state['documents'])} -> {len(reranked_docs)}")
+        return {"documents": reranked_docs}
 
     def grade_documents(self, state: AgentState, config: RunnableConfig) -> Literal["response_synthesizer", "response_synthesizer_cohere", "rewrite_query"]:
         """Grade the retrieved documents holistically."""
@@ -191,6 +208,7 @@ class Graph:
         # define nodes
         workflow.add_node("retriever", self.retrieve_documents)
         workflow.add_node("retriever_with_chat_history", self.retrieve_documents_with_chat_history)
+        workflow.add_node("reranker", self.rerank_documents)
         workflow.add_node("rewrite_query", self.rewrite_query)
         workflow.add_node("response_synthesizer", self.generate_response_default)
         workflow.add_node("response_synthesizer_cohere", self.generate_response_cohere)
@@ -198,14 +216,13 @@ class Graph:
         # set entry point to retrievers
         workflow.set_conditional_entry_point(path=self.route_to_retriever)
 
-        # connect retrievers to grader
+        # connect retrievers to reranker
+        workflow.add_edge("retriever", "reranker")
+        workflow.add_edge("retriever_with_chat_history", "reranker")
+
+        # connect reranker to grader
         workflow.add_conditional_edges(
-            source="retriever",
-            path=self.grade_documents,
-            path_map={"response_synthesizer": "response_synthesizer", "response_synthesizer_cohere": "response_synthesizer_cohere", "rewrite_query": "rewrite_query"},
-        )
-        workflow.add_conditional_edges(
-            source="retriever_with_chat_history",
+            source="reranker",
             path=self.grade_documents,
             path_map={"response_synthesizer": "response_synthesizer", "response_synthesizer_cohere": "response_synthesizer_cohere", "rewrite_query": "rewrite_query"},
         )

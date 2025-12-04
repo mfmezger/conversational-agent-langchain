@@ -22,6 +22,14 @@ class Config(BaseSettings):
     embedding_model_name: str = "embed-v4.0"
     embedding_size: int = 1536
 
+    # Reranker Configuration
+    rerank_provider: str = "none"  # "cohere", "flashrank", or "none"
+    rerank_top_k: int = 5
+
+    # Retrieval Configuration
+    retrieval_k: int = 40  # Number of documents to retrieve initially
+    retrieval_k_retry: int = 100  # Number of documents to retrieve on retry
+
     # QDRANT
     qdrant_url: str = "http://localhost"
     qdrant_api_key: str | None = Field(default=None, validation_alias=AliasChoices("qdrant_api_key", "qdrant_cloud_api_key"))
