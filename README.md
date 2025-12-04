@@ -87,6 +87,32 @@ Features
 - Provides a REST API built with FastAPI for easy integration with other applications.
 - Has a basic GUI.
 - Includes Phoenix Tracing for observability.
+- **Reranking support** with Cohere and FlashRank providers.
+
+## Reranking Configuration
+
+Reranking improves retrieval quality by re-scoring documents after initial retrieval. Two providers are supported:
+
+| Provider    | Description                                   | Requires API Key       |
+| ----------- | --------------------------------------------- | ---------------------- |
+| `cohere`    | Cohere Rerank API (cloud-based, high quality) | Yes (`COHERE_API_KEY`) |
+| `flashrank` | FlashRank (local, fast, privacy-friendly)     | No                     |
+| `none`      | Disabled (default)                            | No                     |
+
+Add these to your `.env` file:
+
+```bash
+# Reranking
+RERANK_PROVIDER=cohere          # Options: "cohere", "flashrank", "none"
+RERANK_TOP_K=5                  # Number of documents to keep after reranking
+
+# Retrieval
+RETRIEVAL_K=10                  # Documents to retrieve initially
+RETRIEVAL_K_RETRY=20            # Documents to retrieve on retry
+```
+
+> [!TIP]
+> For best results, set `RETRIEVAL_K` higher than `RERANK_TOP_K` so the reranker has more candidates to choose from.
 
 ## Tracing
 This project uses [Phoenix](https://github.com/Arize-AI/phoenix) for tracing and observability. It allows you to monitor the execution of your RAG pipeline, inspect retrieved documents, and debug the generation process.

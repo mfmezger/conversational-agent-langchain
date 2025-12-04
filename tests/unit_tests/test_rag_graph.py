@@ -2,16 +2,18 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.documents import Document
-from agent.backend.graph import Graph, AgentState, Grade
-from agent.routes.rag import router
-from fastapi.testclient import TestClient
-from agent.api import app
+
+# Patch reranker and retriever before importing Graph to prevent external connections
+with patch("agent.utils.reranker.get_reranker", return_value=lambda docs, query: docs):
+    from agent.backend.graph import Graph, AgentState, Grade
 
 # --- Tests for Graph Class ---
 
 @pytest.fixture
 def graph_instance():
-    return Graph()
+    with patch("agent.backend.graph.get_reranker") as mock_reranker:
+        mock_reranker.return_value = lambda docs, query: docs
+        yield Graph()
 
 def test_route_to_retriever_single_message(graph_instance):
     state = {"messages": [HumanMessage(content="hi")]}
@@ -58,7 +60,7 @@ def test_retrieve_documents(mock_get_retriever, graph_instance):
     assert result["query"] == "query"
     assert len(result["documents"]) == 1
     assert result["documents"][0].page_content == "doc1"
-    mock_get_retriever.assert_called_with(collection_name="test_coll", k=4)
+    mock_get_retriever.assert_called_with(collection_name="test_coll", k=graph_instance.cfg.retrieval_k)
 
 @patch("agent.backend.graph.get_retriever")
 def test_retrieve_documents_with_chat_history(mock_get_retriever, graph_instance):
@@ -300,11 +302,16 @@ def test_generate_response(graph_instance):
 
 # --- Tests for RAG Routes ---
 
-client = TestClient(app)
+@pytest.fixture
+def client():
+    """Lazily create TestClient to avoid import-time initialization."""
+    from fastapi.testclient import TestClient
+    from agent.api import app
+    return TestClient(app)
 
 @pytest.mark.asyncio
 @patch("agent.routes.rag.graph")
-async def test_rag_question_answer(mock_graph):
+async def test_rag_question_answer(mock_graph, client):
     # Mock the graph.ainvoke method
     mock_graph.with_config.return_value.ainvoke = AsyncMock(return_value={
         "documents": [Document(page_content="doc1", metadata={"source": "test"})],
@@ -326,7 +333,7 @@ async def test_rag_question_answer(mock_graph):
 
 @pytest.mark.asyncio
 @patch("agent.routes.rag.graph")
-async def test_rag_stream(mock_graph):
+async def test_rag_stream(mock_graph, client):
     # Mock the graph.astream_events method
     async def mock_stream(*args, **kwargs):
         yield {
