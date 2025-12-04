@@ -1,14 +1,6 @@
 """Script that contains the Pydantic Models for the Rest Request."""
 
-from fastapi import UploadFile
 from pydantic import BaseModel, Field
-
-
-class EmbeddTextFilesRequest(BaseModel):
-    """The request for the Embedd Text Files endpoint."""
-
-    files: list[UploadFile] = Field(..., description="The list of text files to embed.")
-    seperator: str = Field("###", description="The seperator to use between embedded texts.")
 
 
 class SearchParams(BaseModel):
@@ -37,7 +29,6 @@ class ChatMessages(BaseModel):
 class RAGRequest(BaseModel):
     """Request for the QA endpoint."""
 
-    # language: Language | None = Field(Language.DETECT, title="Language", description="The language to use for the answer.")
     messages: list[ChatMessages] | None = Field(
         default=[
             {
@@ -64,26 +55,8 @@ class EmbeddTextRequest(BaseModel):
         title="File Name",
         description="The name of the file to save the embedded text to.",
     )
-    seperator: str = Field(
+    separator: str = Field(
         "###",
-        title="seperator",
-        description="The seperator to use between embedded texts.",
-    )
-
-
-class CustomPromptCompletion(BaseModel):
-    """The Custom Prompt Completion Model."""
-
-    prompt: str = Field(..., title="Prompt", description="The prompt to use for the completion.")
-    model: str = Field(..., title="Model", description="The model to use for the completion.")
-    max_tokens: int = Field(256, title="Max Tokens", description="The maximum number of tokens to generate.")
-    temperature: float = Field(
-        ...,
-        title="Temperature",
-        description="The temperature to use for the completion.",
-    )
-    stop_sequences: list[str] = Field(
-        [],
-        title="Stop Sequences",
-        description="The stop sequences to use for the completion.",
+        title="Separator",
+        description="The separator to use between embedded texts.",
     )

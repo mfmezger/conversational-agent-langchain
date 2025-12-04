@@ -170,8 +170,8 @@ docker compose up qdrant
 To run the Backend use this command in the root directory:
 
 ```bash
-```bash
 uv run uvicorn agent.api:app --reload
+```
 ```
 
 To run the tests you can use this command:
@@ -184,7 +184,6 @@ uv run coverage run -m pytest -o log_cli=true -vvv tests
 
 To run the Frontend use this command in the root directory:
 
-```bash
 ```bash
 uv run streamlit run frontend/assistant.py --theme.base="dark"
 ```

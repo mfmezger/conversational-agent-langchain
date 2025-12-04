@@ -1,11 +1,28 @@
 """Reranker utilities for document reranking."""
 
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from langchain_core.documents import Document
 from loguru import logger
 
+if TYPE_CHECKING:
+    from flashrank import Ranker
+
 RerankerProvider = Literal["cohere", "flashrank", "none"]
+
+# Cache for FlashRank model (expensive to load)
+_flashrank_ranker: "Ranker | None" = None
+
+
+def _get_flashrank_ranker() -> "Ranker":
+    """Get or create cached FlashRank ranker."""
+    global _flashrank_ranker
+    if _flashrank_ranker is None:
+        from flashrank import Ranker  # noqa: PLC0415
+
+        _flashrank_ranker = Ranker(model_name="ms-marco-MiniLM-L-12-v2", cache_dir="/tmp/flashrank")
+        logger.info("FlashRank model loaded and cached")
+    return _flashrank_ranker
 
 
 def rerank_with_cohere(documents: list[Document], query: str, top_k: int, api_key: str) -> list[Document]:
@@ -44,12 +61,12 @@ def rerank_with_flashrank(documents: list[Document], query: str, top_k: int) -> 
         Reranked list of documents.
 
     """
-    from flashrank import Ranker, RerankRequest  # noqa: PLC0415
+    from flashrank import RerankRequest  # noqa: PLC0415
 
     if not documents:
         return documents
 
-    ranker = Ranker(model_name="ms-marco-MiniLM-L-12-v2", cache_dir="/tmp/flashrank")
+    ranker = _get_flashrank_ranker()
 
     # Convert documents to flashrank format
     passages = [{"id": i, "text": doc.page_content, "meta": doc.metadata} for i, doc in enumerate(documents)]
@@ -98,6 +115,8 @@ def get_reranker(
             return lambda docs, query: rerank_with_cohere(docs, query, top_k, cohere_api_key)
 
         case "flashrank":
+            # Pre-warm the model on startup
+            _get_flashrank_ranker()
             return lambda docs, query: rerank_with_flashrank(docs, query, top_k)
 
         case _:
