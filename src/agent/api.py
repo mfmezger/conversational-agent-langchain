@@ -45,7 +45,7 @@ def my_schema() -> dict:
     return app.openapi_schema
 
 
-app = FastAPI(debug=True)
+app = FastAPI()
 app.openapi = my_schema
 
 

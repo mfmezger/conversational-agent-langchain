@@ -74,16 +74,16 @@ async def test_delete_vector(mock_load_conn):
 
 # --- Tests for Retriever Utils ---
 
-@patch("agent.utils.retriever.QdrantClient")
+@patch("agent.utils.retriever.qdrant_client")
+@patch("agent.utils.retriever.sparse_embeddings")
 @patch("agent.utils.retriever.QdrantVectorStore")
 @patch("agent.utils.retriever.CohereEmbeddings")
-def test_get_retriever(mock_embeddings, mock_vector_store, mock_client):
+def test_get_retriever(mock_embeddings, mock_vector_store, mock_sparse, mock_client):
     mock_vstore_instance = MagicMock()
     mock_vector_store.return_value = mock_vstore_instance
 
     retriever = get_retriever(k=5, collection_name="my_coll")
 
     mock_embeddings.assert_called_once()
-    mock_client.assert_called_once()
     mock_vector_store.assert_called_once()
     mock_vstore_instance.as_retriever.assert_called_with(search_kwargs={"k": 5})

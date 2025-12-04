@@ -107,4 +107,4 @@ def generate_collection(collection_name: str, embeddings_size: int) -> None:
 
 def initialize_all_vector_dbs(config: Config) -> None:
     """Initializes all vector dbs."""
-    initialize_vector_db(collection_name=config.qdrant_collection_name, embeddings_size=config.qdrant_embedding_size)
+    initialize_vector_db(collection_name=config.qdrant_collection_name, embeddings_size=config.embedding_size)

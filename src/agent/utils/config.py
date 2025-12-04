@@ -9,12 +9,12 @@ class Config(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
     openai_api_type: str = "openai"
-    azure_openai_endpoint: str
-    azure_openai_api_key: str
-    openai_api_key: str
+    azure_openai_endpoint: str = ""
+    azure_openai_api_key: str = ""
+    openai_api_key: str = ""
     openai_api_version: str = "2024-02-15-preview"
-    cohere_api_key: str
-    gemini_api_key: str
+    cohere_api_key: str = ""
+    gemini_api_key: str = ""
 
     # Model Configuration
     model_name: str = "gemini/gemini-2.5-flash"
@@ -37,7 +37,6 @@ class Config(BaseSettings):
     qdrant_prefer_http: bool = False
     phoenix_collector_endpoint: str = "http://phoenix:4318/v1/traces"
     qdrant_collection_name: str = "default"
-    qdrant_embedding_size: int = 1536
 
 
 config = Config()
