@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 from typing import Annotated, Literal, TypedDict
 
+from langchain_cohere import ChatCohere
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, convert_to_messages
@@ -51,6 +52,15 @@ class Graph:
 
         # define models
         self.llm = ChatLiteLLM(model_name=self.cfg.model_name, streaming=True)
+
+        # Initialize Cohere model for grounded generation (if API key is available)
+        self.cohere_llm: ChatCohere | None = None
+        if self.cfg.cohere_api_key:
+            self.cohere_llm = ChatCohere(
+                cohere_api_key=self.cfg.cohere_api_key,
+                model=self.cfg.cohere_model_name,
+                streaming=True,
+            )
 
         # Initialize reranker
         self.reranker = get_reranker(
@@ -189,9 +199,34 @@ class Graph:
         return self.generate_response(state, self.llm, RESPONSE_TEMPLATE)
 
     def generate_response_cohere(self, state: AgentState) -> AgentState:
-        """Generate a response using the Cohere model."""
-        model = self.llm.bind(documents=state["documents"])
-        return self.generate_response(state, model, COHERE_RESPONSE_TEMPLATE)
+        """Generate a response using Cohere's grounded generation with native document support."""
+        if not self.cohere_llm:
+            logger.warning("Cohere API key not configured, falling back to default response synthesizer")
+            return self.generate_response_default(state)
+
+        # Convert LangChain Documents to Cohere's expected format
+        cohere_documents = [{"text": doc.page_content, "title": doc.metadata.get("source", f"Document {i + 1}")} for i, doc in enumerate(state["documents"])]
+
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", COHERE_RESPONSE_TEMPLATE),
+                ("placeholder", "{chat_history}"),
+                ("human", "{question}"),
+            ]
+        )
+        response_synthesizer = prompt | self.cohere_llm
+
+        # Pass documents via invoke - Cohere handles grounding natively
+        synthesized_response = response_synthesizer.invoke(
+            {
+                "question": state["query"],
+                "chat_history": self.get_chat_history(convert_to_messages(state["messages"][:-1])),
+            },
+            documents=cohere_documents,
+        )
+        return {
+            "messages": [synthesized_response],
+        }
 
     def route_to_response_synthesizer(self, state: AgentState, config: RunnableConfig) -> Literal["response_synthesizer", "response_synthesizer_cohere"]:  # noqa: ARG002
         """Route to the appropriate response synthesizer based on the config."""

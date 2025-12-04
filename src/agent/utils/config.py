@@ -14,6 +14,7 @@ class Config(BaseSettings):
     openai_api_key: str = ""
     openai_api_version: str = "2024-02-15-preview"
     cohere_api_key: str = ""
+    cohere_model_name: str = "command-r-plus"  # Model for Cohere grounded generation
     gemini_api_key: str = ""
 
     # Model Configuration

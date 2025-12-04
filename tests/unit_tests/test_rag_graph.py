@@ -11,8 +11,10 @@ with patch("agent.utils.reranker.get_reranker", return_value=lambda docs, query:
 
 @pytest.fixture
 def graph_instance():
-    with patch("agent.backend.graph.get_reranker") as mock_reranker:
+    with patch("agent.backend.graph.get_reranker") as mock_reranker, \
+         patch("agent.backend.graph.ChatCohere") as mock_cohere:
         mock_reranker.return_value = lambda docs, query: docs
+        mock_cohere.return_value = MagicMock()
         yield Graph()
 
 def test_route_to_retriever_single_message(graph_instance):
@@ -284,13 +286,14 @@ def test_generate_response(graph_instance):
         result = graph_instance.generate_response_default(state)
         assert result["messages"][0].content == "default response"
 
-    # Test Cohere
+    # Test Cohere (now uses ChatCohere directly with documents passed to invoke)
     with patch("agent.backend.graph.ChatPromptTemplate.from_messages") as mock_prompt_cls:
         mock_prompt_instance = MagicMock()
         mock_prompt_cls.return_value = mock_prompt_instance
 
-        mock_bound_model = MagicMock()
-        graph_instance.llm.bind.return_value = mock_bound_model
+        # Mock the cohere_llm
+        mock_cohere_llm = MagicMock()
+        graph_instance.cohere_llm = mock_cohere_llm
 
         mock_chain = MagicMock()
         mock_prompt_instance.__or__.return_value = mock_chain
@@ -298,7 +301,13 @@ def test_generate_response(graph_instance):
 
         result = graph_instance.generate_response_cohere(state)
         assert result["messages"][0].content == "cohere response"
-        graph_instance.llm.bind.assert_called()
+
+        # Verify documents were passed in Cohere's expected format
+        call_args = mock_chain.invoke.call_args
+        assert "documents" in call_args.kwargs
+        docs = call_args.kwargs["documents"]
+        assert len(docs) == 1
+        assert docs[0]["text"] == "doc1"
 
 # --- Tests for RAG Routes ---
 
