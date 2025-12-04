@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
 
 # Enable bytecode compilation (faster startup)
 ENV UV_COMPILE_BYTECODE=1
