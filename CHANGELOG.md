@@ -1,3 +1,13 @@
+## 5.4.0 (2025-12-04)
+
+### Feat
+
+- **Reranking**: Adding reranking with flashrank or cohere (#133)
+
+### Perf
+
+- **Graph**: Performance Optimization for Graph (#134)
+
 ## 5.3.0 (2025-11-30)
 
 ### Feat
