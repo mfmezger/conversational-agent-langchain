@@ -1,3 +1,9 @@
+## 5.5.0 (2025-12-05)
+
+### Feat
+
+- **Cohere**: Reverting to correct Cohere impl for better grounded generation
+
 ## 5.4.0 (2025-12-04)
 
 ### Feat
