@@ -19,7 +19,12 @@ rather than putting them all at the end.
 If there is nothing in the context relevant to the question at hand, just say "Hmm, \
 I'm not sure." Don't try to make up an answer.
 
-Anything between the following `context`  html blocks is retrieved from a knowledge \
+<user_memory>
+The following is what you remember about this user from previous conversations:
+{memory_context}
+</user_memory>
+
+Anything between the following `context` html blocks is retrieved from a knowledge \
 bank, not part of the conversation with the user.
 
 <context>
@@ -41,6 +46,11 @@ from the provided documents. Use an unbiased and journalistic tone. Combine info
 together into a coherent answer. Do not repeat text.
 
 You should use bullet points in your answer for readability.
+
+<user_memory>
+The following is what you remember about this user from previous conversations:
+{memory_context}
+</user_memory>
 
 If there is nothing in the documents relevant to the question at hand, just say "Hmm, \
 I'm not sure." Don't try to make up an answer.

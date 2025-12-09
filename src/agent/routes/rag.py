@@ -20,7 +20,14 @@ router = APIRouter()
 async def question_answer(rag: RAGRequest) -> QAResponse:
     """Answering the Question."""
     messages = [dict(m) for m in rag.messages]
-    chain_result = await graph.with_config({"metadata": {"collection_name": rag.collection_name}}).ainvoke({"messages": messages})
+    chain_result = await graph.with_config({"metadata": {"collection_name": rag.collection_name}}).ainvoke(
+        {
+            "messages": messages,
+            "user_id": rag.user_id,
+            "session_id": rag.session_id,
+            "agent_id": rag.agent_id,
+        }
+    )
 
     documents = [{"document": [doc.page_content], "metadata": [doc.metadata]} for doc in chain_result["documents"]]
     return QAResponse(answer=chain_result["messages"][-1].content, meta_data=documents)
@@ -30,6 +37,12 @@ async def question_answer(rag: RAGRequest) -> QAResponse:
 async def question_answer_stream(rag: RAGRequest) -> StreamingResponse:
     """Stream the Answering."""
     messages = [dict(m) for m in rag.messages]
+    initial_state = {
+        "messages": messages,
+        "user_id": rag.user_id,
+        "session_id": rag.session_id,
+        "agent_id": rag.agent_id,
+    }
 
     async def stream() -> AsyncGenerator:
         documents = []
@@ -37,7 +50,7 @@ async def question_answer_stream(rag: RAGRequest) -> StreamingResponse:
         # Yield initial status
         yield json.dumps({"type": "status", "data": "Starting request..."}) + "\n"
 
-        async for chunk in graph.with_config({"metadata": {"collection_name": rag.collection_name}}).astream_events({"messages": messages}, version="v2"):
+        async for chunk in graph.with_config({"metadata": {"collection_name": rag.collection_name}}).astream_events(initial_state, version="v2"):
             # Status updates for Retrieval
             if chunk["event"] == "on_chain_start" and chunk["name"] in ["retriever", "retriever_with_chat_history"]:
                 yield json.dumps({"type": "status", "data": "Searching documents..."}) + "\n"

@@ -44,6 +44,22 @@ class RAGRequest(BaseModel):
         title="Collection Name",
         description="The name of the collection to search in.",
     )
+    # Memory context identifiers for personalization
+    user_id: str | None = Field(
+        default=None,
+        title="User ID",
+        description="Unique user identifier for per-user memory persistence.",
+    )
+    session_id: str | None = Field(
+        default=None,
+        title="Session ID",
+        description="Session identifier for session-scoped memory.",
+    )
+    agent_id: str | None = Field(
+        default=None,
+        title="Agent ID",
+        description="Agent identifier for agent-scoped memory.",
+    )
 
 
 class EmbeddTextRequest(BaseModel):

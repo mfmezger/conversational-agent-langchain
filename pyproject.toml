@@ -34,7 +34,9 @@ dependencies = [
     "langchain>=1.1.0",
     "langchain-litellm>=0.3.2",
     "flashrank>=0.2.0",
+    "mem0ai>=0.1.0",
 ]
+
 
 
 [project.scripts]

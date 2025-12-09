@@ -16,6 +16,7 @@ from loguru import logger
 from pydantic import BaseModel, Field
 
 from agent.backend.prompts import COHERE_RESPONSE_TEMPLATE, GRADER_TEMPLATE, REPHRASE_TEMPLATE, RESPONSE_TEMPLATE, REWRITE_TEMPLATE
+from agent.backend.services.memory_service import get_memory_service
 from agent.utils.config import Config
 from agent.utils.reranker import get_reranker
 from agent.utils.retriever import get_retriever
@@ -35,6 +36,11 @@ class AgentState(TypedDict):
     documents: list[Document]
     messages: Annotated[list[BaseMessage], add_messages]
     retry_count: int
+    # Memory fields for conversational memory
+    user_id: str | None
+    session_id: str | None
+    agent_id: str | None
+    memory_context: str | None
 
 
 class Grade(BaseModel):
@@ -68,6 +74,9 @@ class Graph:
             top_k=self.cfg.rerank_top_k,
             cohere_api_key=self.cfg.cohere_api_key,
         )
+
+        # Initialize memory service (if enabled)
+        self.memory_service = get_memory_service(self.cfg) if self.cfg.memory_enabled else None
 
     def retrieve_documents(self, state: AgentState, config: RunnableConfig) -> AgentState:
         """Retrieve documents from the retriever."""
@@ -173,6 +182,38 @@ class Graph:
             if (isinstance(message, AIMessage) and not message.tool_calls) or isinstance(message, HumanMessage)
         ]
 
+    def retrieve_memories(self, state: AgentState) -> AgentState:
+        """Retrieve relevant memories before document retrieval."""
+        if not self.memory_service or not state.get("user_id"):
+            return {"memory_context": "No user context available."}
+
+        query = state.get("query") or (state["messages"][-1].content if state.get("messages") else "")
+        memories = self.memory_service.search(
+            query=query,
+            user_id=state.get("user_id"),
+            session_id=state.get("session_id"),
+            agent_id=state.get("agent_id"),
+        )
+        context = "\n".join(f"- {m}" for m in memories) if memories else "No user context available."
+        logger.debug(f"Retrieved {len(memories)} memories for context enrichment")
+        return {"memory_context": context}
+
+    def store_memory(self, state: AgentState) -> AgentState:
+        """Store the conversation turn in long-term memory."""
+        if not self.memory_service or not state.get("user_id"):
+            return {}
+
+        self.memory_service.add(
+            messages=[
+                {"role": "user", "content": state["query"]},
+                {"role": "assistant", "content": state["messages"][-1].content},
+            ],
+            user_id=state.get("user_id"),
+            session_id=state.get("session_id"),
+            agent_id=state.get("agent_id"),
+        )
+        return {}
+
     def generate_response(self, state: AgentState, model: LanguageModelLike, prompt_template: str) -> AgentState:
         """Create a response from the model."""
         prompt = ChatPromptTemplate.from_messages(
@@ -188,6 +229,7 @@ class Graph:
                 "question": state["query"],
                 "context": format_docs_for_citations(state["documents"]),
                 "chat_history": self.get_chat_history(convert_to_messages(state["messages"][:-1])),
+                "memory_context": state.get("memory_context", "No user context available."),
             }
         )
         return {
@@ -221,6 +263,7 @@ class Graph:
             {
                 "question": state["query"],
                 "chat_history": self.get_chat_history(convert_to_messages(state["messages"][:-1])),
+                "memory_context": state.get("memory_context", "No user context available."),
             },
             documents=cohere_documents,
         )
@@ -241,15 +284,24 @@ class Graph:
         workflow = StateGraph(state_schema=AgentState)
 
         # define nodes
+        workflow.add_node("retrieve_memories", self.retrieve_memories)
         workflow.add_node("retriever", self.retrieve_documents)
         workflow.add_node("retriever_with_chat_history", self.retrieve_documents_with_chat_history)
         workflow.add_node("reranker", self.rerank_documents)
         workflow.add_node("rewrite_query", self.rewrite_query)
         workflow.add_node("response_synthesizer", self.generate_response_default)
         workflow.add_node("response_synthesizer_cohere", self.generate_response_cohere)
+        workflow.add_node("store_memory", self.store_memory)
 
-        # set entry point to retrievers
-        workflow.set_conditional_entry_point(path=self.route_to_retriever)
+        # set entry point to memory retrieval first
+        workflow.set_entry_point("retrieve_memories")
+
+        # connect memory retrieval to appropriate document retriever
+        workflow.add_conditional_edges(
+            source="retrieve_memories",
+            path=self.route_to_retriever,
+            path_map={"retriever": "retriever", "retriever_with_chat_history": "retriever_with_chat_history"},
+        )
 
         # connect retrievers to reranker
         workflow.add_edge("retriever", "reranker")
@@ -266,8 +318,9 @@ class Graph:
         # Note: We always route back to basic retriever because we have a standalone query now
         workflow.add_edge("rewrite_query", "retriever")
 
-        # connect synthesizers to terminal node
-        workflow.add_edge(start_key="response_synthesizer", end_key=END)
-        workflow.add_edge(start_key="response_synthesizer_cohere", end_key=END)
+        # connect synthesizers to memory storage, then to terminal node
+        workflow.add_edge(start_key="response_synthesizer", end_key="store_memory")
+        workflow.add_edge(start_key="response_synthesizer_cohere", end_key="store_memory")
+        workflow.add_edge(start_key="store_memory", end_key=END)
 
         return workflow.compile()

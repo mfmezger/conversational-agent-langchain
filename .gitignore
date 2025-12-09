@@ -135,3 +135,4 @@ vector_db/
 reports.xlsx
 phoenix_data/
 .aider*
+memory_db/

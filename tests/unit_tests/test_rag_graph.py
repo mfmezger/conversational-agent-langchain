@@ -385,3 +385,142 @@ async def test_rag_stream(mock_graph, client):
         # Verify we got some expected events
         assert "Starting request..." in lines[0]
         # We can check for specific content in the lines
+
+
+# --- Tests for Memory Nodes ---
+
+def test_retrieve_memories_with_user_id(graph_instance):
+    """Test retrieve_memories returns context when user_id is provided."""
+    # Mock the memory service
+    mock_memory_service = MagicMock()
+    mock_memory_service.search.return_value = ["User likes Python", "User prefers concise answers"]
+    graph_instance.memory_service = mock_memory_service
+
+    state = {
+        "messages": [HumanMessage(content="What is Python?")],
+        "user_id": "user_123",
+        "session_id": "session_abc",
+        "agent_id": None,
+        "query": None,
+    }
+
+    result = graph_instance.retrieve_memories(state)
+
+    assert "memory_context" in result
+    assert "User likes Python" in result["memory_context"]
+    assert "User prefers concise answers" in result["memory_context"]
+    mock_memory_service.search.assert_called_once_with(
+        query="What is Python?",
+        user_id="user_123",
+        session_id="session_abc",
+        agent_id=None,
+    )
+
+
+def test_retrieve_memories_without_user_id(graph_instance):
+    """Test retrieve_memories returns default when no user_id."""
+    graph_instance.memory_service = MagicMock()
+
+    state = {
+        "messages": [HumanMessage(content="test")],
+        "user_id": None,
+    }
+
+    result = graph_instance.retrieve_memories(state)
+
+    assert result["memory_context"] == "No user context available."
+    graph_instance.memory_service.search.assert_not_called()
+
+
+def test_retrieve_memories_with_no_memories(graph_instance):
+    """Test retrieve_memories returns default when no memories found."""
+    mock_memory_service = MagicMock()
+    mock_memory_service.search.return_value = []
+    graph_instance.memory_service = mock_memory_service
+
+    state = {
+        "messages": [HumanMessage(content="test")],
+        "user_id": "user_123",
+    }
+
+    result = graph_instance.retrieve_memories(state)
+
+    assert result["memory_context"] == "No user context available."
+
+
+def test_retrieve_memories_uses_query_if_available(graph_instance):
+    """Test retrieve_memories uses state query over last message."""
+    mock_memory_service = MagicMock()
+    mock_memory_service.search.return_value = []
+    graph_instance.memory_service = mock_memory_service
+
+    state = {
+        "messages": [HumanMessage(content="original question")],
+        "query": "rewritten query",
+        "user_id": "user_123",
+    }
+
+    graph_instance.retrieve_memories(state)
+
+    call_args = mock_memory_service.search.call_args
+    assert call_args.kwargs["query"] == "rewritten query"
+
+
+def test_store_memory_stores_conversation(graph_instance):
+    """Test store_memory stores the conversation turn."""
+    mock_memory_service = MagicMock()
+    mock_memory_service.add.return_value = {"results": [{"id": "mem_1"}]}
+    graph_instance.memory_service = mock_memory_service
+
+    state = {
+        "query": "What is Python?",
+        "messages": [
+            HumanMessage(content="What is Python?"),
+            AIMessage(content="Python is a programming language."),
+        ],
+        "user_id": "user_123",
+        "session_id": "session_abc",
+        "agent_id": "coding_bot",
+    }
+
+    result = graph_instance.store_memory(state)
+
+    assert result == {}
+    mock_memory_service.add.assert_called_once()
+    call_args = mock_memory_service.add.call_args
+    messages = call_args.kwargs["messages"]
+    assert messages[0]["role"] == "user"
+    assert messages[0]["content"] == "What is Python?"
+    assert messages[1]["role"] == "assistant"
+    assert messages[1]["content"] == "Python is a programming language."
+
+
+def test_store_memory_without_user_id(graph_instance):
+    """Test store_memory does nothing when no user_id."""
+    graph_instance.memory_service = MagicMock()
+
+    state = {
+        "query": "test",
+        "messages": [AIMessage(content="response")],
+        "user_id": None,
+    }
+
+    result = graph_instance.store_memory(state)
+
+    assert result == {}
+    graph_instance.memory_service.add.assert_not_called()
+
+
+def test_store_memory_without_memory_service(graph_instance):
+    """Test store_memory handles disabled memory service."""
+    graph_instance.memory_service = None
+
+    state = {
+        "query": "test",
+        "messages": [AIMessage(content="response")],
+        "user_id": "user_123",
+    }
+
+    result = graph_instance.store_memory(state)
+
+    assert result == {}
