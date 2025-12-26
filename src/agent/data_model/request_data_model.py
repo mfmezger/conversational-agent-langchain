@@ -62,7 +62,7 @@ class RAGRequest(BaseModel):
     )
 
 
-class EmbeddTextRequest(BaseModel):
+class EmbedTextRequest(BaseModel):
     """The request parameters for embedding text."""
 
     text: str = Field(..., title="Text", description="The text to embed.")

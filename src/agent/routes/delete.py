@@ -1,4 +1,4 @@
-"""Route to handle the delection of a vector from the database."""
+"""Route to handle the deletion of a vector from the database."""
 
 import asyncio
 

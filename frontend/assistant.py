@@ -62,6 +62,7 @@ async def process_rag_stream(
     """Process the RAG stream response."""
     full_response = ""
     documents = []
+
     async for line in stream:
         if line:
             data = json.loads(line)

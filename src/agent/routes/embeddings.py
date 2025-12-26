@@ -10,7 +10,7 @@ from loguru import logger
 from werkzeug.utils import secure_filename
 
 from agent.backend.services.embedding_management import EmbeddingManagement
-from agent.data_model.request_data_model import EmbeddTextRequest
+from agent.data_model.request_data_model import EmbedTextRequest
 from agent.data_model.response_data_model import EmbeddingResponse
 from agent.utils.utility import create_tmp_folder
 
@@ -104,7 +104,7 @@ async def _process_and_write_file(file: UploadFile, file_path: Path) -> None:
 
 
 @router.post("/string/", tags=["embeddings"])
-async def embedd_text(embedding: EmbeddTextRequest, collection_name: str) -> EmbeddingResponse:
+async def embedd_text(embedding: EmbedTextRequest, collection_name: str) -> EmbeddingResponse:
     """Embedding text."""
     logger.info("Embedding Text")
     service = EmbeddingManagement(collection_name=collection_name)

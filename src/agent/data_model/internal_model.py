@@ -1,4 +1,4 @@
-"""Script that contains the Pydantic Models for internal Datahandeling."""
+"""Script that contains the Pydantic Models for internal Data handling."""
 
 from pydantic import BaseModel
 

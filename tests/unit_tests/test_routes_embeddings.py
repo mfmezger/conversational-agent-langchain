@@ -6,7 +6,7 @@ import shutil
 import tempfile
 import os
 from agent.routes.embeddings import _write_file_to_disk, post_embed_documents, embedd_text
-from agent.data_model.request_data_model import EmbeddTextRequest
+from agent.data_model.request_data_model import EmbedTextRequest
 
 class TestEmbeddingsRoutes(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
@@ -110,7 +110,7 @@ class TestEmbeddingsRoutes(unittest.IsolatedAsyncioTestCase):
         mock_file = AsyncMock()
         mock_aio_open.return_value.__aenter__.return_value = mock_file
 
-        request = EmbeddTextRequest(text="some text", file_name="test_doc")
+        request = EmbedTextRequest(text="some text", file_name="test_doc")
 
         response = await embedd_text(embedding=request, collection_name="test_collection")
 
