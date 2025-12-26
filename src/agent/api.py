@@ -29,8 +29,8 @@ tracer_provider = register(
 LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
 
 # Show startup message
-f = pyfiglet.figlet_format("Conv Agent", font="univers")
-logger.info(f"Welcome to {f}")
+f = pyfiglet.figlet_format("Conv Agent", font="alligator")
+logger.info(f"Welcome to\n\n{f}\n\n")
 
 
 def my_schema() -> dict:
