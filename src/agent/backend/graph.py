@@ -71,89 +71,103 @@ class Graph:
 
     def retrieve_documents(self, state: AgentState, config: RunnableConfig) -> AgentState:
         """Retrieve documents from the retriever."""
-        # Dynamic k: Increase k if retrying
-        retry_count = state.get("retry_count", 0)
-        k = self.cfg.retrieval_k if retry_count == 0 else self.cfg.retrieval_k_retry
+        try:
+            retry_count = state.get("retry_count", 0)
+            k = self.cfg.retrieval_k if retry_count == 0 else self.cfg.retrieval_k_retry
 
-        retriever = get_retriever(k=k, collection_name=config["metadata"]["collection_name"])
-        messages = convert_to_messages(messages=state["messages"])
-        # If query was rewritten, use state["query"], otherwise use last message
-        query = state.get("query") or messages[-1].content
+            retriever = get_retriever(k=k, collection_name=config["metadata"]["collection_name"])
+            messages = convert_to_messages(messages=state["messages"])
+            query = state.get("query") or messages[-1].content
 
-        relevant_documents = retriever.invoke(query)
-        if not relevant_documents:
-            logger.info(f"No relevant documents found for the query: {query}")
+            relevant_documents = retriever.invoke(query)
 
-        return {"query": query, "documents": relevant_documents, "retry_count": retry_count}
+            if not relevant_documents:
+                logger.info(f"No relevant documents found for the query: {query}")
+                return {"query": query, "documents": [], "retry_count": retry_count}
+            else:
+                return {"query": query, "documents": relevant_documents, "retry_count": retry_count}
+        except Exception as exc:
+            logger.error(f"Error retrieving documents: {exc}")
+            raise
 
     def retrieve_documents_with_chat_history(self, state: AgentState, config: RunnableConfig) -> AgentState:
         """Retrieve documents from the retriever with chat history."""
-        # Dynamic k: Increase k if retrying
-        retry_count = state.get("retry_count", 0)
-        k = self.cfg.retrieval_k if retry_count == 0 else self.cfg.retrieval_k_retry
+        try:
+            retry_count = state.get("retry_count", 0)
+            k = self.cfg.retrieval_k if retry_count == 0 else self.cfg.retrieval_k_retry
 
-        retriever = get_retriever(k=k, collection_name=config["metadata"]["collection_name"])
-        model = self.llm.with_config(tags=["nostream"])
+            retriever = get_retriever(k=k, collection_name=config["metadata"]["collection_name"])
+            model = self.llm.with_config(tags=["nostream"])
 
-        condense_queston_prompt = PromptTemplate.from_template(REPHRASE_TEMPLATE)
-        condense_question_chain = (condense_queston_prompt | model | StrOutputParser()).with_config(
-            run_name="CondenseQuestion",
-        )
+            condense_queston_prompt = PromptTemplate.from_template(REPHRASE_TEMPLATE)
+            condense_question_chain = (condense_queston_prompt | model | StrOutputParser()).with_config(
+                run_name="CondenseQuestion",
+            )
 
-        messages = convert_to_messages(messages=state["messages"])
-        # If query was rewritten, use state["query"], otherwise use last message
-        if not state.get("query"):
-            query = messages[-1].content
-            retriever_with_condensed_question = condense_question_chain | retriever
-            relevant_documents = retriever_with_condensed_question.invoke({"question": query, "chat_history": self.get_chat_history(messages[:-1])})
-            return {"query": query, "documents": relevant_documents, "retry_count": retry_count}
-        else:
-            # If we are looping, we already have a rewritten query in state["query"]
-            # So we just use basic retrieval on that
-            return self.retrieve_documents(state, config)
+            messages = convert_to_messages(messages=state["messages"])
+            if not state.get("query"):
+                query = messages[-1].content
+                retriever_with_condensed_question = condense_question_chain | retriever
+                relevant_documents = retriever_with_condensed_question.invoke({"question": query, "chat_history": self.get_chat_history(messages[:-1])})
+                return {"query": query, "documents": relevant_documents, "retry_count": retry_count}
+            else:
+                return self.retrieve_documents(state, config)
+        except Exception as exc:
+            logger.error(f"Error retrieving documents with chat history: {exc}")
+            raise
 
     def rerank_documents(self, state: AgentState) -> AgentState:
         """Rerank retrieved documents to improve relevance."""
-        if not state["documents"]:
-            return state
-
-        reranked_docs = self.reranker(state["documents"], state["query"])
-        logger.info(f"Reranked documents: {len(state['documents'])} -> {len(reranked_docs)}")
-        return {"documents": reranked_docs}
+        try:
+            if not state["documents"]:
+                return state
+            else:
+                reranked_docs = self.reranker(state["documents"], state["query"])
+                logger.info(f"Reranked documents: {len(state['documents'])} -> {len(reranked_docs)}")
+                return {"documents": reranked_docs}
+        except Exception as exc:
+            logger.error(f"Error reranking documents: {exc}")
+            raise
 
     def grade_documents(self, state: AgentState, config: RunnableConfig) -> Literal["response_synthesizer", "response_synthesizer_cohere", "rewrite_query"]:
         """Grade the retrieved documents holistically."""
-        model = self.llm.with_config(tags=["nostream"])
-        structured_model = model.with_structured_output(Grade)
+        try:
+            model = self.llm.with_config(tags=["nostream"])
+            structured_model = model.with_structured_output(Grade)
 
-        prompt = PromptTemplate(
-            template=GRADER_TEMPLATE,
-            input_variables=["documents", "question"],
-        )
-        chain = prompt | structured_model
+            prompt = PromptTemplate(
+                template=GRADER_TEMPLATE,
+                input_variables=["documents", "question"],
+            )
+            chain = prompt | structured_model
 
-        # Format documents for the grader
-        docs_text = "\n\n".join([f"Document {i + 1}:\n{doc.page_content}" for i, doc in enumerate(state["documents"])])
+            docs_text = "\n\n".join([f"Document {i + 1}:\n{doc.page_content}" for i, doc in enumerate(state["documents"])])
 
-        grade: Grade = chain.invoke({"documents": docs_text, "question": state["query"]})
+            grade: Grade = chain.invoke({"documents": docs_text, "question": state["query"]})
 
-        # If graded as relevant, or we hit max retries, generate
-        if grade.is_relevant or state.get("retry_count", 0) >= 2:
-            return self.route_to_response_synthesizer(state, config)
-
-        return "rewrite_query"
+            if grade.is_relevant or state.get("retry_count", 0) >= 2:
+                return self.route_to_response_synthesizer(state, config)
+            else:
+                return "rewrite_query"
+        except Exception as exc:
+            logger.error(f"Error grading documents: {exc}")
+            raise
 
     def rewrite_query(self, state: AgentState) -> AgentState:
         """Rewrite the query to improve retrieval."""
-        model = self.llm.with_config(tags=["nostream"])
-        prompt = PromptTemplate(
-            template=REWRITE_TEMPLATE,
-            input_variables=["question"],
-        )
-        chain = prompt | model | StrOutputParser()
-        new_query = chain.invoke({"question": state["query"]})
-        logger.info(f"Rewritten query: {new_query}")
-        return {"query": new_query, "retry_count": state.get("retry_count", 0) + 1}
+        try:
+            model = self.llm.with_config(tags=["nostream"])
+            prompt = PromptTemplate(
+                template=REWRITE_TEMPLATE,
+                input_variables=["question"],
+            )
+            chain = prompt | model | StrOutputParser()
+            new_query = chain.invoke({"question": state["query"]})
+            logger.info(f"Rewritten query: {new_query}")
+            return {"query": new_query, "retry_count": state.get("retry_count", 0) + 1}
+        except Exception as exc:
+            logger.error(f"Error rewriting query: {exc}")
+            raise
 
     def route_to_retriever(
         self,
@@ -175,24 +189,29 @@ class Graph:
 
     def generate_response(self, state: AgentState, model: LanguageModelLike, prompt_template: str) -> AgentState:
         """Create a response from the model."""
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", prompt_template),
-                ("placeholder", "{chat_history}"),
-                ("human", "{question}"),
-            ]
-        )
-        response_synthesizer = prompt | model
-        synthesized_response = response_synthesizer.invoke(
-            {
-                "question": state["query"],
-                "context": format_docs_for_citations(state["documents"]),
-                "chat_history": self.get_chat_history(convert_to_messages(state["messages"][:-1])),
+        try:
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", prompt_template),
+                    ("placeholder", "{chat_history}"),
+                    ("human", "{question}"),
+                ]
+            )
+            response_synthesizer = prompt | model
+            synthesized_response = response_synthesizer.invoke(
+                {
+                    "question": state["query"],
+                    "context": format_docs_for_citations(state["documents"]),
+                    "chat_history": self.get_chat_history(convert_to_messages(state["messages"][:-1])),
+                }
+            )
+        except Exception as exc:
+            logger.error(f"Error generating response: {exc}")
+            raise
+        else:
+            return {
+                "messages": [synthesized_response],
             }
-        )
-        return {
-            "messages": [synthesized_response],
-        }
 
     def generate_response_default(self, state: AgentState) -> AgentState:
         """Generate a response using non cohere model."""

@@ -61,13 +61,11 @@ async def post_embed_documents(
 
     for file in files:
         if not file.filename:
-            # This case is unlikely with FastAPI's UploadFile but good for safety
             logger.warning("Skipping an upload that had no filename.")
             continue
 
-        file_path = Path(tmp_dir) / file.filename
+        file_path = _validate_and_resolve_path(Path(tmp_dir), file.filename)
         file_names.append(file.filename)
-        # Create a coroutine to read the file and then write it to disk
         task = asyncio.create_task(_process_and_write_file(file, file_path))
         write_tasks.append(task)
 
@@ -97,6 +95,30 @@ async def post_embed_documents(
     return EmbeddingResponse(status="success", files=file_names)
 
 
+def _validate_and_resolve_path(base_dir: Path, filename: str) -> Path:
+    """Validate that resolved path is within base_dir.
+
+    Args:
+        base_dir: The base directory that must contain resolved path
+        filename: The filename to validate and resolve
+
+    Returns:
+        The validated, resolved Path
+
+    Raises:
+        HTTPException: If path would escape to base directory
+
+    """
+    sanitized_name = secure_filename(filename)
+    full_path = (base_dir / sanitized_name).resolve()
+    if not full_path.is_relative_to(base_dir.resolve()):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file name provided.",
+        )
+    return full_path
+
+
 async def _process_and_write_file(file: UploadFile, file_path: Path) -> None:
     """Reads the content of an uploaded file and writes it to disk."""
     file_content = await file.read()
@@ -110,10 +132,7 @@ async def embedd_text(embedding: EmbeddTextRequest, collection_name: str) -> Emb
     service = EmbeddingManagement(collection_name=collection_name)
     tmp_dir = create_tmp_folder()
 
-    sanitized_file_name = secure_filename(embedding.file_name + ".txt")
-    full_path = Path(tmp_dir) / sanitized_file_name
-    if not str(full_path).startswith(str(tmp_dir)):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file name provided.")
+    full_path = _validate_and_resolve_path(Path(tmp_dir), embedding.file_name + ".txt")
     async with aiofiles.open(full_path, "w") as f:
         await f.write(embedding.text)
     await asyncio.to_thread(service.embed_documents, directory=tmp_dir, file_ending=".txt")

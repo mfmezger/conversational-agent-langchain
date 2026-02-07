@@ -1,4 +1,5 @@
 """API Tests."""
+
 from http import HTTPStatus
 from pathlib import Path
 from collections.abc import Generator
@@ -6,11 +7,12 @@ from collections.abc import Generator
 import pytest
 from fastapi.testclient import TestClient
 
-from agent.api import app
 
 @pytest.fixture(scope="module")
 def client() -> Generator[TestClient, None, None]:
     """Yield a test client."""
+    from agent.api import app
+
     with TestClient(app) as c:
         yield c
 
@@ -30,7 +32,7 @@ def test_read_root(client: TestClient) -> None:
 @pytest.mark.parametrize("provider", ["cohere", "ollama"])
 def test_create_collection(client: TestClient, provider: str) -> None:
     """Test the create_collection function."""
-    collection_name = "test_collection"
+    collection_name = f"test_collection_{provider}"
     response = client.post(
         f"/collection/create/{collection_name}",
         params={"embeddings_size": 1536},
