@@ -25,7 +25,13 @@ def _get_flashrank_ranker() -> "Ranker":
     return _flashrank_ranker
 
 
-def rerank_with_cohere(documents: list[Document], query: str, top_k: int, api_key: str) -> list[Document]:
+def rerank_with_cohere(
+    documents: list[Document],
+    query: str,
+    top_k: int,
+    api_key: str,
+    model: str = "rerank-v3.5",
+) -> list[Document]:
     """Rerank documents using Cohere Rerank API.
 
     Args:
@@ -33,6 +39,7 @@ def rerank_with_cohere(documents: list[Document], query: str, top_k: int, api_ke
         query: The query to rerank against.
         top_k: Number of top documents to return.
         api_key: Cohere API key.
+        model: Cohere rerank model name.
 
     Returns:
         Reranked list of documents.
@@ -43,7 +50,7 @@ def rerank_with_cohere(documents: list[Document], query: str, top_k: int, api_ke
     if not documents:
         return documents
 
-    reranker = CohereRerank(cohere_api_key=api_key, top_n=top_k)
+    reranker = CohereRerank(model=model, cohere_api_key=api_key, top_n=top_k)
     reranked = reranker.compress_documents(documents=documents, query=query)
     logger.info(f"Cohere reranked {len(documents)} documents to top {len(reranked)}")
     return list(reranked)

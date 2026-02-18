@@ -63,9 +63,15 @@ update_changelog_on_bump = true
 
 [dependency-groups]
 dev = [
+    "anyio>=4.11.0",
     "coverage>=7.12.0",
+    "dirty-equals>=0.11",
+    "inline-snapshot>=0.31.0",
+    "pytest-xdist>=3.8.0",
     "pytest>=9.0.1",
     "pytest-asyncio>=1.3.0",
+    "pytest-cov>=7.0.0",
+    "pytest-recording>=0.13.4",
     "httpx>=0.28.1",
 ]
 
@@ -73,6 +79,16 @@ dev = [
 omit = ["tests/*"]
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers --durations=20"
+xfail_strict = true
+markers = [
+    "unit: pure unit tests",
+    "integration: integration tests with in-process dependencies",
+    "e2e: end-to-end tests requiring external services",
+    "vcr: tests backed by recorded HTTP interactions",
+    "slow: long-running tests",
+]
 filterwarnings = [
     "ignore:`json_encoders` is deprecated:pydantic.warnings.PydanticDeprecatedSince20",
     "ignore:Support for class-based `config` is deprecated:pydantic.warnings.PydanticDeprecatedSince20"
