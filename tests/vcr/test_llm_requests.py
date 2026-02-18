@@ -10,13 +10,20 @@ from openai import OpenAIError
 pytestmark = [pytest.mark.vcr, pytest.mark.integration]
 
 
-LIVE_OPENAI_KEY = os.getenv("OPENAI_API_KEY", "")
-HAS_OPENAI_KEY = bool(LIVE_OPENAI_KEY) and LIVE_OPENAI_KEY != "dummy_key"
+OPENAI_KEY = os.getenv("OPENAI_API_KEY", "dummy_key")
+LIVE_RECORD_MODES = {"all", "new_episodes", "rewrite"}
 
 
-@pytest.mark.skipif(not HAS_OPENAI_KEY, reason="Requires OPENAI_API_KEY for recording/replay setup")
+def _requires_live_openai_key() -> bool:
+    record_mode = os.getenv("VCR_RECORD_MODE", "once")
+    return record_mode in LIVE_RECORD_MODES and OPENAI_KEY == "dummy_key"
+
+
 def test_openai_chat_completion_vcr() -> None:
-    client = OpenAI(api_key=LIVE_OPENAI_KEY)
+    if _requires_live_openai_key():
+        pytest.skip("Set OPENAI_API_KEY to record live OpenAI cassettes")
+
+    client = OpenAI(api_key=OPENAI_KEY)
     model = os.getenv("OPENAI_TEST_MODEL", "gpt-4o-mini")
 
     try:
@@ -32,9 +39,11 @@ def test_openai_chat_completion_vcr() -> None:
     assert isinstance(response.output_text, str)
 
 
-@pytest.mark.skipif(not HAS_OPENAI_KEY, reason="Requires OPENAI_API_KEY for recording/replay setup")
 def test_openai_embeddings_vcr() -> None:
-    client = OpenAI(api_key=LIVE_OPENAI_KEY)
+    if _requires_live_openai_key():
+        pytest.skip("Set OPENAI_API_KEY to record live OpenAI cassettes")
+
+    client = OpenAI(api_key=OPENAI_KEY)
     model = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
 
     try:
