@@ -16,6 +16,7 @@ VCR_REDACTED_HEADERS = {
     "authorization",
     "api-key",
     "x-api-key",
+    "x-goog-api-key",
     "cookie",
     "set-cookie",
     "openai-organization",
@@ -58,6 +59,7 @@ def test_env_defaults() -> None:
 def vcr_config() -> dict:
     return {
         "filter_headers": sorted(VCR_REDACTED_HEADERS),
+        "filter_query_parameters": ["key", "api_key"],
         "before_record_request": _sanitize_vcr_request,
         "before_record_response": _sanitize_vcr_response,
         "decode_compressed_response": True,

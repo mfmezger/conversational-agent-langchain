@@ -1,0 +1,61 @@
+interactions:
+- request:
+    body: '{"contents":[{"role":"user","parts":[{"text":"Reply with exactly one short
+      greeting."}]}],"generationConfig":{"temperature":0.0,"thinkingConfig":{"thinkingLevel":"low"}}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '170'
+      Content-Type:
+      - application/json
+      Host:
+      - generativelanguage.googleapis.com
+      User-Agent:
+      - litellm/1.80.7
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"Hello.\",\n            \"thoughtSignature\":
+        \"EskCCsYCAb4+9vugqS+6tOUS3lzijyoGV8tV2ond7zabY+qocIJJLRoYO+P0MYtfCg60xoevPADmZOh2C78Lz95fry1Q/Qc/z1QSjrFuJAyGdv5v18Wa862JUN9b9JhRUvVV+m05iwlqn+6g+DswNEmNKBhkptdmGvjksiVMTbeso/pJaXdkWQHpPl3NEEdgtd7liTbKer64cJI28U4sg2j8fDg9rSGSB7bb09s2nStbgmzw84LDnu7xQm7QfJTa/7gCaSGiywtbnjNl19jscpwU4/3a40A8Sa5qNOqNljwR2y/zEe7mnxPZW3DJ0hVQUDLytWzJccssVnEuyaWOPcO6ar2SGQaBxJ1Ra569Cd58JeSsanEnkM/LfJA9M3x4dCWYYaZupB1dpiUrQkU4X72oBEdF3aRtmZiPQKyj8LltzVxAJghmrEenqdk=\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        8,\n    \"candidatesTokenCount\": 2,\n    \"totalTokenCount\": 96,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 8\n      }\n
+        \   ],\n    \"thoughtsTokenCount\": 86\n  },\n  \"modelVersion\": \"gemini-3-flash-preview\",\n
+        \ \"responseId\": \"4S2YaeH1O8uN7M8P9eePiAI\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 20 Feb 2026 09:48:18 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=27668
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '1031'
+    status:
+      code: 200
+      message: OK
+version: 1
