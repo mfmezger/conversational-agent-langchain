@@ -1,14 +1,13 @@
 # Makefile
 SHELL = /bin/bash
 
-.PHONY: help style restart clean start_backend start_vectordb setup start_docker down start_frontend test test-fast test-vcr update-vcr-tests test-e2e
+.PHONY: help style restart clean start_backend start_vectordb setup start_docker down start_frontend test test-vcr update-vcr-tests test-e2e
 
 help:
 	@echo "Available commands:"
 	@echo "  make setup          - Install dependencies and git hooks"
 	@echo "  make style          - Run code formatting/linting"
 	@echo "  make test           - Run fast tests (unit + integration) with coverage"
-	@echo "  make test-fast      - Run fast tests (unit + integration) with coverage"
 	@echo "  make test-vcr       - Run VCR-marked tests"
 	@echo "  make update-vcr-tests - Rewrite VCR recordings"
 	@echo "  make test-e2e       - Run end-to-end tests"
@@ -26,9 +25,6 @@ style:
 	uv run pre-commit run --all-files
 
 test:
-	$(MAKE) test-fast
-
-test-fast:
 	uv run pytest -n auto -m "not vcr and not e2e" -v --cov=src/agent --cov-report=term --cov-report=html tests/
 
 test-vcr:
