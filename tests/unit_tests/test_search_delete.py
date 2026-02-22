@@ -1,66 +1,37 @@
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
-from fastapi.testclient import TestClient
-from agent.api import app
-from agent.utils.retriever import get_retriever
+from __future__ import annotations
+
+from unittest.mock import MagicMock, patch
+
+from inline_snapshot import snapshot
 from qdrant_client.http.models.models import UpdateResult
 
-client = TestClient(app)
+from agent.utils.retriever import get_retriever
+from tests.fakes.rag import FakeAsyncRetriever, FakeDoc
 
-# --- Tests for Search Route ---
 
-@pytest.mark.asyncio
 @patch("agent.routes.search.get_retriever")
-async def test_search_documents_found(mock_get_retriever):
-    # Mock retriever
-    mock_retriever = MagicMock()
-    mock_doc = MagicMock()
-    mock_doc.page_content = "content"
-    mock_doc.metadata = {"page": 1, "source": "test.pdf"}
-    mock_retriever.ainvoke = AsyncMock(return_value=[mock_doc])
-    mock_get_retriever.return_value = mock_retriever
+def test_search_documents_found(mock_get_retriever, client) -> None:
+    mock_get_retriever.return_value = FakeAsyncRetriever([FakeDoc(page_content="content", metadata={"page": 1, "source": "test.pdf"})])
 
-    payload = {
-        "query": "test",
-        "collection_name": "test_coll",
-        "k": 2
-    }
-
-    response = client.post("/semantic/search", json=payload)
+    response = client.post("/semantic/search", json={"query": "test", "collection_name": "test_coll", "k": 2})
 
     assert response.status_code == 200
-    data = response.json()
-    assert len(data) == 1
-    assert data[0]["text"] == "content"
-    assert data[0]["page"] == 1
-    assert data[0]["source"] == "test.pdf"
+    assert response.json() == snapshot([{"text": "content", "page": 1, "source": "test.pdf"}])
 
-@pytest.mark.asyncio
+
 @patch("agent.routes.search.get_retriever")
-async def test_search_no_documents(mock_get_retriever):
-    # Mock retriever returning empty list
-    mock_retriever = MagicMock()
-    mock_retriever.ainvoke = AsyncMock(return_value=[])
-    mock_get_retriever.return_value = mock_retriever
+def test_search_no_documents(mock_get_retriever, client) -> None:
+    mock_get_retriever.return_value = FakeAsyncRetriever([])
 
-    payload = {
-        "query": "test",
-        "collection_name": "test_coll"
-    }
-
-    response = client.post("/semantic/search", json=payload)
+    response = client.post("/semantic/search", json={"query": "test", "collection_name": "test_coll"})
 
     assert response.status_code == 200
-    data = response.json()
-    assert data["message"] == "No documents found."
+    assert response.json() == snapshot({"message": "No documents found."})
 
-# --- Tests for Delete Route ---
 
-@pytest.mark.asyncio
 @patch("agent.routes.delete.load_vec_db_conn")
-async def test_delete_vector(mock_load_conn):
+def test_delete_vector(mock_load_conn, client) -> None:
     mock_client = MagicMock()
-    # Mock delete result
     mock_result = UpdateResult(operation_id=0, status="completed")
     mock_client.delete.return_value = mock_result
     mock_load_conn.return_value = mock_client
@@ -68,21 +39,20 @@ async def test_delete_vector(mock_load_conn):
     response = client.delete("/embeddings/delete/test.pdf?collection_name=test_coll")
 
     assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "completed"
+    assert response.json()["status"] == "completed"
     mock_client.delete.assert_called_once()
 
-# --- Tests for Retriever Utils ---
 
 @patch("agent.utils.retriever.qdrant_client")
 @patch("agent.utils.retriever.sparse_embeddings")
 @patch("agent.utils.retriever.QdrantVectorStore")
 @patch("agent.utils.retriever.CohereEmbeddings")
-def test_get_retriever(mock_embeddings, mock_vector_store, mock_sparse, mock_client):
+def test_get_retriever(mock_embeddings, mock_vector_store, _mock_sparse, _mock_client) -> None:
     mock_vstore_instance = MagicMock()
     mock_vector_store.return_value = mock_vstore_instance
 
-    retriever = get_retriever(k=5, collection_name="my_coll")
+
+    get_retriever(k=5, collection_name="my_coll")
 
     mock_embeddings.assert_called_once()
     mock_vector_store.assert_called_once()

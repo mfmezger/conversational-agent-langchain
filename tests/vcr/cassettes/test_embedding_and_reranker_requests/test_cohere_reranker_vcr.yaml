@@ -1,0 +1,73 @@
+interactions:
+- request:
+    body: '{"model":"rerank-v3.5","query":"What is the capital of France?","documents":["Paris
+      is the capital of France.","The moon orbits Earth."],"top_n":1,"max_tokens_per_doc":null}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '173'
+      Host:
+      - api.cohere.com
+      User-Agent:
+      - cohere/5.20.0
+      X-Client-Name:
+      - langchain:partner
+      X-Fern-Language:
+      - Python
+      X-Fern-SDK-Name:
+      - cohere
+      X-Fern-SDK-Version:
+      - 5.20.0
+      content-type:
+      - application/json
+    method: POST
+    uri: https://api.cohere.com/v2/rerank
+  response:
+    body:
+      string: '{"id":"c05e06b7-c615-41dd-afc0-7ed7e1c872b3","results":[{"index":0,"relevance_score":0.8923472}],"meta":{"api_version":{"version":"2"},"billed_units":{"search_units":1}}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      access-control-expose-headers:
+      - X-Debug-Trace-ID
+      cache-control:
+      - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
+      content-length:
+      - '170'
+      content-type:
+      - application/json
+      date:
+      - Mon, 16 Feb 2026 19:12:59 GMT
+      expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      pragma:
+      - no-cache
+      server:
+      - envoy
+      vary:
+      - Origin,Accept-Encoding
+      x-accel-expires:
+      - '0'
+      x-debug-trace-id:
+      - 7f73c5cdc93fac9d55ae1ab1469919cb
+      x-endpoint-monthly-call-limit:
+      - '1000'
+      x-envoy-upstream-service-time:
+      - '58'
+      x-trial-endpoint-call-limit:
+      - '40'
+      x-trial-endpoint-call-remaining:
+      - '39'
+    status:
+      code: 200
+      message: OK
+version: 1

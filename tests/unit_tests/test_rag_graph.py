@@ -311,16 +311,8 @@ def test_generate_response(graph_instance):
 
 # --- Tests for RAG Routes ---
 
-@pytest.fixture
-def client():
-    """Lazily create TestClient to avoid import-time initialization."""
-    from fastapi.testclient import TestClient
-    from agent.api import app
-    return TestClient(app)
-
-@pytest.mark.asyncio
 @patch("agent.routes.rag.graph")
-async def test_rag_question_answer(mock_graph, client):
+def test_rag_question_answer(mock_graph, client):
     # Mock the graph.ainvoke method
     mock_graph.with_config.return_value.ainvoke = AsyncMock(return_value={
         "documents": [Document(page_content="doc1", metadata={"source": "test"})],
@@ -340,9 +332,8 @@ async def test_rag_question_answer(mock_graph, client):
     assert len(data["meta_data"]) == 1
     assert data["meta_data"][0]["document"][0] == "doc1"
 
-@pytest.mark.asyncio
 @patch("agent.routes.rag.graph")
-async def test_rag_stream(mock_graph, client):
+def test_rag_stream(mock_graph, client):
     # Mock the graph.astream_events method
     async def mock_stream(*args, **kwargs):
         yield {

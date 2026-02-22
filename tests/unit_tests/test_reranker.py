@@ -47,7 +47,7 @@ def test_rerank_with_cohere(mock_cohere_rerank):
 
     result = rerank_with_cohere(docs, "query", top_k=2, api_key="test_key")
 
-    mock_cohere_rerank.assert_called_once_with(cohere_api_key="test_key", top_n=2)
+    mock_cohere_rerank.assert_called_once_with(model="rerank-v3.5", cohere_api_key="test_key", top_n=2)
     mock_reranker_instance.compress_documents.assert_called_once_with(documents=docs, query="query")
     assert len(result) == 2
 

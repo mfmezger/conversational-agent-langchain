@@ -9,24 +9,19 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      qdrant:
-        image: qdrant/qdrant:latest
-        ports:
-          - 6333:6333
-        env:
-          QDRANT__SERVICE__API_KEY: test_api_key
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13", "3.14"]
 
     env:
-      QDRANT_URL: http://localhost
-      QDRANT_PORT: 6333
-      QDRANT_API_KEY: test_api_key
       # Dummy values for required config
       AZURE_OPENAI_ENDPOINT: "https://dummy.openai.azure.com/"
       AZURE_OPENAI_API_KEY: "dummy_key"
       OPENAI_API_KEY: "dummy_key"
       COHERE_API_KEY: "dummy_key"
       GEMINI_API_KEY: "dummy_key"
+      VCR_RECORD_MODE: "none"
 
     steps:
       - uses: actions/checkout@v4
@@ -37,17 +32,13 @@ jobs:
           enable-cache: true
 
       - name: Set up Python
-        run: uv python install 3.13
+        run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
-      - name: Wait for Qdrant
-        run: |
-          until curl -f http://localhost:6333/livez; do
-            echo "Waiting for Qdrant..."
-            sleep 1
-          done
-
       - name: Run tests
         run: make test
+
+      - name: Run VCR replay tests
+        run: make test-vcr
