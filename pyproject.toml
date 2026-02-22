@@ -85,6 +85,7 @@ xfail_strict = true
 markers = [
     "unit: pure unit tests",
     "integration: integration tests with in-process dependencies",
+    "contract: endpoint contract tests without external network dependencies",
     "e2e: end-to-end tests requiring external services",
     "vcr: tests backed by recorded HTTP interactions",
     "slow: long-running tests",
