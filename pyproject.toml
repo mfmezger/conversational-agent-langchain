@@ -8,7 +8,6 @@ authors = [
 requires-python = ">= 3.13"
 readme = "README.md"
 dependencies = [
-    "werkzeug==3.1.4",
     "ultra-simple-config>=0.1.0",
     "langgraph>=1.0.4",
     "litellm>=1.80.7",
@@ -34,6 +33,7 @@ dependencies = [
     "langchain>=1.1.0",
     "langchain-litellm>=0.3.2",
     "flashrank>=0.2.0",
+    "werkzeug>=3.1.6",
 ]
 
 
