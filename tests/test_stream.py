@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 
 import pytest
@@ -20,3 +21,15 @@ def test_stream_live_backend() -> None:
     )
     response.raise_for_status()
     assert response.status_code == 200
+
+    events = []
+    for raw_line in response.iter_lines(decode_unicode=True):
+        if not raw_line:
+            continue
+        events.append(json.loads(raw_line))
+        if events[-1].get("type") == "status" and events[-1].get("data") == "Done.":
+            break
+
+    assert events, "Expected at least one streamed NDJSON event"
+    assert any(event.get("type") == "status" and event.get("data") == "Starting request..." for event in events)
+    assert any(event.get("type") == "status" and event.get("data") == "Done." for event in events)
