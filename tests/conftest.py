@@ -2,17 +2,19 @@ from __future__ import annotations
 
 import importlib
 import os
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from contextlib import ExitStack
 from pathlib import Path
+from typing import Any, Literal
 from unittest.mock import patch
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 
-ALLOWED_TEST_HOSTS = {"localhost", "127.0.0.1", "::1", "testserver"}
-VCR_REDACTED_HEADERS = {
+ALLOWED_TEST_HOSTS: set[str] = {"localhost", "127.0.0.1", "::1", "testserver"}
+VCR_REDACTED_HEADERS: set[str] = {
     "authorization",
     "api-key",
     "x-api-key",
@@ -39,7 +41,7 @@ def _is_allowed_host(url: str) -> bool:
 
 
 @pytest.fixture(scope="session")
-def anyio_backend() -> str:
+def anyio_backend() -> Literal["asyncio"]:
     return "asyncio"
 
 
@@ -56,7 +58,7 @@ def test_env_defaults() -> None:
 
 
 @pytest.fixture(scope="module")
-def vcr_config() -> dict:
+def vcr_config() -> dict[str, Any]:
     return {
         "filter_headers": sorted(VCR_REDACTED_HEADERS),
         "filter_query_parameters": ["key", "api_key"],
@@ -67,17 +69,17 @@ def vcr_config() -> dict:
     }
 
 
-def _sanitize_vcr_request(request):
+def _sanitize_vcr_request(request: Any) -> Any:
     request.headers = _strip_sensitive_headers(dict(request.headers))
     return request
 
 
-def _sanitize_vcr_response(response):
+def _sanitize_vcr_response(response: dict[str, Any]) -> dict[str, Any]:
     response["headers"] = _strip_sensitive_headers(dict(response.get("headers", {})))
     return response
 
 
-def _strip_sensitive_headers(headers: dict) -> dict:
+def _strip_sensitive_headers(headers: Mapping[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in headers.items() if key.lower() not in VCR_REDACTED_HEADERS}
 
 
@@ -97,17 +99,19 @@ def block_external_http(monkeypatch: pytest.MonkeyPatch, request: pytest.Fixture
     original_async_request = httpx.AsyncClient.request
     original_requests_request = requests.sessions.Session.request
 
-    def guarded_sync_request(self: httpx.Client, method: str, url: str, *args, **kwargs):
+    def guarded_sync_request(self: httpx.Client, method: str, url: str, *args: Any, **kwargs: Any) -> Any:
         if not _is_allowed_host(str(url)):
             raise RuntimeError(f"External HTTP blocked in tests: {url}")
         return original_sync_request(self, method, url, *args, **kwargs)
 
-    async def guarded_async_request(self: httpx.AsyncClient, method: str, url: str, *args, **kwargs):
+    async def guarded_async_request(self: httpx.AsyncClient, method: str, url: str, *args: Any, **kwargs: Any) -> Any:
         if not _is_allowed_host(str(url)):
             raise RuntimeError(f"External HTTP blocked in tests: {url}")
         return await original_async_request(self, method, url, *args, **kwargs)
 
-    def guarded_requests_request(self: requests.sessions.Session, method: str, url: str, *args, **kwargs):
+    def guarded_requests_request(
+        self: requests.sessions.Session, method: str, url: str, *args: Any, **kwargs: Any
+    ) -> Any:
         if not _is_allowed_host(str(url)):
             raise RuntimeError(f"External HTTP blocked in tests: {url}")
         return original_requests_request(self, method, url, *args, **kwargs)
@@ -118,7 +122,7 @@ def block_external_http(monkeypatch: pytest.MonkeyPatch, request: pytest.Fixture
 
 
 @pytest.fixture(scope="session")
-def app() -> Iterator:
+def app() -> Iterator[FastAPI]:
     """Import the FastAPI app with expensive startup side effects patched out."""
     with ExitStack() as stack:
         stack.enter_context(patch("agent.utils.vdb.initialize_all_vector_dbs", return_value=None))
@@ -132,7 +136,7 @@ def app() -> Iterator:
 
 
 @pytest.fixture
-def client(app) -> Iterator[TestClient]:
+def client(app: FastAPI) -> Iterator[TestClient]:
     with TestClient(app) as test_client:
         yield test_client
 

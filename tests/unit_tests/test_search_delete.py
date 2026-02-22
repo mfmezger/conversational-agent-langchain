@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 from inline_snapshot import snapshot
 from qdrant_client.http.models.models import UpdateResult
 
+from agent.utils.retriever import get_retriever
 from tests.fakes.rag import FakeAsyncRetriever, FakeDoc
 
 
@@ -50,7 +51,6 @@ def test_get_retriever(mock_embeddings, mock_vector_store, _mock_sparse, _mock_c
     mock_vstore_instance = MagicMock()
     mock_vector_store.return_value = mock_vstore_instance
 
-    from agent.utils.retriever import get_retriever
 
     get_retriever(k=5, collection_name="my_coll")
 
