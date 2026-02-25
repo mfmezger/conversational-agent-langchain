@@ -1,21 +1,36 @@
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+# Build stage
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
 
-# Enable bytecode compilation (faster startup)
+# Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1
-
-# Copy from cache instead of linking (required for Docker layer caching)
 ENV UV_LINK_MODE=copy
 
-# copy python installation files.
-COPY ./pyproject.toml ./pyproject.toml
-COPY ./README.md ./README.md
-COPY ./uv.lock ./uv.lock
+WORKDIR /app
 
-# installing python dependencies
-RUN uv sync --frozen --no-install-project
+# Create data and logs directories
+RUN mkdir /data /logs
 
-COPY ./src /src
+# Copy python installation files
+COPY ./pyproject.toml ./uv.lock ./README.md ./
+# Installing python dependencies
+RUN uv sync --frozen --no-install-project --no-dev
 
-RUN uv sync --frozen
+COPY ./src ./src
+RUN uv sync --frozen --no-dev
 
-ENTRYPOINT ["uv", "run", "uvicorn", "src.agent.api:app", "--host", "0.0.0.0", "--port", "8001"]
+# Final stage
+FROM cgr.dev/chainguard/python:latest
+
+WORKDIR /app
+
+# Copy the virtual environment and source code from the builder
+COPY --from=builder --chown=python:python /app/.venv /app/.venv
+COPY --from=builder --chown=python:python /app/src /src
+COPY --from=builder --chown=python:python /data /data
+COPY --from=builder --chown=python:python /logs /logs
+
+# Use the virtual environment's python
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONUNBUFFERED=1
+
+ENTRYPOINT ["python", "-m", "uvicorn", "src.agent.api:app", "--host", "0.0.0.0", "--port", "8001"]
