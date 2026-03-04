@@ -1,11 +1,13 @@
 """Route to handle the delection of a vector from the database."""
 
+import asyncio
+
 from fastapi import APIRouter
 from loguru import logger
 from qdrant_client import models
 from qdrant_client.http.models.models import UpdateResult
 
-from agent.utils.vdb import get_async_qdrant_client
+from agent.utils.vdb import load_vec_db_conn
 
 router = APIRouter()
 
@@ -30,8 +32,9 @@ async def delete(source: str, collection_name: str) -> UpdateResult:
 
     """
     logger.info("Deleting Vector from Database")
-    async_qdrant_client = get_async_qdrant_client()
-    result = await async_qdrant_client.delete(
+    qdrant_client = load_vec_db_conn()
+    result = await asyncio.to_thread(
+        qdrant_client.delete,
         collection_name=collection_name,
         points_selector=models.FilterSelector(
             filter=models.Filter(
