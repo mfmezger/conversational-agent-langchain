@@ -29,12 +29,13 @@ def test_search_no_documents(mock_get_retriever, client) -> None:
     assert response.json() == snapshot({"message": "No documents found."})
 
 
-@patch("agent.routes.delete.load_vec_db_conn")
-def test_delete_vector(mock_load_conn, client) -> None:
-    mock_client = MagicMock()
+@patch("agent.routes.delete.get_async_qdrant_client")
+def test_delete_vector(mock_get_async_qdrant_client, client) -> None:
+    from unittest.mock import AsyncMock
+    mock_client = AsyncMock()
     mock_result = UpdateResult(operation_id=0, status="completed")
     mock_client.delete.return_value = mock_result
-    mock_load_conn.return_value = mock_client
+    mock_get_async_qdrant_client.return_value = mock_client
 
     response = client.delete("/embeddings/delete/test.pdf?collection_name=test_coll")
 
@@ -43,8 +44,8 @@ def test_delete_vector(mock_load_conn, client) -> None:
     mock_client.delete.assert_called_once()
 
 
-@patch("agent.utils.retriever.qdrant_client")
-@patch("agent.utils.retriever.sparse_embeddings")
+@patch("agent.utils.retriever.get_qdrant_client")
+@patch("agent.utils.retriever.get_sparse_embeddings")
 @patch("agent.utils.retriever.QdrantVectorStore")
 @patch("agent.utils.retriever.CohereEmbeddings")
 def test_get_retriever(mock_embeddings, mock_vector_store, _mock_sparse, _mock_client) -> None:

@@ -73,6 +73,7 @@ dev = [
     "pytest-cov>=7.0.0",
     "pytest-recording>=0.13.4",
     "httpx>=0.28.1",
+    "pylint>=4.0.5",
 ]
 
 [tool.coverage.run]
