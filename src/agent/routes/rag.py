@@ -1,13 +1,15 @@
 """The RAG Routes."""
 
 import json
+import time
+import uuid
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
 from agent.backend.graph import Graph
-from agent.data_model.request_data_model import RAGRequest
+from agent.data_model.request_data_model import OpenAIChatRequest, RAGRequest
 from agent.data_model.response_data_model import QAResponse
 
 graph = Graph().build_graph()
@@ -24,6 +26,99 @@ async def question_answer(rag: RAGRequest) -> QAResponse:
 
     documents = [{"document": [doc.page_content], "metadata": [doc.metadata]} for doc in chain_result["documents"]]
     return QAResponse(answer=chain_result["messages"][-1].content, meta_data=documents)
+
+
+@router.post("/chat/completions", tags=["rag"], response_model=None)
+async def openai_chat_completions(request: OpenAIChatRequest) -> dict | StreamingResponse:
+    """OpenAI compatible chat completions endpoint."""
+    messages = [dict(m) for m in request.messages]
+    # Use the model as collection_name or "default"
+    collection_name = request.model if request.model else "default"
+
+    # Generate an ID for the response
+    chat_id = f"chatcmpl-{uuid.uuid4().hex}"
+    created_time = int(time.time())
+
+    if not request.stream:
+        chain_result = await graph.with_config({"metadata": {"collection_name": collection_name}}).ainvoke({"messages": messages})
+        answer = chain_result["messages"][-1].content
+
+        return {
+            "id": chat_id,
+            "object": "chat.completion",
+            "created": created_time,
+            "model": request.model,
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {
+                        "role": "assistant",
+                        "content": answer,
+                    },
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0
+            }
+        }
+
+    async def openai_stream() -> AsyncGenerator:
+        # Send the first chunk with the role
+        initial_chunk = {
+            "id": chat_id,
+            "object": "chat.completion.chunk",
+            "created": created_time,
+            "model": request.model,
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"role": "assistant", "content": ""},
+                    "finish_reason": None,
+                }
+            ]
+        }
+        yield f"data: {json.dumps(initial_chunk)}\n\n"
+
+        async for chunk in graph.with_config({"metadata": {"collection_name": collection_name}}).astream_events({"messages": messages}, version="v2"):
+            if chunk["event"] == "on_chat_model_stream" and chunk["metadata"].get("langgraph_node") in ["response_synthesizer", "response_synthesizer_cohere"]:
+                content = chunk["data"]["chunk"].content
+                if content:
+                    delta_chunk = {
+                        "id": chat_id,
+                        "object": "chat.completion.chunk",
+                        "created": created_time,
+                        "model": request.model,
+                        "choices": [
+                            {
+                                "index": 0,
+                                "delta": {"content": content},
+                                "finish_reason": None,
+                            }
+                        ]
+                    }
+                    yield f"data: {json.dumps(delta_chunk)}\n\n"
+
+        # Send the final chunk
+        final_chunk = {
+            "id": chat_id,
+            "object": "chat.completion.chunk",
+            "created": created_time,
+            "model": request.model,
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {},
+                    "finish_reason": "stop",
+                }
+            ]
+        }
+        yield f"data: {json.dumps(final_chunk)}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(openai_stream(), media_type="text/event-stream")
 
 
 @router.post("/stream", tags=["rag"])
