@@ -5,7 +5,7 @@ import warnings
 from langchain_core.embeddings import Embeddings
 from langchain_qdrant import FastEmbedSparse, QdrantVectorStore, RetrievalMode
 from loguru import logger
-from qdrant_client import QdrantClient, models
+from qdrant_client import AsyncQdrantClient, QdrantClient, models
 
 from agent.utils.config import Config
 
@@ -68,6 +68,25 @@ def load_vec_db_conn() -> QdrantClient:
     return qdrant_client
 
 
+def get_async_qdrant_client() -> AsyncQdrantClient:
+    """Load the Async Vector Database Connection.
+
+    This function creates a new AsyncQdrantClient instance using the configuration
+    parameters provided in the settings.
+
+    Returns
+    -------
+        AsyncQdrantClient: The created AsyncQdrantClient instance.
+
+    """
+    return AsyncQdrantClient(
+        location=settings.qdrant_url,
+        port=settings.qdrant_port,
+        api_key=settings.qdrant_api_key,
+        prefer_grpc=settings.qdrant_prefer_http,
+    )
+
+
 def initialize_vector_db(collection_name: str, embeddings_size: int) -> None:
     """Initializes the vector db for a given backend.
 
@@ -103,6 +122,42 @@ def generate_collection(collection_name: str, embeddings_size: int) -> None:
         sparse_vectors_config=qdrant_client.get_fastembed_sparse_vector_params(),
     )
     logger.info(f"SUCCESS: Collection {collection_name} created.")
+
+
+async def generate_collection_async(collection_name: str, embeddings_size: int) -> None:
+    """Generate a collection for a given backend asynchronously.
+
+    Args:
+    ----
+        collection_name (str): Name of the Collection
+        embeddings_size (int): Size of the Embeddings
+
+    """
+    qdrant_client = get_async_qdrant_client()
+    qdrant_client.set_sparse_model(embedding_model_name="Qdrant/bm25")
+    await qdrant_client.create_collection(
+        collection_name=collection_name,
+        vectors_config=models.VectorParams(size=embeddings_size, distance=models.Distance.COSINE),
+        sparse_vectors_config=qdrant_client.get_fastembed_sparse_vector_params(),
+    )
+    logger.info(f"SUCCESS: Collection {collection_name} created.")
+
+
+async def initialize_vector_db_async(collection_name: str, embeddings_size: int) -> None:
+    """Initializes the vector db for a given backend asynchronously.
+
+    Args:
+    ----
+        collection_name (str): Name of the Collection
+        embeddings_size (int): Size of the Embeddings
+
+    """
+    qdrant_client = get_async_qdrant_client()
+
+    if await qdrant_client.collection_exists(collection_name=collection_name):
+        logger.info(f"SUCCESS: Collection {collection_name} already exists.")
+    else:
+        await generate_collection_async(collection_name=collection_name, embeddings_size=embeddings_size)
 
 
 def initialize_all_vector_dbs(config: Config) -> None:
