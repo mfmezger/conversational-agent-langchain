@@ -6,7 +6,7 @@ requires-python = ">=3.13"
 dependencies = [
     "loguru>=0.7.3",
     "requests>=2.32.5",
-    "streamlit>=1.54.0",
+    "streamlit>=1.55.0",
     "httpx>=0.28.1",
 ]
 
