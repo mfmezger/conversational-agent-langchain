@@ -7,7 +7,7 @@ from loguru import logger
 from qdrant_client import models
 from qdrant_client.http.models.models import UpdateResult
 
-from agent.utils.vdb import load_vec_db_conn
+from agent.utils.vdb import get_qdrant_client
 
 router = APIRouter()
 
@@ -32,7 +32,7 @@ async def delete(source: str, collection_name: str) -> UpdateResult:
 
     """
     logger.info("Deleting Vector from Database")
-    qdrant_client = load_vec_db_conn()
+    qdrant_client = get_qdrant_client()
     result = await asyncio.to_thread(
         qdrant_client.delete,
         collection_name=collection_name,

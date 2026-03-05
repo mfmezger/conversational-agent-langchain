@@ -9,18 +9,33 @@ from qdrant_client import QdrantClient, models
 
 from agent.utils.config import Config
 
-sparse_embeddings = FastEmbedSparse(model_name="Qdrant/bm25")
-
 settings = Config()
 
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=UserWarning, message="Api key is used with an insecure connection")
-    qdrant_client = QdrantClient(
-        location=settings.qdrant_url,
-        port=settings.qdrant_port,
-        api_key=settings.qdrant_api_key,
-        prefer_grpc=settings.qdrant_prefer_http,
-    )
+_qdrant_client = None
+_sparse_embeddings = None
+
+
+def get_qdrant_client() -> QdrantClient:
+    """Get or initialize the Qdrant Client."""
+    global _qdrant_client
+    if _qdrant_client is None:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning, message="Api key is used with an insecure connection")
+            _qdrant_client = QdrantClient(
+                location=settings.qdrant_url,
+                port=settings.qdrant_port,
+                api_key=settings.qdrant_api_key,
+                prefer_grpc=settings.qdrant_prefer_http,
+            )
+    return _qdrant_client
+
+
+def get_sparse_embeddings() -> FastEmbedSparse:
+    """Get or initialize the FastEmbedSparse embeddings."""
+    global _sparse_embeddings
+    if _sparse_embeddings is None:
+        _sparse_embeddings = FastEmbedSparse(model_name="Qdrant/bm25")
+    return _sparse_embeddings
 
 
 def init_vdb(collection_name: str, embedding: Embeddings) -> QdrantVectorStore:
@@ -39,33 +54,16 @@ def init_vdb(collection_name: str, embedding: Embeddings) -> QdrantVectorStore:
     logger.info(f"USING COLLECTION: {collection_name}")
 
     vector_db = QdrantVectorStore(
-        client=qdrant_client,
+        client=get_qdrant_client(),
         collection_name=collection_name,
         embedding=embedding,
-        sparse_embedding=sparse_embeddings,
+        sparse_embedding=get_sparse_embeddings(),
         retrieval_mode=RetrievalMode.HYBRID,
         sparse_vector_name="fast-sparse-bm25",
     )
     logger.info("SUCCESS: Qdrant DB initialized.")
 
     return vector_db
-
-
-def load_vec_db_conn() -> QdrantClient:
-    """Load the Vector Database Connection.
-
-    This function creates a new QdrantClient instance using the configuration
-    parameters provided in the 'cfg' argument. The QdrantClient is used to
-    interact with the Qdrant vector database.
-
-    Returns
-    -------
-        Tuple[QdrantClient, DictConfig]: A tuple containing the created
-                                        QdrantClient instance and the
-                                        original configuration object.
-
-    """
-    return qdrant_client
 
 
 def initialize_vector_db(collection_name: str, embeddings_size: int) -> None:
@@ -77,7 +75,7 @@ def initialize_vector_db(collection_name: str, embeddings_size: int) -> None:
         embeddings_size (int): Size of the Embeddings
 
     """
-    qdrant_client = load_vec_db_conn()
+    qdrant_client = get_qdrant_client()
 
     if qdrant_client.collection_exists(collection_name=collection_name):
         logger.info(f"SUCCESS: Collection {collection_name} already exists.")
@@ -95,7 +93,7 @@ def generate_collection(collection_name: str, embeddings_size: int) -> None:
         embeddings_size (int): Size of the Embeddings
 
     """
-    qdrant_client = load_vec_db_conn()
+    qdrant_client = get_qdrant_client()
     qdrant_client.set_sparse_model(embedding_model_name="Qdrant/bm25")
     qdrant_client.create_collection(
         collection_name=collection_name,
