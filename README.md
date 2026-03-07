@@ -2,6 +2,7 @@
 
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
+[![prek](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/j178/prek/master/docs/assets/badge-v0.json)](https://github.com/j178/prek)
 
 # Conversational RAG Agent
 This is a Rest-Backend for a Conversational Agent, that allows you to embed Documents, search for them using Semantic Search, to QA based on Documents and do document processing with Large Language Models.
@@ -88,6 +89,7 @@ Features
 - Has a basic GUI.
 - Includes Phoenix Tracing for observability.
 - **Reranking support** with Cohere and FlashRank providers.
+- Fast, Rust-native git hooks using [prek](https://prek.j178.dev/) for code quality checks.
 
 ## Reranking Configuration
 
