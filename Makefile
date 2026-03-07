@@ -18,11 +18,11 @@ help:
 
 setup:
 	uv sync
-	uv run prek install
+	prek install
 	cd frontend && uv sync
 
 style:
-	uv run prek run --all-files
+	prek run --all-files
 
 test:
 	uv run pytest -n auto -m "not vcr and not e2e" -v --cov=src/agent --cov-report=term --cov-report=html tests/
