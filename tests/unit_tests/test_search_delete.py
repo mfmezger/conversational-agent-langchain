@@ -29,7 +29,7 @@ def test_search_no_documents(mock_get_retriever, client) -> None:
     assert response.json() == snapshot({"message": "No documents found."})
 
 
-@patch("agent.routes.delete.load_vec_db_conn")
+@patch("agent.routes.delete.get_qdrant_client")
 def test_delete_vector(mock_load_conn, client) -> None:
     mock_client = MagicMock()
     mock_result = UpdateResult(operation_id=0, status="completed")
@@ -43,8 +43,8 @@ def test_delete_vector(mock_load_conn, client) -> None:
     mock_client.delete.assert_called_once()
 
 
-@patch("agent.utils.retriever.qdrant_client")
-@patch("agent.utils.retriever.sparse_embeddings")
+@patch("agent.utils.retriever.get_qdrant_client")
+@patch("agent.utils.retriever.get_sparse_embeddings")
 @patch("agent.utils.retriever.QdrantVectorStore")
 @patch("agent.utils.retriever.CohereEmbeddings")
 def test_get_retriever(mock_embeddings, mock_vector_store, _mock_sparse, _mock_client) -> None:

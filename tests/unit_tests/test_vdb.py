@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 from agent.utils.vdb import initialize_vector_db, generate_collection, init_vdb, initialize_all_vector_dbs
 from agent.utils.config import Config
 
-@patch("agent.utils.vdb.load_vec_db_conn")
+@patch("agent.utils.vdb.get_qdrant_client")
 def test_initialize_vector_db_exists(mock_load_conn):
     mock_client = MagicMock()
     mock_client.collection_exists.return_value = True
@@ -15,7 +15,7 @@ def test_initialize_vector_db_exists(mock_load_conn):
     # Should NOT call create_collection
     mock_client.create_collection.assert_not_called()
 
-@patch("agent.utils.vdb.load_vec_db_conn")
+@patch("agent.utils.vdb.get_qdrant_client")
 def test_initialize_vector_db_not_exists(mock_load_conn):
     mock_client = MagicMock()
     mock_client.collection_exists.return_value = False
