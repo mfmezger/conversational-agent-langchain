@@ -1,22 +1,23 @@
 """Retriever utils with cached embeddings and vector stores."""
 
-from langchain_cohere import CohereEmbeddings
+from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
 from langchain_qdrant import QdrantVectorStore, RetrievalMode
 
 from agent.utils.config import config
+from agent.utils.embeddings import get_embedding_model
 from agent.utils.vdb import qdrant_client, sparse_embeddings
 
 # Cache embeddings - created once per model name
-_embeddings_cache: dict[str, CohereEmbeddings] = {}
+_embeddings_cache: dict[tuple[str, str], Embeddings] = {}
 
 
-def _get_cached_embedding() -> CohereEmbeddings:
-    """Get or create cached Cohere embeddings."""
-    model_name = config.embedding_model_name
-    if model_name not in _embeddings_cache:
-        _embeddings_cache[model_name] = CohereEmbeddings(model=model_name)
-    return _embeddings_cache[model_name]
+def _get_cached_embedding() -> Embeddings:
+    """Get or create cached embeddings for the configured provider."""
+    key = (config.embedding_provider, config.embedding_model_name)
+    if key not in _embeddings_cache:
+        _embeddings_cache[key] = get_embedding_model(config)
+    return _embeddings_cache[key]
 
 
 # Cache vector stores per collection

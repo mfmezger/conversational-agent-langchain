@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 from inline_snapshot import snapshot
 from qdrant_client.http.models.models import UpdateResult
 
+from agent.utils import retriever as retriever_module
 from agent.utils.retriever import get_retriever
 from tests.fakes.rag import FakeAsyncRetriever, FakeDoc
 
@@ -46,14 +47,17 @@ def test_delete_vector(mock_load_conn, client) -> None:
 @patch("agent.utils.retriever.qdrant_client")
 @patch("agent.utils.retriever.sparse_embeddings")
 @patch("agent.utils.retriever.QdrantVectorStore")
-@patch("agent.utils.retriever.CohereEmbeddings")
-def test_get_retriever(mock_embeddings, mock_vector_store, _mock_sparse, _mock_client) -> None:
+@patch("agent.utils.retriever.get_embedding_model")
+def test_get_retriever(mock_get_embedding_model, mock_vector_store, _mock_sparse, _mock_client) -> None:
     mock_vstore_instance = MagicMock()
     mock_vector_store.return_value = mock_vstore_instance
 
+    retriever_module._embeddings_cache.clear()
+    retriever_module._vector_store_cache.clear()
+    mock_get_embedding_model.return_value = MagicMock()
 
     get_retriever(k=5, collection_name="my_coll")
 
-    mock_embeddings.assert_called_once()
+    mock_get_embedding_model.assert_called_once()
     mock_vector_store.assert_called_once()
     mock_vstore_instance.as_retriever.assert_called_with(search_kwargs={"k": 5})
