@@ -26,6 +26,7 @@ def get_embedding_model(cfg: Config) -> Embeddings:
             return GoogleGenerativeAIEmbeddings(
                 model=model_name,
                 google_api_key=cfg.gemini_api_key or None,
+                output_dimensionality=cfg.embedding_size,
             )
 
         case "openai":
