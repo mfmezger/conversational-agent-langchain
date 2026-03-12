@@ -1,12 +1,12 @@
 """LiteLLM Backend."""
 
 from dotenv import load_dotenv
-from langchain_cohere import CohereEmbeddings
 from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from loguru import logger
 
 from agent.utils.config import config
+from agent.utils.embeddings import get_embedding_model
 from agent.utils.vdb import generate_collection, init_vdb
 
 load_dotenv()
@@ -22,20 +22,7 @@ class EmbeddingManagement:
         if collection_name:
             self.collection_name = collection_name
 
-        # unfortunately, the embedding is not working with litellm directly an can only be used directly with a litellm prox server.
-        match self.cfg.embedding_provider:
-            case "cohere":
-                embedding = CohereEmbeddings(model=self.cfg.embedding_model_name)
-            case "google":
-                # TODO: add
-
-                pass
-            case "openai":
-                # TODO: add
-                pass
-            case _:
-                msg = "No suitable embedding Model configured!"
-                raise KeyError(msg)
+        embedding = get_embedding_model(self.cfg)
 
         self.vector_db = init_vdb(collection_name=self.collection_name, embedding=embedding)
 
