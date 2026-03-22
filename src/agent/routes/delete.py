@@ -1,13 +1,11 @@
-"""Route to handle the delection of a vector from the database."""
-
-import asyncio
+"""Route to handle the deletion of a vector from the database."""
 
 from fastapi import APIRouter
 from loguru import logger
 from qdrant_client import models
 from qdrant_client.http.models.models import UpdateResult
 
-from agent.utils.vdb import load_vec_db_conn
+from agent.utils.vdb import get_async_qdrant_client
 
 router = APIRouter()
 
@@ -18,13 +16,8 @@ async def delete(source: str, collection_name: str) -> UpdateResult:
 
     Args:
     ----
-        page (int): Number of the page in the document
         source (str): Name of the Document
-        collection_name (str): Large Language Model Provider. Defaults to LLMProvider.OPENAI.
-
-    Raises:
-    ------
-        ValueError: Wrong LLM Provider
+        collection_name (str): Name of the Qdrant Collection.
 
     Returns:
     -------
@@ -32,9 +25,8 @@ async def delete(source: str, collection_name: str) -> UpdateResult:
 
     """
     logger.info("Deleting Vector from Database")
-    qdrant_client = load_vec_db_conn()
-    result = await asyncio.to_thread(
-        qdrant_client.delete,
+    qdrant_client = get_async_qdrant_client()
+    result = await qdrant_client.delete(
         collection_name=collection_name,
         points_selector=models.FilterSelector(
             filter=models.Filter(
