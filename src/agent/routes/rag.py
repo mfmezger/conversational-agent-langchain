@@ -58,11 +58,7 @@ async def openai_chat_completions(request: OpenAIChatRequest) -> dict | Streamin
                     "finish_reason": "stop",
                 }
             ],
-            "usage": {
-                "prompt_tokens": 0,
-                "completion_tokens": 0,
-                "total_tokens": 0
-            }
+            "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
         }
 
     async def openai_stream() -> AsyncGenerator:
@@ -78,7 +74,7 @@ async def openai_chat_completions(request: OpenAIChatRequest) -> dict | Streamin
                     "delta": {"role": "assistant", "content": ""},
                     "finish_reason": None,
                 }
-            ]
+            ],
         }
         yield f"data: {json.dumps(initial_chunk)}\n\n"
 
@@ -97,7 +93,7 @@ async def openai_chat_completions(request: OpenAIChatRequest) -> dict | Streamin
                                 "delta": {"content": content},
                                 "finish_reason": None,
                             }
-                        ]
+                        ],
                     }
                     yield f"data: {json.dumps(delta_chunk)}\n\n"
 
@@ -113,7 +109,7 @@ async def openai_chat_completions(request: OpenAIChatRequest) -> dict | Streamin
                     "delta": {},
                     "finish_reason": "stop",
                 }
-            ]
+            ],
         }
         yield f"data: {json.dumps(final_chunk)}\n\n"
         yield "data: [DONE]\n\n"
