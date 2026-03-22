@@ -91,7 +91,8 @@ def initialize_vector_db(collection_name: str, embeddings_size: int) -> None:
         embeddings_size (int): Size of the Embeddings
 
     """
-    if qdrant_client.collection_exists(collection_name=collection_name):
+    client = load_vec_db_conn()
+    if client.collection_exists(collection_name=collection_name):
         logger.info(f"SUCCESS: Collection {collection_name} already exists.")
     else:
         generate_collection(collection_name=collection_name, embeddings_size=embeddings_size)
@@ -106,11 +107,12 @@ def generate_collection(collection_name: str, embeddings_size: int) -> None:
         embeddings_size (int): Size of the Embeddings
 
     """
-    qdrant_client.set_sparse_model(embedding_model_name="Qdrant/bm25")
-    qdrant_client.create_collection(
+    client = load_vec_db_conn()
+    client.set_sparse_model(embedding_model_name="Qdrant/bm25")
+    client.create_collection(
         collection_name=collection_name,
         vectors_config=models.VectorParams(size=embeddings_size, distance=models.Distance.COSINE),
-        sparse_vectors_config=qdrant_client.get_fastembed_sparse_vector_params(),
+        sparse_vectors_config=client.get_fastembed_sparse_vector_params(),
     )
     logger.info(f"SUCCESS: Collection {collection_name} created.")
 
@@ -124,7 +126,8 @@ async def initialize_vector_db_async(collection_name: str, embeddings_size: int)
         embeddings_size (int): Size of the Embeddings
 
     """
-    if await async_qdrant_client.collection_exists(collection_name=collection_name):
+    client = get_async_qdrant_client()
+    if await client.collection_exists(collection_name=collection_name):
         logger.info(f"SUCCESS: Collection {collection_name} already exists.")
     else:
         await generate_collection_async(collection_name=collection_name, embeddings_size=embeddings_size)
@@ -139,11 +142,12 @@ async def generate_collection_async(collection_name: str, embeddings_size: int) 
         embeddings_size (int): Size of the Embeddings
 
     """
-    async_qdrant_client.set_sparse_model(embedding_model_name="Qdrant/bm25")
-    await async_qdrant_client.create_collection(
+    client = get_async_qdrant_client()
+    client.set_sparse_model(embedding_model_name="Qdrant/bm25")
+    await client.create_collection(
         collection_name=collection_name,
         vectors_config=models.VectorParams(size=embeddings_size, distance=models.Distance.COSINE),
-        sparse_vectors_config=async_qdrant_client.get_fastembed_sparse_vector_params(),
+        sparse_vectors_config=client.get_fastembed_sparse_vector_params(),
     )
     logger.info(f"SUCCESS: Collection {collection_name} created.")
 
