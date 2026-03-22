@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.post(path="/create/{collection_name}", tags=["collection"])
-async def create_collection(collection_name: str, embeddings_size: Annotated[int, Query(gt=0, le=65536)]) -> JSONResponse:
+async def create_collection(collection_name: str, embeddings_size: Annotated[int, Query(gt=0, le=5000)]) -> JSONResponse:
     """Create a new collection.
 
     Args:
