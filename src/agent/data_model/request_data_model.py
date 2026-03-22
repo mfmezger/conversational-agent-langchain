@@ -26,26 +26,16 @@ class ChatMessages(BaseModel):
     content: str = Field(default=..., title="Content", description="The content of the message.")
 
 
-class OpenAIChatMessage(BaseModel):
-    """The Chat Messages Model for OpenAI."""
-
-    role: str = Field(
-        ...,
-        title="Role",
-        description="The role of the sender can be either user, assistant or system.",
-    )
-    content: str = Field(default=..., title="Content", description="The content of the message.")
-
-
 class OpenAIChatRequest(BaseModel):
     """Request for the OpenAI compatible chat completions endpoint."""
 
     model: str = Field(
         default="default",
         title="Model",
-        description="ID of the model to use.",
+        description="The collection name to use for retrieval. Must be alphanumeric with hyphens/underscores.",
+        pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_-]*$",
     )
-    messages: list[OpenAIChatMessage] = Field(
+    messages: list[ChatMessages] = Field(
         ...,
         title="Messages",
         description="A list of messages comprising the conversation so far.",
