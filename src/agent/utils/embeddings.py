@@ -14,7 +14,7 @@ def get_embedding_model(cfg: Config) -> Embeddings:
         case "cohere":
             from langchain_cohere import CohereEmbeddings  # noqa: PLC0415
 
-            return CohereEmbeddings(model=model_name)
+            return CohereEmbeddings(model=model_name, cohere_api_key=cfg.cohere_api_key or None)
 
         case "google":
             try:
