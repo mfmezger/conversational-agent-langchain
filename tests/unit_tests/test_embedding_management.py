@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from agent.backend.services.embedding_management import EmbeddingManagement
-from agent.data_model.request_data_model import SearchParams
 from langchain_core.documents import Document
 
 @pytest.fixture
@@ -18,19 +17,20 @@ def mock_init_vdb():
         yield mock_vdb
 
 @pytest.fixture
-def mock_cohere_embeddings():
-    with patch("agent.backend.services.embedding_management.CohereEmbeddings") as mock_embed:
+def mock_get_embedding_model():
+    with patch("agent.backend.services.embedding_management.get_embedding_model") as mock_embed:
+        mock_embed.return_value = MagicMock()
         yield mock_embed
 
 @pytest.fixture
-def embedding_service(mock_config, mock_init_vdb, mock_cohere_embeddings):
+def embedding_service(mock_config, mock_init_vdb, mock_get_embedding_model):
     return EmbeddingManagement(collection_name="test_collection")
 
-def test_init_success(mock_config, mock_init_vdb, mock_cohere_embeddings):
+def test_init_success(mock_config, mock_init_vdb, mock_get_embedding_model):
     service = EmbeddingManagement(collection_name="test_collection")
 
     assert service.collection_name == "test_collection"
-    mock_cohere_embeddings.assert_called_once_with(model="embed-english-v3.0")
+    mock_get_embedding_model.assert_called_once_with(mock_config)
     mock_init_vdb.assert_called_once()
 
 def test_init_invalid_provider(mock_config):

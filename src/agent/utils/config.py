@@ -19,9 +19,9 @@ class Config(BaseSettings):
 
     # Model Configuration
     model_name: str = "gemini/gemini-2.5-flash"
-    embedding_provider: str = "cohere"
-    embedding_model_name: str = "embed-v4.0"
-    embedding_size: int = 1536
+    embedding_provider: str = "google"
+    embedding_model_name: str = "gemini-embedding-002"
+    embedding_size: int = 768
 
     # Reranker Configuration
     rerank_provider: str = "none"  # "cohere", "flashrank", or "none"
