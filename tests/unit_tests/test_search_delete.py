@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from inline_snapshot import snapshot
 from qdrant_client.http.models.models import UpdateResult
@@ -30,9 +30,9 @@ def test_search_no_documents(mock_get_retriever, client) -> None:
     assert response.json() == snapshot({"message": "No documents found."})
 
 
-@patch("agent.routes.delete.load_vec_db_conn")
+@patch("agent.routes.delete.get_async_qdrant_client")
 def test_delete_vector(mock_load_conn, client) -> None:
-    mock_client = MagicMock()
+    mock_client = AsyncMock()
     mock_result = UpdateResult(operation_id=0, status="completed")
     mock_client.delete.return_value = mock_result
     mock_load_conn.return_value = mock_client
