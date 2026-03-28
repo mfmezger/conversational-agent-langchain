@@ -1,18 +1,37 @@
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm
+# Build stage
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
 
-# Set working directory
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+
 WORKDIR /app
 
 # Copy dependency files first for caching
 COPY frontend/pyproject.toml frontend/uv.lock ./
 
 # Install dependencies
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev --no-install-project
 
 # Copy the rest of the frontend code
-COPY frontend/ .
+COPY frontend/ ./
+RUN uv sync --frozen --no-dev
+
+# Final stage
+FROM cgr.dev/chainguard/python:latest@sha256:6b75c6363142679d082d3aed51280bd7eace8412e9ce7ab8394e38fc80ae9889
+
+WORKDIR /app
+
+# Copy the virtual environment and source code from the builder
+COPY --from=builder --chown=65532:65532 /app/.venv /app/.venv
+COPY --from=builder --chown=65532:65532 /app/assistant.py /app/assistant.py
+COPY --from=builder --chown=65532:65532 /app/client.py /app/client.py
+
+# Use the virtual environment's python
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONUNBUFFERED=1
 
 # Expose port
 EXPOSE 8501
 
-CMD ["uv", "run", "streamlit", "run", "assistant.py", "--theme.base=dark"]
+ENTRYPOINT ["python", "-m", "streamlit", "run", "assistant.py", "--theme.base=dark", "--server.address=0.0.0.0"]
