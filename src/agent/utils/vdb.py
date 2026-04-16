@@ -25,7 +25,7 @@ def get_qdrant_client() -> QdrantClient:
                 location=settings.qdrant_url,
                 port=settings.qdrant_port,
                 api_key=settings.qdrant_api_key,
-                prefer_grpc=settings.qdrant_prefer_http,
+                prefer_grpc=not settings.qdrant_prefer_http,
             )
     return _qdrant_client
 
