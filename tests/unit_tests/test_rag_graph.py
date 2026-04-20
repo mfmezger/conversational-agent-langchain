@@ -1,7 +1,9 @@
+import json
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.documents import Document
+from langchain_core.messages import AIMessage, HumanMessage
 
 # Patch reranker and retriever before importing Graph to prevent external connections
 with patch("agent.utils.reranker.get_reranker", return_value=lambda docs, query: docs):
@@ -377,8 +379,61 @@ def test_rag_stream(mock_graph, client):
 
     with client.stream("POST", "/rag/stream", json=payload) as response:
         assert response.status_code == 200
-        lines = list(response.iter_lines())
-        assert len(lines) > 0
-        # Verify we got some expected events
-        assert "Starting request..." in lines[0]
-        # We can check for specific content in the lines
+        assert response.headers["content-type"].startswith("application/x-ndjson")
+        events = [json.loads(line) for line in response.iter_lines() if line]
+
+    assert events == [
+        {"type": "status", "data": "Starting request..."},
+        {"type": "status", "data": "Searching documents..."},
+        {"type": "status", "data": "Found 1 documents."},
+        {"type": "status", "data": "Generating answer..."},
+        {"type": "content", "data": "chunk1"},
+        {"type": "citation", "data": [{"document": ["doc1"], "metadata": [{"s": "1"}]}]},
+        {"type": "status", "data": "Done."},
+    ]
+
+
+@patch("agent.routes.rag.graph")
+def test_rag_stream_error_event(mock_graph, client):
+    async def mock_stream(*args, **kwargs):
+        yield {
+            "event": "on_chain_start",
+            "name": "retriever",
+            "data": {},
+        }
+        raise RuntimeError("boom")
+
+    mock_graph.with_config.return_value.astream_events = mock_stream
+
+    payload = {
+        "messages": [{"role": "user", "content": "question"}],
+        "collection_name": "test",
+    }
+
+    with client.stream("POST", "/rag/stream", json=payload) as response:
+        assert response.status_code == 200
+        events = [json.loads(line) for line in response.iter_lines() if line]
+
+    assert events == [
+        {"type": "status", "data": "Starting request..."},
+        {"type": "status", "data": "Searching documents..."},
+        {"type": "error", "data": "An internal error occurred during streaming."},
+        {"type": "status", "data": "Done."},
+    ]
+
+
+def test_rag_stream_openapi_documents_ndjson(client):
+    response = client.get("/openapi.json")
+
+    assert response.status_code == 200
+    stream_response = response.json()["paths"]["/rag/stream"]["post"]["responses"]["200"]
+    ndjson_content = stream_response["content"]["application/x-ndjson"]
+
+    assert "schema" in ndjson_content
+    assert "examples" in ndjson_content
+    assert {example["value"]["type"] for example in ndjson_content["examples"].values()} == {
+        "status",
+        "content",
+        "citation",
+        "error",
+    }
