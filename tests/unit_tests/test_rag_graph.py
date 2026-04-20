@@ -418,7 +418,6 @@ def test_rag_stream_error_event(mock_graph, client):
         {"type": "status", "data": "Starting request..."},
         {"type": "status", "data": "Searching documents..."},
         {"type": "error", "data": "An internal error occurred during streaming."},
-        {"type": "status", "data": "Done."},
     ]
 
 

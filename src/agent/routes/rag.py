@@ -133,5 +133,5 @@ async def question_answer_stream(rag: RAGRequest) -> AsyncIterable[str]:
     except Exception:
         logger.exception("Error during RAG streaming")
         yield _ndjson_event(StreamErrorEvent(data="An internal error occurred during streaming."))
-
-    yield _ndjson_event(StreamStatusEvent(data="Done."))
+    else:
+        yield _ndjson_event(StreamStatusEvent(data="Done."))
