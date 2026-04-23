@@ -421,6 +421,44 @@ def test_rag_stream_error_event(mock_graph, client):
     ]
 
 
+@patch("agent.routes.rag.graph")
+def test_rag_stream_handles_null_outputs(mock_graph, client):
+    async def mock_stream(*args, **kwargs):
+        yield {
+            "event": "on_chain_start",
+            "name": "retriever",
+            "data": {},
+        }
+        yield {
+            "event": "on_chain_end",
+            "name": "retriever",
+            "data": {"output": None},
+        }
+        yield {
+            "event": "on_chain_end",
+            "name": "LangGraph",
+            "data": {"output": None},
+        }
+
+    mock_graph.with_config.return_value.astream_events = mock_stream
+
+    payload = {
+        "messages": [{"role": "user", "content": "question"}],
+        "collection_name": "test",
+    }
+
+    with client.stream("POST", "/rag/stream", json=payload) as response:
+        assert response.status_code == 200
+        events = [json.loads(line) for line in response.iter_lines() if line]
+
+    assert events == [
+        {"type": "status", "data": "Starting request..."},
+        {"type": "status", "data": "Searching documents..."},
+        {"type": "status", "data": "Found 0 documents."},
+        {"type": "status", "data": "Done."},
+    ]
+
+
 def test_rag_stream_openapi_documents_ndjson(client):
     response = client.get("/openapi.json")
 

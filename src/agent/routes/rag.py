@@ -70,6 +70,38 @@ def _ndjson_event(
     return event.model_dump_json() + "\n"
 
 
+def _stream_event_from_chunk(chunk: dict) -> str | None:
+    """Map a LangGraph chunk to one NDJSON event."""
+    event = None
+
+    if chunk["event"] == "on_chain_start" and chunk["name"] in ["retriever", "retriever_with_chat_history"]:
+        event = _ndjson_event(StreamStatusEvent(data="Searching documents..."))
+
+    elif chunk["event"] == "on_chain_end" and chunk["name"] in ["retriever", "retriever_with_chat_history"]:
+        output = chunk["data"].get("output") or {}
+        num_docs = len(output.get("documents", []))
+        event = _ndjson_event(StreamStatusEvent(data=f"Found {num_docs} documents."))
+
+    elif chunk["event"] == "on_chat_model_start":
+        event = _ndjson_event(StreamStatusEvent(data="Generating answer..."))
+
+    elif chunk["event"] == "on_chat_model_stream" and chunk["metadata"].get("langgraph_node") in [
+        "response_synthesizer",
+        "response_synthesizer_cohere",
+    ]:
+        content = chunk["data"]["chunk"].content
+        if content:
+            event = _ndjson_event(StreamContentEvent(data=content))
+
+    elif chunk["name"] == "LangGraph" and chunk["event"] == "on_chain_end":
+        output = chunk["data"].get("output") or {}
+        if "documents" in output:
+            citations = [CitationDocument(document=[doc.page_content], metadata=[doc.metadata]) for doc in output["documents"]]
+            event = _ndjson_event(StreamCitationEvent(data=citations))
+
+    return event
+
+
 @router.post("/", tags=["rag"])
 async def question_answer(rag: RAGRequest) -> QAResponse:
     """Answering the Question."""
@@ -107,28 +139,9 @@ async def question_answer_stream(rag: RAGRequest) -> AsyncIterable[str]:
 
     try:
         async for chunk in graph.with_config({"metadata": {"collection_name": rag.collection_name}}).astream_events({"messages": messages}, version="v2"):
-            # Status updates for Retrieval
-            if chunk["event"] == "on_chain_start" and chunk["name"] in ["retriever", "retriever_with_chat_history"]:
-                yield _ndjson_event(StreamStatusEvent(data="Searching documents..."))
-
-            elif chunk["event"] == "on_chain_end" and chunk["name"] in ["retriever", "retriever_with_chat_history"]:
-                num_docs = len(chunk["data"]["output"].get("documents", []))
-                yield _ndjson_event(StreamStatusEvent(data=f"Found {num_docs} documents."))
-
-            # Status updates for Generation
-            elif chunk["event"] == "on_chat_model_start":
-                yield _ndjson_event(StreamStatusEvent(data="Generating answer..."))
-
-            # Content streaming
-            elif chunk["event"] == "on_chat_model_stream" and chunk["metadata"].get("langgraph_node") in ["response_synthesizer", "response_synthesizer_cohere"]:
-                content = chunk["data"]["chunk"].content
-                if content:
-                    yield _ndjson_event(StreamContentEvent(data=content))
-
-            # Final Citations
-            elif chunk["name"] == "LangGraph" and chunk["event"] == "on_chain_end" and "documents" in chunk["data"]["output"]:
-                citations = [CitationDocument(document=[doc.page_content], metadata=[doc.metadata]) for doc in chunk["data"]["output"]["documents"]]
-                yield _ndjson_event(StreamCitationEvent(data=citations))
+            event = _stream_event_from_chunk(chunk)
+            if event is not None:
+                yield event
 
     except Exception:
         logger.exception("Error during RAG streaming")
