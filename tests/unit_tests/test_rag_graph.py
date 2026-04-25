@@ -340,6 +340,25 @@ def test_rag_question_answer(mock_graph, client):
     assert len(data["meta_data"]) == 1
     assert data["meta_data"][0]["document"][0] == "doc1"
 
+
+@patch("agent.routes.rag.graph")
+def test_rag_question_answer_handles_null_messages(mock_graph, client):
+    mock_graph.with_config.return_value.ainvoke = AsyncMock(return_value={
+        "documents": [Document(page_content="doc1", metadata={"source": "test"})],
+        "messages": [AIMessage(content="The answer")]
+    })
+
+    payload = {
+        "messages": None,
+        "collection_name": "test"
+    }
+
+    response = client.post("/rag/", json=payload)
+
+    assert response.status_code == 200
+    mock_graph.with_config.return_value.ainvoke.assert_awaited_once_with({"messages": []})
+
+
 @patch("agent.routes.rag.graph")
 def test_rag_stream(mock_graph, client):
     # Mock the graph.astream_events method

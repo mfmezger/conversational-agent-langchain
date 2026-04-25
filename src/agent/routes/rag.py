@@ -109,7 +109,7 @@ def _stream_event_from_chunk(chunk: dict) -> str | None:
 @router.post("/", tags=["rag"])
 async def question_answer(rag: RAGRequest) -> QAResponse:
     """Answering the Question."""
-    messages = [dict(m) for m in rag.messages]
+    messages = [dict(m) for m in (rag.messages or [])]
     chain_result = await graph.with_config({"metadata": {"collection_name": rag.collection_name}}).ainvoke({"messages": messages})
 
     documents = [{"document": [doc.page_content], "metadata": [doc.metadata]} for doc in chain_result["documents"]]
