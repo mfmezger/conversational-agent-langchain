@@ -73,28 +73,32 @@ def _ndjson_event(
 def _stream_event_from_chunk(chunk: dict) -> str | None:
     """Map a LangGraph chunk to one NDJSON event."""
     event = None
+    chunk_event = chunk.get("event")
+    chunk_name = chunk.get("name")
+    chunk_data = chunk.get("data") or {}
+    chunk_metadata = chunk.get("metadata") or {}
 
-    if chunk["event"] == "on_chain_start" and chunk["name"] in ["retriever", "retriever_with_chat_history"]:
+    if chunk_event == "on_chain_start" and chunk_name in ["retriever", "retriever_with_chat_history"]:
         event = _ndjson_event(StreamStatusEvent(data="Searching documents..."))
 
-    elif chunk["event"] == "on_chain_end" and chunk["name"] in ["retriever", "retriever_with_chat_history"]:
-        output = chunk["data"].get("output") or {}
+    elif chunk_event == "on_chain_end" and chunk_name in ["retriever", "retriever_with_chat_history"]:
+        output = chunk_data.get("output") or {}
         num_docs = len(output.get("documents", []))
         event = _ndjson_event(StreamStatusEvent(data=f"Found {num_docs} documents."))
 
-    elif chunk["event"] == "on_chat_model_start":
+    elif chunk_event == "on_chat_model_start":
         event = _ndjson_event(StreamStatusEvent(data="Generating answer..."))
 
-    elif chunk["event"] == "on_chat_model_stream" and chunk["metadata"].get("langgraph_node") in [
+    elif chunk_event == "on_chat_model_stream" and chunk_metadata.get("langgraph_node") in [
         "response_synthesizer",
         "response_synthesizer_cohere",
     ]:
-        content = chunk["data"]["chunk"].content
+        content = getattr(chunk_data.get("chunk"), "content", None)
         if content:
             event = _ndjson_event(StreamContentEvent(data=content))
 
-    elif chunk["name"] == "LangGraph" and chunk["event"] == "on_chain_end":
-        output = chunk["data"].get("output") or {}
+    elif chunk_name == "LangGraph" and chunk_event == "on_chain_end":
+        output = chunk_data.get("output") or {}
         if "documents" in output:
             citations = [CitationDocument(document=[doc.page_content], metadata=[doc.metadata]) for doc in output["documents"]]
             event = _ndjson_event(StreamCitationEvent(data=citations))

@@ -439,6 +439,18 @@ def test_rag_stream_handles_null_outputs(mock_graph, client):
             "name": "LangGraph",
             "data": {"output": None},
         }
+        yield {
+            "event": "on_chain_end",
+            "name": "retriever",
+        }
+        yield {
+            "event": "on_chat_model_stream",
+            "metadata": {"langgraph_node": "response_synthesizer"},
+        }
+        yield {
+            "event": "on_chain_end",
+            "name": "LangGraph",
+        }
 
     mock_graph.with_config.return_value.astream_events = mock_stream
 
@@ -454,6 +466,7 @@ def test_rag_stream_handles_null_outputs(mock_graph, client):
     assert events == [
         {"type": "status", "data": "Starting request..."},
         {"type": "status", "data": "Searching documents..."},
+        {"type": "status", "data": "Found 0 documents."},
         {"type": "status", "data": "Found 0 documents."},
         {"type": "status", "data": "Done."},
     ]
