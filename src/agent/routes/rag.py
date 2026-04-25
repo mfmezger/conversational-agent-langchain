@@ -83,7 +83,7 @@ def _stream_event_from_chunk(chunk: dict) -> str | None:
 
     elif chunk_event == "on_chain_end" and chunk_name in ["retriever", "retriever_with_chat_history"]:
         output = chunk_data.get("output") or {}
-        num_docs = len(output.get("documents", []))
+        num_docs = len(output.get("documents") or [])
         event = _ndjson_event(StreamStatusEvent(data=f"Found {num_docs} documents."))
 
     elif chunk_event == "on_chat_model_start":
@@ -100,7 +100,7 @@ def _stream_event_from_chunk(chunk: dict) -> str | None:
     elif chunk_name == "LangGraph" and chunk_event == "on_chain_end":
         output = chunk_data.get("output") or {}
         if "documents" in output:
-            citations = [CitationDocument(document=[doc.page_content], metadata=[doc.metadata]) for doc in output["documents"]]
+            citations = [CitationDocument(document=[doc.page_content], metadata=[doc.metadata]) for doc in output.get("documents") or []]
             event = _ndjson_event(StreamCitationEvent(data=citations))
 
     return event
@@ -137,7 +137,7 @@ async def question_answer_stream(rag: RAGRequest) -> AsyncIterable[str]:
 
     Event types: status, content, citation, error.
     """
-    messages = [dict(m) for m in rag.messages]
+    messages = [dict(m) for m in (rag.messages or [])]
 
     yield _ndjson_event(StreamStatusEvent(data="Starting request..."))
 

@@ -442,6 +442,16 @@ def test_rag_stream_handles_null_outputs(mock_graph, client):
         yield {
             "event": "on_chain_end",
             "name": "retriever",
+            "data": {"output": {"documents": None}},
+        }
+        yield {
+            "event": "on_chain_end",
+            "name": "LangGraph",
+            "data": {"output": {"documents": None}},
+        }
+        yield {
+            "event": "on_chain_end",
+            "name": "retriever",
         }
         yield {
             "event": "on_chat_model_stream",
@@ -455,7 +465,7 @@ def test_rag_stream_handles_null_outputs(mock_graph, client):
     mock_graph.with_config.return_value.astream_events = mock_stream
 
     payload = {
-        "messages": [{"role": "user", "content": "question"}],
+        "messages": None,
         "collection_name": "test",
     }
 
@@ -467,6 +477,8 @@ def test_rag_stream_handles_null_outputs(mock_graph, client):
         {"type": "status", "data": "Starting request..."},
         {"type": "status", "data": "Searching documents..."},
         {"type": "status", "data": "Found 0 documents."},
+        {"type": "status", "data": "Found 0 documents."},
+        {"type": "citation", "data": []},
         {"type": "status", "data": "Found 0 documents."},
         {"type": "status", "data": "Done."},
     ]
