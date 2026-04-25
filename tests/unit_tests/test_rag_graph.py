@@ -360,6 +360,21 @@ def test_rag_question_answer_handles_null_messages(mock_graph, client):
 
 
 @patch("agent.routes.rag.graph")
+def test_rag_question_answer_handles_empty_graph_result(mock_graph, client):
+    mock_graph.with_config.return_value.ainvoke = AsyncMock(return_value={})
+
+    payload = {
+        "messages": [{"role": "user", "content": "question"}],
+        "collection_name": "test",
+    }
+
+    response = client.post("/rag/", json=payload)
+
+    assert response.status_code == 200
+    assert response.json() == {"answer": "", "meta_data": []}
+
+
+@patch("agent.routes.rag.graph")
 def test_rag_stream(mock_graph, client):
     # Mock the graph.astream_events method
     async def mock_stream(*args, **kwargs):

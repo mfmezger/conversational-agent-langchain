@@ -112,8 +112,10 @@ async def question_answer(rag: RAGRequest) -> QAResponse:
     messages = [dict(m) for m in (rag.messages or [])]
     chain_result = await graph.with_config({"metadata": {"collection_name": rag.collection_name}}).ainvoke({"messages": messages})
 
-    documents = [{"document": [doc.page_content], "metadata": [doc.metadata]} for doc in chain_result["documents"]]
-    return QAResponse(answer=chain_result["messages"][-1].content, meta_data=documents)
+    documents = [{"document": [doc.page_content], "metadata": [doc.metadata]} for doc in chain_result.get("documents", [])]
+    messages_out = chain_result.get("messages", [])
+    answer = messages_out[-1].content if messages_out else ""
+    return QAResponse(answer=answer, meta_data=documents)
 
 
 @router.post(
