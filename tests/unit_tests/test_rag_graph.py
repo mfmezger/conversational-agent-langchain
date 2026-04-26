@@ -413,7 +413,7 @@ def test_rag_stream(mock_graph, client):
 
     with client.stream("POST", "/rag/stream", json=payload) as response:
         assert response.status_code == 200
-        assert response.headers["content-type"].startswith("application/x-ndjson")
+        assert response.headers["content-type"].startswith("application/jsonl")
         events = [json.loads(line) for line in response.iter_lines() if line]
 
     assert events == [
@@ -518,18 +518,17 @@ def test_rag_stream_handles_null_outputs(mock_graph, client):
     ]
 
 
-def test_rag_stream_openapi_documents_ndjson(client):
+def test_rag_stream_openapi_documents_json_lines(client):
     response = client.get("/openapi.json")
 
     assert response.status_code == 200
     stream_response = response.json()["paths"]["/rag/stream"]["post"]["responses"]["200"]
-    ndjson_content = stream_response["content"]["application/x-ndjson"]
+    jsonl_content = stream_response["content"]["application/jsonl"]
+    event_titles = {schema["title"] for schema in jsonl_content["itemSchema"]["anyOf"]}
 
-    assert "schema" in ndjson_content
-    assert "examples" in ndjson_content
-    assert {example["value"]["type"] for example in ndjson_content["examples"].values()} == {
-        "status",
-        "content",
-        "citation",
-        "error",
+    assert event_titles == {
+        "StreamStatusEvent",
+        "StreamContentEvent",
+        "StreamCitationEvent",
+        "StreamErrorEvent",
     }
