@@ -1,14 +1,22 @@
 """The RAG Routes."""
 
-import json
-from collections.abc import AsyncGenerator
+import logging
+from collections.abc import AsyncIterable
 
 from fastapi import APIRouter
-from fastapi.responses import StreamingResponse
 
 from agent.backend.graph import Graph
 from agent.data_model.request_data_model import RAGRequest
-from agent.data_model.response_data_model import QAResponse
+from agent.data_model.response_data_model import (
+    CitationDocument,
+    QAResponse,
+    StreamCitationEvent,
+    StreamContentEvent,
+    StreamErrorEvent,
+    StreamStatusEvent,
+)
+
+logger = logging.getLogger(__name__)
 
 graph = Graph().build_graph()
 
@@ -16,52 +24,97 @@ graph = Graph().build_graph()
 router = APIRouter()
 
 
+StreamEvent = StreamStatusEvent | StreamContentEvent | StreamCitationEvent | StreamErrorEvent
+
+STREAM_EVENT_ITEM_SCHEMA = {
+    "anyOf": [
+        StreamStatusEvent.model_json_schema(),
+        StreamContentEvent.model_json_schema(),
+        StreamCitationEvent.model_json_schema(),
+        StreamErrorEvent.model_json_schema(),
+    ]
+}
+
+
+def _stream_event_from_chunk(chunk: dict) -> StreamEvent | None:
+    """Map a LangGraph chunk to one JSON Lines event."""
+    event = None
+    chunk_event = chunk.get("event")
+    chunk_name = chunk.get("name")
+    chunk_data = chunk.get("data") or {}
+    chunk_metadata = chunk.get("metadata") or {}
+
+    if chunk_event == "on_chain_start" and chunk_name in ["retriever", "retriever_with_chat_history"]:
+        event = StreamStatusEvent(data="Searching documents...")
+
+    elif chunk_event == "on_chain_end" and chunk_name in ["retriever", "retriever_with_chat_history"]:
+        output = chunk_data.get("output") or {}
+        num_docs = len(output.get("documents") or [])
+        event = StreamStatusEvent(data=f"Found {num_docs} documents.")
+
+    elif chunk_event == "on_chat_model_start":
+        event = StreamStatusEvent(data="Generating answer...")
+
+    elif chunk_event == "on_chat_model_stream" and chunk_metadata.get("langgraph_node") in [
+        "response_synthesizer",
+        "response_synthesizer_cohere",
+    ]:
+        content = getattr(chunk_data.get("chunk"), "content", None)
+        if content:
+            event = StreamContentEvent(data=content)
+
+    elif chunk_name == "LangGraph" and chunk_event == "on_chain_end":
+        output = chunk_data.get("output") or {}
+        if "documents" in output:
+            citations = [CitationDocument(document=[doc.page_content], metadata=[doc.metadata]) for doc in output.get("documents") or []]
+            event = StreamCitationEvent(data=citations)
+
+    return event
+
+
 @router.post("/", tags=["rag"])
 async def question_answer(rag: RAGRequest) -> QAResponse:
     """Answering the Question."""
-    messages = [dict(m) for m in rag.messages]
+    messages = [dict(m) for m in (rag.messages or [])]
     chain_result = await graph.with_config({"metadata": {"collection_name": rag.collection_name}}).ainvoke({"messages": messages})
 
-    documents = [{"document": [doc.page_content], "metadata": [doc.metadata]} for doc in chain_result["documents"]]
-    return QAResponse(answer=chain_result["messages"][-1].content, meta_data=documents)
+    documents = [{"document": [doc.page_content], "metadata": [doc.metadata]} for doc in chain_result.get("documents", [])]
+    messages_out = chain_result.get("messages", [])
+    answer = messages_out[-1].content if messages_out else ""
+    return QAResponse(answer=answer, meta_data=documents)
 
 
-@router.post("/stream", tags=["rag"])
-async def question_answer_stream(rag: RAGRequest) -> StreamingResponse:
-    """Stream the Answering."""
-    messages = [dict(m) for m in rag.messages]
+@router.post(
+    "/stream",
+    tags=["rag"],
+    responses={
+        200: {
+            "description": "JSON Lines event stream. Each line is a JSON object with a `type` and `data` field.",
+            "content": {
+                "application/jsonl": {
+                    "itemSchema": STREAM_EVENT_ITEM_SCHEMA,
+                }
+            },
+        }
+    },
+)
+async def question_answer_stream(rag: RAGRequest) -> AsyncIterable[StreamEvent]:
+    """Stream the RAG answering process as JSON Lines events.
 
-    async def stream() -> AsyncGenerator:
-        documents = []
+    Event types: status, content, citation, error.
+    """
+    messages = [dict(m) for m in (rag.messages or [])]
 
-        # Yield initial status
-        yield json.dumps({"type": "status", "data": "Starting request..."}) + "\n"
+    yield StreamStatusEvent(data="Starting request...")
 
+    try:
         async for chunk in graph.with_config({"metadata": {"collection_name": rag.collection_name}}).astream_events({"messages": messages}, version="v2"):
-            # Status updates for Retrieval
-            if chunk["event"] == "on_chain_start" and chunk["name"] in ["retriever", "retriever_with_chat_history"]:
-                yield json.dumps({"type": "status", "data": "Searching documents..."}) + "\n"
+            event = _stream_event_from_chunk(chunk)
+            if event is not None:
+                yield event
 
-            elif chunk["event"] == "on_chain_end" and chunk["name"] in ["retriever", "retriever_with_chat_history"]:
-                num_docs = len(chunk["data"]["output"].get("documents", []))
-                yield json.dumps({"type": "status", "data": f"Found {num_docs} documents."}) + "\n"
-
-            # Status updates for Generation
-            elif chunk["event"] == "on_chat_model_start":
-                yield json.dumps({"type": "status", "data": "Generating answer..."}) + "\n"
-
-            # Content streaming
-            elif chunk["event"] == "on_chat_model_stream" and chunk["metadata"].get("langgraph_node") in ["response_synthesizer", "response_synthesizer_cohere"]:
-                content = chunk["data"]["chunk"].content
-                if content:
-                    yield json.dumps({"type": "content", "data": content}) + "\n"
-
-            # Final Citations
-            elif chunk["name"] == "LangGraph" and chunk["event"] == "on_chain_end" and "documents" in chunk["data"]["output"]:
-                documents = [{"document": [doc.page_content], "metadata": [doc.metadata]} for doc in chunk["data"]["output"]["documents"]]
-                yield json.dumps({"type": "citation", "data": documents}) + "\n"
-
-        # Done event
-        yield json.dumps({"type": "status", "data": "Done."}) + "\n"
-
-    return StreamingResponse(stream(), media_type="application/x-ndjson")
+    except Exception:
+        logger.exception("Error during RAG streaming")
+        yield StreamErrorEvent(data="An internal error occurred during streaming.")
+    else:
+        yield StreamStatusEvent(data="Done.")

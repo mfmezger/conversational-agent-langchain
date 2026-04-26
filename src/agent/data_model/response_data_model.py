@@ -34,6 +34,41 @@ class QAResponse(BaseModel):
     meta_data: list
 
 
+class CitationDocument(BaseModel):
+    """A streamed citation payload entry."""
+
+    document: list[str] = Field(..., title="Document", description="The retrieved document content.")
+    metadata: list[dict] = Field(..., title="Metadata", description="Metadata for the retrieved document.")
+
+
+class StreamStatusEvent(BaseModel):
+    """A streamed status update."""
+
+    type: str = Field(default="status", title="Type", description="The event type.")
+    data: str = Field(..., title="Data", description="The status message.")
+
+
+class StreamContentEvent(BaseModel):
+    """A streamed answer content chunk."""
+
+    type: str = Field(default="content", title="Type", description="The event type.")
+    data: str = Field(..., title="Data", description="A streamed text chunk.")
+
+
+class StreamCitationEvent(BaseModel):
+    """A streamed citation event."""
+
+    type: str = Field(default="citation", title="Type", description="The event type.")
+    data: list[CitationDocument] = Field(..., title="Data", description="The retrieved citation payload.")
+
+
+class StreamErrorEvent(BaseModel):
+    """A streamed error event."""
+
+    type: str = Field(default="error", title="Type", description="The event type.")
+    data: str = Field(..., title="Data", description="The error message.")
+
+
 class ExplainQAResponse(BaseModel):
     """The Response for the Explain QA endpoint."""
 
