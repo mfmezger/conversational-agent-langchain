@@ -14,7 +14,7 @@ services:
       - .env
     environment:
       - QDRANT_URL=http://qdrant
-      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
+      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:4318/v1/traces
 
   streamlit_app:
     build:
