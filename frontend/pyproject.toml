@@ -5,10 +5,7 @@ description = "Frontend for Conversational Agent"
 requires-python = ">=3.13"
 dependencies = [
     "loguru>=0.7.3",
-    "requests>=2.32.5",
-    "streamlit>=1.55.0",
+    "requests>=2.34.2",
+    "streamlit>=1.58.0",
     "httpx>=0.28.1",
 ]
-
-[tool.uv]
-dev-dependencies = []
