@@ -1,7 +1,7 @@
 [project]
 name = "agent"
 version = "5.5.0"
-description = "Add your description here"
+description = "Conversational Agent that uses Retrieval Augmented Generation to answer questions based on documentation."
 authors = [
     { name = "Marc Fabian Mezger", email = "57255687+mfmezger@users.noreply.github.com" }
 ]
@@ -9,11 +9,11 @@ requires-python = ">= 3.13"
 readme = "README.md"
 dependencies = [
     "ultra-simple-config>=0.1.0",
-    "langgraph>=1.2.6",
-    "litellm>=1.89.3",
+    "langgraph>=1.2.9",
+    "litellm>=1.93.0",
     "fastembed>=0.8.0",
-    "arize-phoenix>=17.9.0",
-    "openai>=2.43.0",
+    "arize-phoenix>=19.6.0",
+    "openai>=2.48.0",
     "fastapi>=0.138.0",
     "python-dotenv>=1.2.2",
     "langchain-cohere>=0.6.0",
@@ -22,16 +22,16 @@ dependencies = [
     "tiktoken>=0.13.0",
     "langchain-community>=0.4.2",
     "langchain-google-genai>=4.2.5",
-    "langchain-openai>=1.3.2",
-    "pypdfium2>=5.10.1",
+    "langchain-openai>=1.4.1",
+    "pypdfium2>=5.12.1",
     "uvicorn>=0.49.0",
     "arize-phoenix-otel>=0.16.1",
-    "openinference-instrumentation-langchain>=0.1.66",
+    "openinference-instrumentation-langchain>=0.1.67",
     "pyfiglet>=1.0.4",
     "langchain-qdrant>=1.1.0",
     "aiofiles>=25.1.0",
-    "streamlit>=1.58.0",
-    "langchain>=1.3.10",
+    "streamlit>=1.60.0",
+    "langchain>=1.3.14",
     "langchain-litellm>=0.7.0",
     "flashrank>=0.2.10",
     "werkzeug>=3.1.8",
@@ -64,8 +64,8 @@ update_changelog_on_bump = true
 
 [dependency-groups]
 dev = [
-    "anyio>=4.14.0",
-    "coverage>=7.14.2",
+    "anyio>=4.14.2",
+    "coverage>=7.15.2",
     "dirty-equals>=0.11",
     "inline-snapshot>=0.34.2",
     "pytest-xdist>=3.8.0",
