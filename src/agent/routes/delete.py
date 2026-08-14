@@ -1,11 +1,9 @@
 """Route to handle the deletion of a vector from the database."""
 
 from fastapi import APIRouter
-from loguru import logger
-from qdrant_client import models
 from qdrant_client.http.models.models import UpdateResult
 
-from agent.utils.vdb import get_async_qdrant_client
+from agent.utils.vdb import delete_documents_by_source
 
 router = APIRouter()
 
@@ -24,17 +22,4 @@ async def delete(source: str, collection_name: str) -> UpdateResult:
         UpdateResult: Result of the Update.
 
     """
-    logger.info("Deleting Vector from Database")
-    qdrant_client = get_async_qdrant_client()
-    result = await qdrant_client.delete(
-        collection_name=collection_name,
-        points_selector=models.FilterSelector(
-            filter=models.Filter(
-                must=[
-                    models.FieldCondition(key="metadata.source", match=models.MatchValue(value=source)),
-                ],
-            )
-        ),
-    )
-    logger.info("Deleted Point from Database via Metadata.")
-    return result
+    return await delete_documents_by_source(collection_name=collection_name, source=source)

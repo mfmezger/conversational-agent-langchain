@@ -1,7 +1,15 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, patch
-from agent.utils.vdb import initialize_vector_db, generate_collection, init_vdb, initialize_all_vector_dbs
+
 from agent.utils.config import Config
+from agent.utils.vdb import (
+    delete_documents_by_source,
+    get_vector_store,
+    init_vdb,
+    initialize_all_vector_dbs,
+    initialize_vector_db,
+)
 
 @patch("agent.utils.vdb.load_vec_db_conn")
 def test_initialize_vector_db_exists(mock_load_conn):
@@ -29,7 +37,7 @@ def test_initialize_vector_db_not_exists(mock_load_conn):
 
 @patch("agent.utils.vdb.QdrantVectorStore")
 @patch("agent.utils.vdb.FastEmbedSparse")
-def test_init_vdb(mock_sparse, mock_vstore):
+def test_init_vdb(_mock_sparse, mock_vstore):
     mock_embedding = MagicMock()
 
     init_vdb("test_coll", mock_embedding)
@@ -38,6 +46,37 @@ def test_init_vdb(mock_sparse, mock_vstore):
     args, kwargs = mock_vstore.call_args
     assert kwargs["collection_name"] == "test_coll"
     assert kwargs["embedding"] == mock_embedding
+
+def test_get_vector_store_is_cached():
+    with patch("agent.utils.vdb.init_vdb") as mock_init_vdb:
+        import agent.utils.vdb as vdb
+
+        vdb._vector_store_cache.clear()
+        mock_store = MagicMock()
+        mock_init_vdb.return_value = mock_store
+        embedding = MagicMock()
+
+        assert get_vector_store("test_coll", embedding) is mock_store
+        assert get_vector_store("test_coll", embedding) is mock_store
+
+        mock_init_vdb.assert_called_once_with(collection_name="test_coll", embedding=embedding)
+
+
+@pytest.mark.anyio
+@patch("agent.utils.vdb.get_async_qdrant_client")
+async def test_delete_documents_by_source(mock_get_client):
+    mock_client = AsyncMock()
+    mock_get_client.return_value = mock_client
+
+    await delete_documents_by_source(collection_name="test_coll", source="test.pdf")
+
+    mock_client.delete.assert_awaited_once()
+    call = mock_client.delete.call_args.kwargs
+    assert call["collection_name"] == "test_coll"
+    condition = call["points_selector"].filter.must[0]
+    assert condition.key == "metadata.source"
+    assert condition.match.value == "test.pdf"
+
 
 @patch("agent.utils.vdb.initialize_vector_db")
 def test_initialize_all_vector_dbs(mock_init_vdb):

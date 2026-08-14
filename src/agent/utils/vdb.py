@@ -6,16 +6,18 @@ from langchain_core.embeddings import Embeddings
 from langchain_qdrant import FastEmbedSparse, QdrantVectorStore, RetrievalMode
 from loguru import logger
 from qdrant_client import AsyncQdrantClient, QdrantClient, models
+from qdrant_client.http.models.models import UpdateResult
 
 from agent.utils.config import Config
 
-sparse_embeddings = FastEmbedSparse(model_name="Qdrant/bm25")
+_sparse_embeddings = FastEmbedSparse(model_name="Qdrant/bm25")
+_vector_store_cache: dict[str, QdrantVectorStore] = {}
 
 settings = Config()
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning, message="Api key is used with an insecure connection")
-    qdrant_client = QdrantClient(
+    _qdrant_client = QdrantClient(
         location=settings.qdrant_url,
         port=settings.qdrant_port,
         api_key=settings.qdrant_api_key,
@@ -24,7 +26,7 @@ with warnings.catch_warnings():
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning, message="Api key is used with an insecure connection")
-    async_qdrant_client = AsyncQdrantClient(
+    _async_qdrant_client = AsyncQdrantClient(
         location=settings.qdrant_url,
         port=settings.qdrant_port,
         api_key=settings.qdrant_api_key,
@@ -48,10 +50,10 @@ def init_vdb(collection_name: str, embedding: Embeddings) -> QdrantVectorStore:
     logger.info(f"USING COLLECTION: {collection_name}")
 
     vector_db = QdrantVectorStore(
-        client=qdrant_client,
+        client=load_vec_db_conn(),
         collection_name=collection_name,
         embedding=embedding,
-        sparse_embedding=sparse_embeddings,
+        sparse_embedding=_sparse_embeddings,
         retrieval_mode=RetrievalMode.HYBRID,
         sparse_vector_name="fast-sparse-bm25",
     )
@@ -68,7 +70,7 @@ def load_vec_db_conn() -> QdrantClient:
         QdrantClient: The shared QdrantClient instance.
 
     """
-    return qdrant_client
+    return _qdrant_client
 
 
 def get_async_qdrant_client() -> AsyncQdrantClient:
@@ -79,7 +81,14 @@ def get_async_qdrant_client() -> AsyncQdrantClient:
         AsyncQdrantClient: The shared AsyncQdrantClient instance.
 
     """
-    return async_qdrant_client
+    return _async_qdrant_client
+
+
+def get_vector_store(collection_name: str, embedding: Embeddings) -> QdrantVectorStore:
+    """Return a cached hybrid vector store for a collection."""
+    if collection_name not in _vector_store_cache:
+        _vector_store_cache[collection_name] = init_vdb(collection_name=collection_name, embedding=embedding)
+    return _vector_store_cache[collection_name]
 
 
 def initialize_vector_db(collection_name: str, embeddings_size: int) -> None:
@@ -115,6 +124,21 @@ def generate_collection(collection_name: str, embeddings_size: int) -> None:
         sparse_vectors_config=client.get_fastembed_sparse_vector_params(),
     )
     logger.info(f"SUCCESS: Collection {collection_name} created.")
+
+
+async def delete_documents_by_source(collection_name: str, source: str) -> UpdateResult:
+    """Delete all documents with a matching source from a collection."""
+    client = get_async_qdrant_client()
+    return await client.delete(
+        collection_name=collection_name,
+        points_selector=models.FilterSelector(
+            filter=models.Filter(
+                must=[
+                    models.FieldCondition(key="metadata.source", match=models.MatchValue(value=source)),
+                ],
+            )
+        ),
+    )
 
 
 async def initialize_vector_db_async(collection_name: str, embeddings_size: int) -> None:

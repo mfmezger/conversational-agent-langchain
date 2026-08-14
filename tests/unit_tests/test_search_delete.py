@@ -30,34 +30,30 @@ def test_search_no_documents(mock_get_retriever, client) -> None:
     assert response.json() == snapshot({"message": "No documents found."})
 
 
-@patch("agent.routes.delete.get_async_qdrant_client")
-def test_delete_vector(mock_load_conn, client) -> None:
-    mock_client = AsyncMock()
+@patch("agent.routes.delete.delete_documents_by_source", new_callable=AsyncMock)
+def test_delete_vector(mock_delete, client) -> None:
     mock_result = UpdateResult(operation_id=0, status="completed")
-    mock_client.delete.return_value = mock_result
-    mock_load_conn.return_value = mock_client
+    mock_delete.return_value = mock_result
 
     response = client.delete("/embeddings/delete/test.pdf?collection_name=test_coll")
 
     assert response.status_code == 200
     assert response.json()["status"] == "completed"
-    mock_client.delete.assert_called_once()
+    mock_delete.assert_awaited_once_with(collection_name="test_coll", source="test.pdf")
 
 
-@patch("agent.utils.retriever.qdrant_client")
-@patch("agent.utils.retriever.sparse_embeddings")
-@patch("agent.utils.retriever.QdrantVectorStore")
+@patch("agent.utils.retriever.get_vector_store")
 @patch("agent.utils.retriever.get_embedding_model")
-def test_get_retriever(mock_get_embedding_model, mock_vector_store, _mock_sparse, _mock_client) -> None:
+def test_get_retriever(mock_get_embedding_model, mock_get_vector_store) -> None:
     mock_vstore_instance = MagicMock()
-    mock_vector_store.return_value = mock_vstore_instance
+    mock_get_vector_store.return_value = mock_vstore_instance
 
     retriever_module._embeddings_cache.clear()
-    retriever_module._vector_store_cache.clear()
-    mock_get_embedding_model.return_value = MagicMock()
+    mock_embedding = MagicMock()
+    mock_get_embedding_model.return_value = mock_embedding
 
     get_retriever(k=5, collection_name="my_coll")
 
     mock_get_embedding_model.assert_called_once()
-    mock_vector_store.assert_called_once()
+    mock_get_vector_store.assert_called_once_with(collection_name="my_coll", embedding=mock_embedding)
     mock_vstore_instance.as_retriever.assert_called_with(search_kwargs={"k": 5})
