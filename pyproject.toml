@@ -76,6 +76,9 @@ dev = [
     "httpx>=0.28.1",
 ]
 
+[tool.ty.terminal]
+error-on-warning = false
+
 [tool.ty.rules]
 invalid-argument-type = "warn"
 invalid-assignment = "warn"
