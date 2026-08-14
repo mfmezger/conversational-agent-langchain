@@ -35,7 +35,7 @@ def retrieve_documents(state: AgentState, config: RunnableConfig, *, cfg: Config
     # If query was rewritten, use state["query"], otherwise use last message
     query = state.get("query") or messages[-1].content
 
-    relevant_documents = retriever.invoke(query)
+    relevant_documents = retriever.invoke(input=query)
     if not relevant_documents:
         logger.info(f"No relevant documents found for the query: {query}")
 
