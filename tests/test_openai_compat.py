@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import importlib
+import json
 from collections.abc import AsyncIterator
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from openai import OpenAI
+from openai import APIError, OpenAI
 
 pytestmark = pytest.mark.contract
 
@@ -24,23 +25,26 @@ class FakeConfiguredGraph:
     async def astream_events(self, payload: dict[str, Any], *, version: str) -> AsyncIterator[dict[str, Any]]:
         self.parent.payloads.append(payload)
         assert version == "v2"
-        yield {
-            "event": "on_chat_model_stream",
-            "metadata": {"langgraph_node": "grader"},
-            "data": {"chunk": SimpleNamespace(content="ignored")},
-        }
-        yield {
-            "event": "on_chat_model_stream",
-            "metadata": {"langgraph_node": "response_synthesizer"},
-            "data": {"chunk": SimpleNamespace(content="RAG ")},
-        }
-        if self.parent.fail_stream:
-            raise RuntimeError("stream failed")
-        yield {
-            "event": "on_chat_model_stream",
-            "metadata": {"langgraph_node": "response_synthesizer"},
-            "data": {"chunk": SimpleNamespace(content="answer")},
-        }
+        try:
+            yield {
+                "event": "on_chat_model_stream",
+                "metadata": {"langgraph_node": "grader"},
+                "data": {"chunk": SimpleNamespace(content="ignored")},
+            }
+            yield {
+                "event": "on_chat_model_stream",
+                "metadata": {"langgraph_node": "response_synthesizer"},
+                "data": {"chunk": SimpleNamespace(content="RAG ")},
+            }
+            if self.parent.fail_stream:
+                raise RuntimeError("stream failed")
+            yield {
+                "event": "on_chat_model_stream",
+                "metadata": {"langgraph_node": "response_synthesizer"},
+                "data": {"chunk": SimpleNamespace(content="answer")},
+            }
+        finally:
+            self.parent.stream_closed = True
 
 
 class FakeGraph:
@@ -49,6 +53,7 @@ class FakeGraph:
         self.payloads: list[dict[str, Any]] = []
         self.fail_invoke = False
         self.fail_stream = False
+        self.stream_closed = False
 
     def with_config(self, config: dict[str, Any]) -> FakeConfiguredGraph:
         self.configs.append(config)
@@ -79,6 +84,24 @@ def test_openapi_documents_compatibility_subset(app) -> None:
         assert "text/event-stream" in operation["responses"]["200"]["content"]
         assert operation["requestBody"]["content"]["application/json"]["schema"]["$ref"]
 
+    components = schema["components"]["schemas"]
+    assert set(components["ChatCompletionChoice"]["required"]) == {"index", "message", "logprobs", "finish_reason"}
+    assert set(components["ChatCompletionResponseMessage"]["required"]) == {"role", "content", "refusal"}
+    assert {
+        "object",
+        "completed_at",
+        "error",
+        "incomplete_details",
+        "instructions",
+        "metadata",
+        "parallel_tool_calls",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_p",
+        "usage",
+    } <= set(components["ResponsesResponse"]["required"])
+
 
 def test_chat_completion_contract(client, fake_graph: FakeGraph) -> None:
     response = client.post(
@@ -100,7 +123,8 @@ def test_chat_completion_contract(client, fake_graph: FakeGraph) -> None:
     assert body["choices"] == [
         {
             "index": 0,
-            "message": {"role": "assistant", "content": "RAG answer"},
+            "message": {"role": "assistant", "content": "RAG answer", "refusal": None},
+            "logprobs": None,
             "finish_reason": "stop",
         }
     ]
@@ -119,9 +143,12 @@ def test_chat_completion_stream_contract(client, fake_graph: FakeGraph) -> None:
     assert response.headers["content-type"].startswith("text/event-stream")
     data_lines = [line.removeprefix("data: ") for line in response.text.splitlines() if line.startswith("data: ")]
     assert data_lines[-1] == "[DONE]"
-    assert '"finish_reason":"stop"' in data_lines[-2]
-    assert '"content":"RAG "' in data_lines[1]
-    assert '"content":"answer"' in data_lines[2]
+    chunks = [json.loads(line) for line in data_lines[:-1]]
+    assert chunks[0]["choices"][0]["delta"] == {"role": "assistant", "content": "", "refusal": None}
+    assert all(chunk["choices"][0]["logprobs"] is None for chunk in chunks)
+    assert chunks[-1]["choices"][0]["finish_reason"] == "stop"
+    assert chunks[1]["choices"][0]["delta"]["content"] == "RAG "
+    assert chunks[2]["choices"][0]["delta"]["content"] == "answer"
     assert fake_graph.configs == [{"metadata": {"collection_name": "configured-collection"}}]
 
 
@@ -142,10 +169,21 @@ def test_responses_contract_with_string_input(client, fake_graph: FakeGraph) -> 
             "content": [{"type": "output_text", "text": "RAG answer", "annotations": []}],
         }
     ]
-    assert body["parallel_tool_calls"] is False
-    assert body["tool_choice"] == "none"
-    assert body["tools"] == []
-    assert "usage" not in body
+    required_fields = {
+        "error": None,
+        "incomplete_details": None,
+        "instructions": None,
+        "metadata": {},
+        "parallel_tool_calls": False,
+        "temperature": None,
+        "tool_choice": "none",
+        "tools": [],
+        "top_p": None,
+        "usage": None,
+    }
+    assert body["completed_at"] is not None
+    for field, value in required_fields.items():
+        assert body[field] == value
     assert fake_graph.configs == [{"metadata": {"collection_name": "configured-collection"}}]
 
 
@@ -224,6 +262,27 @@ def test_multimodal_input_is_rejected(client, fake_graph: FakeGraph) -> None:
     assert fake_graph.configs == []
 
 
+@pytest.mark.parametrize("stream", ["true", 1, None])
+@pytest.mark.parametrize(
+    ("path", "body"),
+    [
+        ("/v1/chat/completions", {"model": "rag-test", "messages": [{"role": "user", "content": "Question"}]}),
+        ("/v1/responses", {"model": "rag-test", "input": "Question"}),
+    ],
+)
+def test_stream_requires_a_boolean(client, fake_graph: FakeGraph, path: str, body: dict[str, Any], stream: Any) -> None:
+    response = client.post(path, json={**body, "stream": stream})
+
+    assert response.status_code == 400
+    assert response.json()["error"] == {
+        "message": "Input should be a valid boolean",
+        "type": "invalid_request_error",
+        "param": "stream",
+        "code": "invalid_value",
+    }
+    assert fake_graph.configs == []
+
+
 def test_model_alias_is_validated_without_selecting_collection(client, fake_graph: FakeGraph) -> None:
     response = client.post(
         "/v1/chat/completions",
@@ -271,8 +330,9 @@ def test_openai_internal_error_does_not_leak_details(client, fake_graph: FakeGra
     }
 
 
-def test_unknown_v1_route_uses_openai_error_envelope(client, fake_graph: FakeGraph) -> None:
-    response = client.get("/v1/not-implemented")
+@pytest.mark.parametrize("path", ["/v1", "/v1/not-implemented"])
+def test_unknown_v1_route_uses_openai_error_envelope(client, fake_graph: FakeGraph, path: str) -> None:
+    response = client.get(path)
 
     assert response.status_code == 404
     assert response.json() == {
@@ -330,38 +390,66 @@ def test_installed_sdk_parses_responses_non_streaming_and_streaming(sdk_client: 
     assert final_response.output_text == "RAG answer"
 
 
-@pytest.mark.anyio
-async def test_midstream_failure_has_no_chat_done_marker(app, fake_graph: FakeGraph) -> None:
-    module = importlib.import_module("agent.routes.openai_compat")
-    schema_module = importlib.import_module("agent.data_model.openai_compat")
+def test_chat_stream_failure_uses_sdk_error_contract(client, sdk_client: OpenAI, fake_graph: FakeGraph) -> None:
     fake_graph.fail_stream = True
-    response = await module.create_chat_completion(
-        schema_module.ChatCompletionRequest(
-            model="rag-test",
-            messages=[{"role": "user", "content": "Question"}],
-            stream=True,
+    request = {
+        "model": "rag-test",
+        "messages": [{"role": "user", "content": "Question"}],
+        "stream": True,
+    }
+
+    response = client.post("/v1/chat/completions", json=request)
+    data = [line.removeprefix("data: ") for line in response.text.splitlines() if line.startswith("data: ")]
+    assert json.loads(data[-1]) == {
+        "error": {
+            "message": "Internal server error.",
+            "type": "server_error",
+            "param": None,
+            "code": "internal_error",
+        }
+    }
+    assert "[DONE]" not in data
+    assert '"finish_reason":"stop"' not in response.text
+
+    with pytest.raises(APIError, match="Internal server error"):
+        list(
+            sdk_client.chat.completions.create(
+                model="rag-test",
+                messages=[{"role": "user", "content": "Question"}],
+                stream=True,
+            )
         )
-    )
-
-    chunks: list[str] = []
-    with pytest.raises(RuntimeError, match="stream failed"):
-        async for chunk in response.body_iterator:
-            chunks.append(chunk)
-    assert "[DONE]" not in "".join(chunks)
-    assert '"finish_reason":"stop"' not in "".join(chunks)
+    assert fake_graph.stream_closed is True
 
 
-@pytest.mark.anyio
-async def test_midstream_failure_has_no_responses_completion_event(app, fake_graph: FakeGraph) -> None:
-    module = importlib.import_module("agent.routes.openai_compat")
-    schema_module = importlib.import_module("agent.data_model.openai_compat")
+def test_responses_stream_failure_uses_official_sdk_events(client, sdk_client: OpenAI, fake_graph: FakeGraph) -> None:
     fake_graph.fail_stream = True
-    response = await module.create_response(
-        schema_module.ResponsesRequest(model="rag-test", input="Question", stream=True)
-    )
+    response = client.post("/v1/responses", json={"model": "rag-test", "input": "Question", "stream": True})
+    event_names = [line.removeprefix("event: ") for line in response.text.splitlines() if line.startswith("event: ")]
+    payloads = [json.loads(line.removeprefix("data: ")) for line in response.text.splitlines() if line.startswith("data: ")]
 
-    chunks: list[str] = []
-    with pytest.raises(RuntimeError, match="stream failed"):
-        async for chunk in response.body_iterator:
-            chunks.append(chunk)
-    assert "response.completed" not in "".join(chunks)
+    assert event_names[-2:] == ["error", "response.failed"]
+    assert "response.completed" not in event_names
+    assert payloads[-2] == {
+        "type": "error",
+        "code": "server_error",
+        "message": "Internal server error.",
+        "param": None,
+        "sequence_number": payloads[-2]["sequence_number"],
+    }
+    assert payloads[-1]["type"] == "response.failed"
+    assert payloads[-1]["response"]["status"] == "failed"
+    assert payloads[-1]["response"]["error"] == {"code": "server_error", "message": "Internal server error."}
+
+    events = list(sdk_client.responses.create(model="rag-test", input="Question", stream=True))
+    assert [event.type for event in events[-2:]] == ["error", "response.failed"]
+    assert events[-2].code == "server_error"
+    assert events[-1].response.status == "failed"
+    assert events[-1].response.error.code == "server_error"
+
+    with sdk_client.responses.stream(model="rag-test", input="Question") as stream:
+        stream_events = list(stream)
+        with pytest.raises(RuntimeError, match="Didn't receive a `response.completed` event"):
+            stream.get_final_response()
+    assert stream_events[-1].type == "response.failed"
+    assert fake_graph.stream_closed is True

@@ -2,7 +2,7 @@
 
 from typing import Any, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, model_validator
 
 
 class StrictOpenAIRequest(BaseModel):
@@ -23,7 +23,7 @@ class ChatCompletionRequest(StrictOpenAIRequest):
 
     model: str = Field(min_length=1, description="Configured public RAG model alias.")
     messages: list[ChatCompletionMessageRequest] = Field(min_length=1)
-    stream: bool = False
+    stream: StrictBool = False
 
     @model_validator(mode="after")
     def require_final_user_message(self) -> Self:
@@ -46,7 +46,7 @@ class ResponsesRequest(StrictOpenAIRequest):
 
     model: str = Field(min_length=1, description="Configured public RAG model alias.")
     input: str | list[ResponseInputMessage]
-    stream: bool = False
+    stream: StrictBool = False
 
     @model_validator(mode="after")
     def validate_input(self) -> Self:
@@ -82,23 +82,25 @@ class OpenAIErrorResponse(BaseModel):
 class ChatCompletionResponseMessage(BaseModel):
     """Assistant message returned in a Chat Completion."""
 
-    role: Literal["assistant"] = "assistant"
+    role: Literal["assistant"]
     content: str
+    refusal: None
 
 
 class ChatCompletionChoice(BaseModel):
     """Single RAG answer choice."""
 
-    index: Literal[0] = 0
+    index: Literal[0]
     message: ChatCompletionResponseMessage
-    finish_reason: Literal["stop"] = "stop"
+    logprobs: None
+    finish_reason: Literal["stop"]
 
 
 class ChatCompletionResponse(BaseModel):
     """OpenAI-compatible non-streaming Chat Completion."""
 
     id: str
-    object: Literal["chat.completion"] = "chat.completion"
+    object: Literal["chat.completion"]
     created: int
     model: str
     choices: list[ChatCompletionChoice]
@@ -107,33 +109,45 @@ class ChatCompletionResponse(BaseModel):
 class ResponseOutputText(BaseModel):
     """Text content in a Responses output message."""
 
-    type: Literal["output_text"] = "output_text"
+    type: Literal["output_text"]
     text: str
-    annotations: list[dict[str, Any]] = Field(default_factory=list)
+    annotations: list[dict[str, Any]]
 
 
 class ResponseOutputMessage(BaseModel):
     """Assistant output item in a Responses object."""
 
     id: str
-    type: Literal["message"] = "message"
-    status: Literal["in_progress", "completed"]
-    role: Literal["assistant"] = "assistant"
+    type: Literal["message"]
+    status: Literal["in_progress", "completed", "incomplete"]
+    role: Literal["assistant"]
     content: list[ResponseOutputText]
 
 
+class ResponseFailure(BaseModel):
+    """Failure details on a failed Responses object."""
+
+    code: Literal["server_error"]
+    message: str
+
+
 class ResponsesResponse(BaseModel):
-    """OpenAI-compatible non-streaming Responses object."""
+    """OpenAI-compatible Responses object for this text-only subset."""
 
     id: str
-    object: Literal["response"] = "response"
+    object: Literal["response"]
     created_at: float
-    status: Literal["in_progress", "completed"]
-    completed_at: float | None = None
-    error: None = None
-    incomplete_details: None = None
+    status: Literal["in_progress", "completed", "failed"]
+    completed_at: float | None
+    error: ResponseFailure | None
+    incomplete_details: None
+    instructions: None
+    metadata: dict[str, str]
     model: str
     output: list[ResponseOutputMessage]
-    parallel_tool_calls: Literal[False] = False
-    tool_choice: Literal["none"] = "none"
-    tools: list[dict[str, Any]] = Field(default_factory=list)
+    parallel_tool_calls: Literal[False]
+    temperature: float | None
+    tool_choice: Literal["none"]
+    tools: list[dict[str, Any]]
+    top_p: float | None
+    usage: None

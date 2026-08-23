@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
+from loguru import logger
 
 from agent.data_model.openai_compat import (
     ChatCompletionChoice,
@@ -15,6 +16,7 @@ from agent.data_model.openai_compat import (
     ChatCompletionResponse,
     ChatCompletionResponseMessage,
     OpenAIErrorResponse,
+    ResponseFailure,
     ResponseOutputMessage,
     ResponseOutputText,
     ResponsesRequest,
@@ -90,18 +92,38 @@ async def _answer(messages: list[dict[str, str]]) -> str:
         ) from exc
 
 
+def _event_text_delta(event: dict[str, Any]) -> str | None:
+    if event.get("event") != "on_chat_model_stream" or event.get("metadata", {}).get("langgraph_node") not in _GENERATION_NODES:
+        return None
+    content = event["data"]["chunk"].content
+    if not content:
+        return None
+    if not isinstance(content, str):
+        msg = "The RAG graph returned a non-text stream chunk."
+        raise TypeError(msg)
+    return content
+
+
 async def _text_deltas(messages: list[dict[str, str]]) -> AsyncIterator[str]:
     events = graph.with_config(_graph_config()).astream_events({"messages": messages}, version="v2")
-    async for event in events:
-        if event.get("event") != "on_chat_model_stream" or event.get("metadata", {}).get("langgraph_node") not in _GENERATION_NODES:
-            continue
-        content = event["data"]["chunk"].content
-        if not content:
-            continue
-        if not isinstance(content, str):
-            msg = "The RAG graph returned a non-text stream chunk."
-            raise TypeError(msg)
-        yield content
+    failure_in_flight = False
+    try:
+        async for event in events:
+            content = _event_text_delta(event)
+            if content is not None:
+                yield content
+    except BaseException:
+        failure_in_flight = True
+        raise
+    finally:
+        close = getattr(events, "aclose", None)
+        if close is not None:
+            try:
+                await close()
+            except Exception as exc:
+                if not failure_in_flight:
+                    raise
+                logger.warning("Failed to close upstream RAG event stream: {}", exc)
 
 
 def _sse_data(payload: dict[str, Any]) -> str:
@@ -116,18 +138,50 @@ def _response_object(*, response_id: str, model: str, created_at: float, message
     completed = message is not None
     return ResponsesResponse(
         id=response_id,
+        object="response",
         created_at=created_at,
         status="completed" if completed else "in_progress",
         completed_at=time.time() if completed else None,
+        error=None,
+        incomplete_details=None,
+        instructions=None,
+        metadata={},
         model=model,
         output=[message] if message else [],
+        parallel_tool_calls=False,
+        temperature=None,
+        tool_choice="none",
+        tools=[],
+        top_p=None,
+        usage=None,
+    )
+
+
+def _failed_response(*, response_id: str, model: str, created_at: float, message: ResponseOutputMessage) -> ResponsesResponse:
+    return ResponsesResponse(
+        id=response_id,
+        object="response",
+        created_at=created_at,
+        status="failed",
+        completed_at=None,
+        error=ResponseFailure(code="server_error", message="Internal server error."),
+        incomplete_details=None,
+        instructions=None,
+        metadata={},
+        model=model,
+        output=[message],
+        parallel_tool_calls=False,
+        temperature=None,
+        tool_choice="none",
+        tools=[],
+        top_p=None,
+        usage=None,
     )
 
 
 @router.post(
     "/chat/completions",
     response_model=ChatCompletionResponse,
-    response_model_exclude_none=True,
     summary="Create a RAG-backed chat completion",
     description="Supports text-only user/assistant messages, one configured model alias, and optional SSE streaming.",
     responses={
@@ -151,9 +205,17 @@ async def create_chat_completion(request: ChatCompletionRequest) -> ChatCompleti
         answer = await _answer(messages)
         return ChatCompletionResponse(
             id=completion_id,
+            object="chat.completion",
             created=created,
             model=request.model,
-            choices=[ChatCompletionChoice(message=ChatCompletionResponseMessage(content=answer))],
+            choices=[
+                ChatCompletionChoice(
+                    index=0,
+                    message=ChatCompletionResponseMessage(role="assistant", content=answer, refusal=None),
+                    logprobs=None,
+                    finish_reason="stop",
+                )
+            ],
         )
 
     async def stream() -> AsyncIterator[str]:
@@ -163,26 +225,54 @@ async def create_chat_completion(request: ChatCompletionRequest) -> ChatCompleti
                 "object": "chat.completion.chunk",
                 "created": created,
                 "model": request.model,
-                "choices": [{"index": 0, "delta": {"role": "assistant", "content": ""}, "finish_reason": None}],
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {"role": "assistant", "content": "", "refusal": None},
+                        "logprobs": None,
+                        "finish_reason": None,
+                    }
+                ],
             }
         )
-        async for delta in _text_deltas(messages):
+        try:
+            async for delta in _text_deltas(messages):
+                yield _sse_data(
+                    {
+                        "id": completion_id,
+                        "object": "chat.completion.chunk",
+                        "created": created,
+                        "model": request.model,
+                        "choices": [
+                            {
+                                "index": 0,
+                                "delta": {"content": delta},
+                                "logprobs": None,
+                                "finish_reason": None,
+                            }
+                        ],
+                    }
+                )
+        except Exception as exc:
+            logger.error("OpenAI-compatible Chat Completion stream failed: {}", exc)
             yield _sse_data(
                 {
-                    "id": completion_id,
-                    "object": "chat.completion.chunk",
-                    "created": created,
-                    "model": request.model,
-                    "choices": [{"index": 0, "delta": {"content": delta}, "finish_reason": None}],
+                    "error": {
+                        "message": "Internal server error.",
+                        "type": "server_error",
+                        "param": None,
+                        "code": "internal_error",
+                    }
                 }
             )
+            return
         yield _sse_data(
             {
                 "id": completion_id,
                 "object": "chat.completion.chunk",
                 "created": created,
                 "model": request.model,
-                "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+                "choices": [{"index": 0, "delta": {}, "logprobs": None, "finish_reason": "stop"}],
             }
         )
         yield "data: [DONE]\n\n"
@@ -197,7 +287,6 @@ async def create_chat_completion(request: ChatCompletionRequest) -> ChatCompleti
 @router.post(
     "/responses",
     response_model=ResponsesResponse,
-    response_model_exclude_none=True,
     summary="Create a RAG-backed response",
     description="Supports string input or text-only user/assistant input messages, one configured model alias, and optional SSE streaming.",
     responses={
@@ -226,8 +315,10 @@ async def create_response(request: ResponsesRequest) -> ResponsesResponse | Stre
             created_at=created_at,
             message=ResponseOutputMessage(
                 id=message_id,
+                type="message",
                 status="completed",
-                content=[ResponseOutputText(text=answer)],
+                role="assistant",
+                content=[ResponseOutputText(type="output_text", text=answer, annotations=[])],
             ),
         )
 
@@ -238,13 +329,19 @@ async def create_response(request: ResponsesRequest) -> ResponsesResponse | Stre
             model=request.model,
             created_at=created_at,
             message=None,
-        ).model_dump(exclude_none=True)
+        ).model_dump()
         yield _response_sse({"type": "response.created", "response": initial_response, "sequence_number": sequence_number})
         sequence_number += 1
         yield _response_sse({"type": "response.in_progress", "response": initial_response, "sequence_number": sequence_number})
         sequence_number += 1
 
-        in_progress_message = ResponseOutputMessage(id=message_id, status="in_progress", content=[]).model_dump()
+        in_progress_message = ResponseOutputMessage(
+            id=message_id,
+            type="message",
+            status="in_progress",
+            role="assistant",
+            content=[],
+        ).model_dump()
         yield _response_sse(
             {
                 "type": "response.output_item.added",
@@ -254,7 +351,7 @@ async def create_response(request: ResponsesRequest) -> ResponsesResponse | Stre
             }
         )
         sequence_number += 1
-        empty_part = ResponseOutputText(text="").model_dump()
+        empty_part = ResponseOutputText(type="output_text", text="", annotations=[]).model_dump()
         yield _response_sse(
             {
                 "type": "response.content_part.added",
@@ -268,27 +365,64 @@ async def create_response(request: ResponsesRequest) -> ResponsesResponse | Stre
         sequence_number += 1
 
         text_parts: list[str] = []
-        async for delta in _text_deltas(messages):
-            text_parts.append(delta)
+        try:
+            async for delta in _text_deltas(messages):
+                text_parts.append(delta)
+                yield _response_sse(
+                    {
+                        "type": "response.output_text.delta",
+                        "item_id": message_id,
+                        "output_index": 0,
+                        "content_index": 0,
+                        "delta": delta,
+                        "logprobs": [],
+                        "sequence_number": sequence_number,
+                    }
+                )
+                sequence_number += 1
+        except Exception as exc:
+            logger.error("OpenAI-compatible Responses stream failed: {}", exc)
             yield _response_sse(
                 {
-                    "type": "response.output_text.delta",
-                    "item_id": message_id,
-                    "output_index": 0,
-                    "content_index": 0,
-                    "delta": delta,
-                    "logprobs": [],
+                    "type": "error",
+                    "code": "server_error",
+                    "message": "Internal server error.",
+                    "param": None,
                     "sequence_number": sequence_number,
                 }
             )
             sequence_number += 1
+            partial_text = "".join(text_parts)
+            failed_message = ResponseOutputMessage(
+                id=message_id,
+                type="message",
+                status="incomplete",
+                role="assistant",
+                content=[ResponseOutputText(type="output_text", text=partial_text, annotations=[])],
+            )
+            failed_response = _failed_response(
+                response_id=response_id,
+                model=request.model,
+                created_at=created_at,
+                message=failed_message,
+            ).model_dump()
+            yield _response_sse(
+                {
+                    "type": "response.failed",
+                    "response": failed_response,
+                    "sequence_number": sequence_number,
+                }
+            )
+            return
 
         text = "".join(text_parts)
-        completed_part = ResponseOutputText(text=text).model_dump()
+        completed_part = ResponseOutputText(type="output_text", text=text, annotations=[]).model_dump()
         completed_message = ResponseOutputMessage(
             id=message_id,
+            type="message",
             status="completed",
-            content=[ResponseOutputText(text=text)],
+            role="assistant",
+            content=[ResponseOutputText(type="output_text", text=text, annotations=[])],
         )
         yield _response_sse(
             {
@@ -327,7 +461,7 @@ async def create_response(request: ResponsesRequest) -> ResponsesResponse | Stre
             model=request.model,
             created_at=created_at,
             message=completed_message,
-        ).model_dump(exclude_none=True)
+        ).model_dump()
         yield _response_sse({"type": "response.completed", "response": completed_response, "sequence_number": sequence_number})
 
     return StreamingResponse(

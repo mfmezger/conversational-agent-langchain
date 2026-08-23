@@ -95,8 +95,8 @@ Supported subset:
 
 - Chat Completions: `model`, `messages`, and `stream`; messages use string `content`, `user`/`assistant` roles, and end with a `user` message.
 - Responses: `model`, `input`, and `stream`; input is either a string or the same text-message history subset.
-- Text answers only. Chat streams terminate with `[DONE]`; Responses streams terminate after `response.completed`.
-- OpenAI-style error envelopes for invalid `/v1` requests. Token usage is omitted because the RAG graph does not provide reliable totals.
+- Text answers only. Successful Chat streams terminate with `[DONE]`; successful Responses streams terminate after `response.completed`. Mid-stream failures emit SDK-compatible error events without a success terminator.
+- OpenAI-style error envelopes for invalid `/v1` requests. Because the RAG graph does not provide reliable token totals, Chat usage is omitted and Responses usage is `null`.
 
 Unsupported fields are rejected rather than ignored. This includes system/developer/tool messages, `instructions`, tools and function calling, multimodal content, structured outputs, previous-response or conversation state, sampling/token controls, storage, and metadata. The compatibility responses contain the generated answer, not the RAG citation metadata available from `/rag`.
 

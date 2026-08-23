@@ -54,6 +54,10 @@ app = FastAPI()
 app.openapi = my_schema
 
 
+def _is_openai_path(path: str) -> bool:
+    return path == "/v1" or path.startswith("/v1/")
+
+
 def _openai_error_response(*, status_code: int, message: str, error_type: str, param: str | None, code: str) -> JSONResponse:
     return JSONResponse(
         status_code=status_code,
@@ -83,7 +87,7 @@ async def openai_api_exception_handler(_request: Request, exc: openai_compat.Ope
 @app.exception_handler(StarletteHTTPException)
 async def http_error_exception_handler(request: Request, exc: StarletteHTTPException) -> Response:
     """Use OpenAI error envelopes for HTTP errors below the compatibility prefix."""
-    if not request.url.path.startswith("/v1/"):
+    if not _is_openai_path(request.url.path):
         return await http_exception_handler(request, exc)
 
     return _openai_error_response(
@@ -98,7 +102,7 @@ async def http_error_exception_handler(request: Request, exc: StarletteHTTPExcep
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> Response:
     """Use OpenAI validation envelopes only below the compatibility prefix."""
-    if not request.url.path.startswith("/v1/"):
+    if not _is_openai_path(request.url.path):
         return await request_validation_exception_handler(request, exc)
 
     error = exc.errors()[0]
@@ -119,7 +123,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Global exception handler."""
     logger.error(f"Global error: {exc}")
-    if request.url.path.startswith("/v1/"):
+    if _is_openai_path(request.url.path):
         return _openai_error_response(
             status_code=500,
             message="Internal server error.",
