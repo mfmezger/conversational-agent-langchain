@@ -24,6 +24,7 @@ This is a Rest-Backend for a Conversational Agent, that allows you to embed Docu
   - [Installation \& Development Backend](#installation--development-backend)
     - [Load Demo Data](#load-demo-data)
   - [Development Frontend](#development-frontend)
+  - [Docker Image Validation](#docker-image-validation)
   - [Qdrant API Key](#qdrant-api-key)
   - [Testing the API](#testing-the-api)
   - [Star History](#star-history)
@@ -190,6 +191,10 @@ To run the Frontend use this command in the root directory:
 uv run streamlit run frontend/assistant.py --theme.base="dark"
 ```
 
+
+## Docker Image Validation
+
+The Docker image workflow authenticates to `dhi.io` with the `DOCKER_USERNAME` and `DOCKER_PASSWORD` repository Actions secrets. Add secrets with the same names under **Settings → Secrets and variables → Dependabot** so Dependabot pull requests can run the authenticated image builds. Fork pull requests never receive these credentials; their workflow reports that image validation was not run and requires a maintainer to validate the commit from a trusted repository branch.
 
 ## Qdrant API Key
 To use the Qdrant API you need to set the correct parameters in the .env file.

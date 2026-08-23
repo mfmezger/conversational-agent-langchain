@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
 
 FROM dhi.io/uv:0.12.5-debian13@sha256:c804efbe6ad0091c93fabafd6ee0af4273a2e3e436b8bb86c7e45c9a58fd93d3 AS uv
 
