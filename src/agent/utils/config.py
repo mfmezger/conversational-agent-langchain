@@ -38,6 +38,3 @@ class Config(BaseSettings):
     qdrant_prefer_grpc: bool = False
     phoenix_collector_endpoint: str = "http://phoenix:4318/v1/traces"
     qdrant_collection_name: str = "default"
-
-
-config = Config()
