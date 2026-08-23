@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 from openai import APIError, OpenAI
+from starlette.requests import ClientDisconnect
 
 pytestmark = pytest.mark.contract
 
@@ -73,6 +74,45 @@ def fake_graph(app, monkeypatch: pytest.MonkeyPatch) -> FakeGraph:
 @pytest.fixture
 def sdk_client(client, fake_graph: FakeGraph) -> OpenAI:
     return OpenAI(api_key="test-key", base_url="http://testserver/v1", http_client=client)
+
+
+async def _request_with_send_failure(app: Any, path: str, payload: dict[str, Any], failure_marker: str) -> list[str]:
+    request_body = json.dumps(payload).encode()
+    request_received = False
+    sent_bodies: list[str] = []
+
+    async def receive() -> dict[str, Any]:
+        nonlocal request_received
+        if not request_received:
+            request_received = True
+            return {"type": "http.request", "body": request_body, "more_body": False}
+        return {"type": "http.disconnect"}
+
+    async def send(message: dict[str, Any]) -> None:
+        if message["type"] != "http.response.body":
+            return
+        body = message.get("body", b"").decode()
+        if failure_marker in body:
+            raise OSError("client disconnected")
+        sent_bodies.append(body)
+
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0", "spec_version": "2.4"},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": path,
+        "raw_path": path.encode(),
+        "query_string": b"",
+        "root_path": "",
+        "headers": [(b"host", b"testserver"), (b"content-type", b"application/json")],
+        "client": ("testclient", 50000),
+        "server": ("testserver", 80),
+    }
+    with pytest.raises(ClientDisconnect):
+        await app(scope, receive, send)
+    return sent_bodies
 
 
 def test_openapi_documents_compatibility_subset(app) -> None:
@@ -453,3 +493,41 @@ def test_responses_stream_failure_uses_official_sdk_events(client, sdk_client: O
             stream.get_final_response()
     assert stream_events[-1].type == "response.failed"
     assert fake_graph.stream_closed is True
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("path", "payload", "failure_marker", "forbidden_markers"),
+    [
+        (
+            "/v1/chat/completions",
+            {
+                "model": "rag-test",
+                "messages": [{"role": "user", "content": "Question"}],
+                "stream": True,
+            },
+            '"content":"RAG "',
+            ('"error"', '"finish_reason":"stop"', "[DONE]"),
+        ),
+        (
+            "/v1/responses",
+            {"model": "rag-test", "input": "Question", "stream": True},
+            '"type":"response.output_text.delta"',
+            ('"type":"error"', '"type":"response.failed"', '"type":"response.completed"'),
+        ),
+    ],
+)
+async def test_asgi_send_failure_closes_upstream_without_terminal_events(
+    app,
+    fake_graph: FakeGraph,
+    path: str,
+    payload: dict[str, Any],
+    failure_marker: str,
+    forbidden_markers: tuple[str, ...],
+) -> None:
+    sent_bodies = await _request_with_send_failure(app, path, payload, failure_marker)
+
+    assert fake_graph.stream_closed is True
+    body = "".join(sent_bodies)
+    assert failure_marker not in body
+    assert all(marker not in body for marker in forbidden_markers)
