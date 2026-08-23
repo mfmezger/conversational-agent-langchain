@@ -1,18 +1,35 @@
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm
+# syntax=docker/dockerfile:1
 
-# Set working directory
+FROM dhi.io/uv:0.12.5-debian13@sha256:c804efbe6ad0091c93fabafd6ee0af4273a2e3e436b8bb86c7e45c9a58fd93d3 AS uv
+
+FROM dhi.io/python:3.13.15-debian13-dev@sha256:2167b6b86500f8e40f0e09fa1453a4f62cc7bbd4af2398907ade6af4302d7b83 AS builder
+
+COPY --from=uv /usr/local/bin/uv /usr/local/bin/uvx /usr/local/bin/
+
+ENV UV_PYTHON_DOWNLOADS=0 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
+
 WORKDIR /app
 
-# Copy dependency files first for caching
 COPY frontend/pyproject.toml frontend/uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-project
 
-# Install dependencies
-RUN uv sync --frozen --no-dev
+FROM dhi.io/python:3.13.15-debian13@sha256:c8f52628204884bf35cdff4d57eb3d58fd92fdadd3cc1f47eaa1c4efcead9090
 
-# Copy the rest of the frontend code
-COPY frontend/ .
+ENV UV_PYTHON_DOWNLOADS=0 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/app/.venv/bin:$PATH" \
+    HOME=/tmp
 
-# Expose port
+COPY --from=builder --chown=nonroot:nonroot /app/.venv /app/.venv
+COPY --chown=nonroot:nonroot frontend/assistant.py frontend/client.py /app/
+
+USER nonroot
+WORKDIR /app
+
 EXPOSE 8501
 
-CMD ["uv", "run", "streamlit", "run", "assistant.py", "--theme.base=dark"]
+ENTRYPOINT ["/app/.venv/bin/streamlit", "run", "/app/assistant.py", "--server.address=0.0.0.0", "--server.port=8501", "--server.headless=true", "--theme.base=dark"]

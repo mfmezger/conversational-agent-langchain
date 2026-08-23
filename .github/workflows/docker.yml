@@ -1,0 +1,49 @@
+name: Docker images
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hardened Images
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: echo "$DOCKER_PASSWORD" | docker login dhi.io --username "$DOCKER_USERNAME" --password-stdin
+
+      - name: Build backend image
+        run: docker build --pull --tag conversational-agent-backend:test .
+
+      - name: Build frontend image
+        run: docker build --pull --file Dockerfile.frontend --tag conversational-agent-frontend:test .
+
+      - name: Verify runtime users and Python environments
+        run: |
+          test "$(docker image inspect --format '{{.Config.User}}' conversational-agent-backend:test)" = "nonroot"
+          test "$(docker image inspect --format '{{.Config.User}}' conversational-agent-frontend:test)" = "nonroot"
+          docker run --rm --entrypoint /app/.venv/bin/python conversational-agent-backend:test \
+            -c 'import importlib.util; import fastembed, onnxruntime, pypdfium2, uvicorn; assert importlib.util.find_spec("agent.api") is not None'
+          docker run --rm --entrypoint /app/.venv/bin/python conversational-agent-frontend:test \
+            -c 'import httpx, streamlit; import client'
+
+      - name: Smoke test frontend startup
+        run: |
+          container_id=$(docker run --detach --publish 127.0.0.1:8501:8501 conversational-agent-frontend:test)
+          trap 'docker logs "$container_id"; docker rm --force "$container_id"' EXIT
+          ready=false
+          for _ in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:8501/ >/dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" = true
