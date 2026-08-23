@@ -194,7 +194,7 @@ uv run streamlit run frontend/assistant.py --theme.base="dark"
 
 ## Docker Image Validation
 
-The Docker image workflow authenticates to `dhi.io` with the `DOCKER_USERNAME` and `DOCKER_PASSWORD` repository Actions secrets. Add secrets with the same names under **Settings → Secrets and variables → Dependabot** so Dependabot pull requests can run the authenticated image builds. Fork pull requests never receive these credentials; their workflow reports that image validation was not run and requires a maintainer to validate the commit from a trusted repository branch.
+The Docker image workflow authenticates to `dhi.io` with the `DOCKER_USERNAME` and `DOCKER_PASSWORD` repository Actions secrets. Add secrets with the same names under **Settings → Secrets and variables → Dependabot** so Dependabot pull requests can run the authenticated image builds. Fork pull requests never receive these credentials; their image-validation job fails before checkout and requires a maintainer to push the commit to a trusted branch in this repository.
 
 ## Qdrant API Key
 To use the Qdrant API you need to set the correct parameters in the .env file.

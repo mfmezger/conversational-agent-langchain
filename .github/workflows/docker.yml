@@ -29,10 +29,20 @@ permissions:
 jobs:
   build:
     name: Build and smoke test DHI images
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
 
     steps:
+      - name: Reject fork pull requests before validation
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::error title=DHI validation required::Fork pull requests cannot receive dhi.io credentials. Push this commit to a trusted same-repository branch for validation."
+          {
+            echo "### Docker Hardened Images validation is required"
+            echo
+            echo "This fork pull request cannot receive dhi.io credentials, so validation cannot run here. A maintainer must push the commit to a trusted branch in this repository."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Verify DHI credentials are configured
@@ -149,17 +159,3 @@ jobs:
             sleep 1
           done
           test "$ready" = true
-
-  fork-notice:
-    name: DHI validation not run (fork PR)
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
-    runs-on: ubuntu-latest
-    steps:
-      - name: Explain trusted validation requirement
-        run: |
-          echo "::notice title=DHI validation not run::Fork pull requests do not receive dhi.io credentials. No Docker image was built or validated. A maintainer must run the commit from a trusted repository branch."
-          {
-            echo "### Docker Hardened Images validation was not run"
-            echo
-            echo "This is a fork pull request, so no dhi.io credentials were provided and no image was built. A maintainer must validate the commit from a trusted repository branch."
-          } >> "$GITHUB_STEP_SUMMARY"
