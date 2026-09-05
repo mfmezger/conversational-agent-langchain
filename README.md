@@ -16,6 +16,7 @@ This is a Rest-Backend for a Conversational Agent, that allows you to embed Docu
   - [LLMs and Backend Providers](#llms-and-backend-providers)
   - [Quickstart](#quickstart)
   - [Project Description](#project-description)
+  - [OpenAI-compatible API subset](#openai-compatible-api-subset)
   - [What is RAG?](#what-is-rag)
   - [Tracing](#tracing)
   - [Semantic Search](#semantic-search)
@@ -76,6 +77,30 @@ Then start the system with
 
 ## Project Description
 This project is a conversational rag agent that uses Google Gemini Large Language Models to generate responses to user queries. The agent also includes a vector database and a REST API built with FastAPI.
+
+## OpenAI-compatible API subset
+
+The backend exposes `POST /v1/chat/completions` and `POST /v1/responses` for clients that use the OpenAI HTTP contract. Both endpoints support non-streaming and SSE streaming and run the same LangGraph RAG pipeline as `/rag`.
+
+Configure the public model alias and collection independently:
+
+```bash
+OPENAI_COMPATIBLE_MODEL=rag
+QDRANT_COLLECTION_NAME=default
+```
+
+The request `model` must equal `OPENAI_COMPATIBLE_MODEL`. It never selects a Qdrant collection; retrieval always uses the server-controlled `QDRANT_COLLECTION_NAME`.
+
+Supported subset:
+
+- Chat Completions: `model`, `messages`, and `stream`; messages use string `content`, `user`/`assistant` roles, and end with a `user` message.
+- Responses: `model`, `input`, and `stream`; input is either a string or the same text-message history subset.
+- Text answers only. Successful Chat streams terminate with `[DONE]`; successful Responses streams terminate after `response.completed`. Mid-stream failures emit SDK-compatible error events without a success terminator.
+- OpenAI-style error envelopes for invalid `/v1` requests. Because the RAG graph does not provide reliable token totals, Chat usage is omitted and Responses usage is `null`.
+
+Unsupported fields are rejected rather than ignored. This includes system/developer/tool messages, `instructions`, tools and function calling, multimodal content, structured outputs, previous-response or conversation state, sampling/token controls, storage, and metadata. The compatibility responses contain the generated answer, not the RAG citation metadata available from `/rag`.
+
+For the Python SDK, set `base_url` to the backend's `/v1` URL and use the configured alias as `model`.
 
 ## What is RAG?
 Retrieval-Augmented Generation (RAG) is a technique that enhances Large Language Models (LLMs) by providing them with relevant information from an external knowledge base. Instead of relying solely on its pre-trained knowledge, the model retrieves specific documents related to the user's query and uses them as context to generate more accurate, up-to-date, and domain-specific responses. This approach reduces hallucinations and allows the model to answer questions about private or proprietary data.
