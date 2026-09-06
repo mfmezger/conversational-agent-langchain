@@ -1,3 +1,5 @@
+import subprocess
+import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -6,6 +8,21 @@ from fastapi import FastAPI
 from agent.api import lifespan
 from agent.utils.config import Config
 from agent.utils.vdb import VDBResources
+
+
+def test_import_does_not_construct_application_resources() -> None:
+    code = """
+from unittest.mock import patch
+with (
+    patch('agent.utils.config.Config', side_effect=AssertionError('Config constructed')),
+    patch('agent.backend.graph.Graph', side_effect=AssertionError('Graph constructed')),
+    patch('qdrant_client.QdrantClient', side_effect=AssertionError('sync client constructed')),
+    patch('qdrant_client.AsyncQdrantClient', side_effect=AssertionError('async client constructed')),
+    patch('langchain_qdrant.FastEmbedSparse', side_effect=AssertionError('sparse embeddings constructed')),
+):
+    import agent.api
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 @pytest.mark.anyio

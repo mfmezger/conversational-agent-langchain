@@ -19,6 +19,7 @@ class Config(BaseSettings):
 
     # Model Configuration
     model_name: str = "gemini/gemini-2.5-flash"
+    openai_compatible_model: str = "rag"
     embedding_provider: str = "google"
     embedding_model_name: str = "gemini-embedding-002"
     embedding_size: int = 768
