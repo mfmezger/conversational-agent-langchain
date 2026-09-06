@@ -26,6 +26,37 @@ class ChatMessages(BaseModel):
     content: str = Field(default=..., title="Content", description="The content of the message.")
 
 
+class OpenAIChatMessage(BaseModel):
+    """The Chat Messages Model for OpenAI."""
+
+    role: str = Field(
+        ...,
+        title="Role",
+        description="The role of the sender can be either user, assistant or system.",
+    )
+    content: str = Field(default=..., title="Content", description="The content of the message.")
+
+
+class OpenAIChatRequest(BaseModel):
+    """Request for the OpenAI compatible chat completions endpoint."""
+
+    model: str = Field(
+        default="default",
+        title="Model",
+        description="ID of the model to use.",
+    )
+    messages: list[OpenAIChatMessage] = Field(
+        ...,
+        title="Messages",
+        description="A list of messages comprising the conversation so far.",
+    )
+    stream: bool | None = Field(
+        default=False,
+        title="Stream",
+        description="If set, partial message deltas will be sent, like in ChatGPT.",
+    )
+
+
 class RAGRequest(BaseModel):
     """Request for the QA endpoint."""
 
