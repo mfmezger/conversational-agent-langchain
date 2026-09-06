@@ -1,0 +1,163 @@
+name: Docker images
+
+on:
+  push:
+    paths:
+      - ".dockerignore"
+      - ".github/workflows/docker.yml"
+      - "Dockerfile*"
+      - "README.md"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "src/**"
+      - "frontend/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".dockerignore"
+      - ".github/workflows/docker.yml"
+      - "Dockerfile*"
+      - "README.md"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "src/**"
+      - "frontend/**"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and smoke test DHI images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Reject fork pull requests before validation
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::error title=DHI validation required::Fork pull requests cannot receive dhi.io credentials. Push this commit to a trusted same-repository branch for validation."
+          {
+            echo "### Docker Hardened Images validation is required"
+            echo
+            echo "This fork pull request cannot receive dhi.io credentials, so validation cannot run here. A maintainer must push the commit to a trusted branch in this repository."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Verify DHI credentials are configured
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          if [[ -z "$DOCKER_USERNAME" || -z "$DOCKER_PASSWORD" ]]; then
+            echo "::error title=DHI credentials unavailable::Configure DOCKER_USERNAME and DOCKER_PASSWORD as Actions secrets. Dependabot PRs require Dependabot secrets with the same names."
+            {
+              echo "### Docker image validation could not start"
+              echo
+              echo "The required dhi.io credentials are unavailable. Configure DOCKER_USERNAME and DOCKER_PASSWORD as repository Actions secrets and, for Dependabot PRs, as Dependabot secrets with the same names."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Log in to Docker Hardened Images
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: echo "$DOCKER_PASSWORD" | docker login dhi.io --username "$DOCKER_USERNAME" --password-stdin
+
+      - name: Build backend image
+        run: docker build --pull --tag conversational-agent-backend:test .
+
+      - name: Build frontend image
+        run: docker build --pull --file Dockerfile.frontend --tag conversational-agent-frontend:test .
+
+      - name: Verify runtime users and Python environments
+        run: |
+          test "$(docker image inspect --format '{{.Config.User}}' conversational-agent-backend:test)" = "nonroot"
+          test "$(docker image inspect --format '{{.Config.User}}' conversational-agent-frontend:test)" = "nonroot"
+          docker run --rm --entrypoint /app/.venv/bin/python conversational-agent-backend:test \
+            -c 'import fastembed, onnxruntime, pypdfium2, uvicorn'
+          docker run --rm --entrypoint /app/.venv/bin/python conversational-agent-frontend:test \
+            -c 'import httpx, streamlit; import client'
+
+      - name: Smoke test backend startup
+        run: |
+          network_name="dhi-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          backend_name="dhi-backend-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          qdrant_name="dhi-qdrant-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          cleanup() {
+            result=$?
+            if [[ $result -ne 0 ]]; then
+              echo "::group::Backend logs"
+              docker logs "$backend_name" 2>&1 || true
+              echo "::endgroup::"
+              echo "::group::Qdrant logs"
+              docker logs "$qdrant_name" 2>&1 || true
+              echo "::endgroup::"
+            fi
+            docker rm --force "$backend_name" "$qdrant_name" >/dev/null 2>&1 || true
+            docker network rm "$network_name" >/dev/null 2>&1 || true
+            exit "$result"
+          }
+          trap cleanup EXIT
+
+          docker network create "$network_name"
+          docker run --detach --name "$qdrant_name" --network "$network_name" --network-alias qdrant \
+            --publish 127.0.0.1::6333 \
+            qdrant/qdrant:v1.18.3@sha256:0bd98fa7977f1e75694779359ca4e212822e5a71334e28421182f72f209d5286
+
+          qdrant_port=$(docker port "$qdrant_name" 6333/tcp | awk -F: '{print $NF}')
+          qdrant_ready=false
+          for _ in $(seq 1 60); do
+            if curl --fail --silent --show-error "http://127.0.0.1:${qdrant_port}/readyz" >/dev/null; then
+              qdrant_ready=true
+              break
+            fi
+            sleep 1
+          done
+          test "$qdrant_ready" = true
+
+          docker run --detach --name "$backend_name" --network "$network_name" \
+            --publish 127.0.0.1::8001 \
+            --env QDRANT_URL=http://qdrant \
+            --env PHOENIX_COLLECTOR_ENDPOINT=http://127.0.0.1:4318/v1/traces \
+            conversational-agent-backend:test
+
+          backend_port=$(docker port "$backend_name" 8001/tcp | awk -F: '{print $NF}')
+          backend_ready=false
+          for _ in $(seq 1 60); do
+            if curl --fail --silent --show-error "http://127.0.0.1:${backend_port}/" | grep --quiet "Welcome to the RAG Backend"; then
+              backend_ready=true
+              break
+            fi
+            sleep 1
+          done
+          test "$backend_ready" = true
+
+      - name: Smoke test frontend startup
+        run: |
+          container_id=$(docker run --detach --publish 127.0.0.1::8501 conversational-agent-frontend:test)
+          cleanup() {
+            result=$?
+            if [[ $result -ne 0 ]]; then
+              docker logs "$container_id" 2>&1 || true
+            fi
+            docker rm --force "$container_id" >/dev/null 2>&1 || true
+            exit "$result"
+          }
+          trap cleanup EXIT
+
+          frontend_port=$(docker port "$container_id" 8501/tcp | awk -F: '{print $NF}')
+          ready=false
+          for _ in $(seq 1 30); do
+            if curl --fail --silent --show-error "http://127.0.0.1:${frontend_port}/" >/dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" = true

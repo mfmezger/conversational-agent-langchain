@@ -1,21 +1,40 @@
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+# syntax=docker/dockerfile:1@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
 
-# Enable bytecode compilation (faster startup)
-ENV UV_COMPILE_BYTECODE=1
+FROM dhi.io/uv:0.12.5-debian13@sha256:c804efbe6ad0091c93fabafd6ee0af4273a2e3e436b8bb86c7e45c9a58fd93d3 AS uv
 
-# Copy from cache instead of linking (required for Docker layer caching)
-ENV UV_LINK_MODE=copy
+FROM dhi.io/python:3.13.15-debian13-dev@sha256:2167b6b86500f8e40f0e09fa1453a4f62cc7bbd4af2398907ade6af4302d7b83 AS builder
 
-# copy python installation files.
-COPY ./pyproject.toml ./pyproject.toml
-COPY ./README.md ./README.md
-COPY ./uv.lock ./uv.lock
+COPY --from=uv /usr/local/bin/uv /usr/local/bin/uvx /usr/local/bin/
 
-# installing python dependencies
-RUN uv sync --frozen --no-install-project
+ENV UV_PYTHON_DOWNLOADS=0 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
 
-COPY ./src /src
+WORKDIR /app
 
-RUN uv sync --frozen
+COPY pyproject.toml uv.lock README.md ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-project --no-editable
 
-ENTRYPOINT ["uv", "run", "uvicorn", "src.agent.api:app", "--host", "0.0.0.0", "--port", "8001"]
+COPY src ./src
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-editable \
+    && mkdir /app/work
+
+FROM dhi.io/python:3.13.15-debian13@sha256:c8f52628204884bf35cdff4d57eb3d58fd92fdadd3cc1f47eaa1c4efcead9090
+
+ENV UV_PYTHON_DOWNLOADS=0 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/app/.venv/bin:$PATH" \
+    HOME=/app/work
+
+COPY --from=builder --chown=nonroot:nonroot /app/.venv /app/.venv
+COPY --from=builder --chown=nonroot:nonroot /app/work /app/work
+
+USER nonroot
+WORKDIR /app/work
+
+EXPOSE 8001
+
+ENTRYPOINT ["/app/.venv/bin/uvicorn", "agent.api:app", "--host", "0.0.0.0", "--port", "8001"]
