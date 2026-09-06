@@ -13,6 +13,7 @@ from agent.backend.prompts import REPHRASE_TEMPLATE
 from agent.backend.state import AgentState
 from agent.utils.config import Config
 from agent.utils.retriever import get_retriever
+from agent.utils.vdb import VDBResources
 
 
 def get_chat_history(messages: Sequence[BaseMessage]) -> list:
@@ -24,13 +25,26 @@ def get_chat_history(messages: Sequence[BaseMessage]) -> list:
     ]
 
 
+def _get_vdb_resources(config: RunnableConfig) -> VDBResources:
+    """Read explicitly propagated VDB resources from the runnable config."""
+    resources = config.get("configurable", {}).get("vdb_resources")
+    if not isinstance(resources, VDBResources):
+        msg = "VDB resources are required in RunnableConfig.configurable"
+        raise TypeError(msg)
+    return resources
+
+
 def retrieve_documents(state: AgentState, config: RunnableConfig, *, cfg: Config) -> AgentState:
     """Retrieve documents from the retriever."""
     # Dynamic k: Increase k if retrying
     retry_count = state.get("retry_count", 0)
     k = cfg.retrieval_k if retry_count == 0 else cfg.retrieval_k_retry
 
-    retriever = get_retriever(k=k, collection_name=config["metadata"]["collection_name"])
+    retriever = get_retriever(
+        resources=_get_vdb_resources(config),
+        k=k,
+        collection_name=config["metadata"]["collection_name"],
+    )
     messages = convert_to_messages(messages=state["messages"])
     # If query was rewritten, use state["query"], otherwise use last message
     query = state.get("query") or messages[-1].content
@@ -48,7 +62,11 @@ def retrieve_documents_with_chat_history(state: AgentState, config: RunnableConf
     retry_count = state.get("retry_count", 0)
     k = cfg.retrieval_k if retry_count == 0 else cfg.retrieval_k_retry
 
-    retriever = get_retriever(k=k, collection_name=config["metadata"]["collection_name"])
+    retriever = get_retriever(
+        resources=_get_vdb_resources(config),
+        k=k,
+        collection_name=config["metadata"]["collection_name"],
+    )
     model = llm.with_config(tags=["nostream"])
 
     condense_queston_prompt = PromptTemplate.from_template(REPHRASE_TEMPLATE)

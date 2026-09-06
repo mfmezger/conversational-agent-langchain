@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import importlib
 import json
 from collections.abc import AsyncIterator
 from types import SimpleNamespace
@@ -62,12 +61,12 @@ class FakeGraph:
 
 
 @pytest.fixture
-def fake_graph(app, monkeypatch: pytest.MonkeyPatch) -> FakeGraph:
-    module = importlib.import_module("agent.routes.openai_compat")
+def fake_graph(client, monkeypatch: pytest.MonkeyPatch) -> FakeGraph:
     graph = FakeGraph()
-    monkeypatch.setattr(module, "graph", graph)
-    monkeypatch.setattr(module.settings, "openai_compatible_model", "rag-test")
-    monkeypatch.setattr(module.settings, "qdrant_collection_name", "configured-collection")
+    monkeypatch.setattr(client.app.state, "graph", graph)
+    config = client.app.state.vdb_resources.config
+    monkeypatch.setattr(config, "openai_compatible_model", "rag-test")
+    monkeypatch.setattr(config, "qdrant_collection_name", "configured-collection")
     return graph
 
 
@@ -169,7 +168,9 @@ def test_chat_completion_contract(client, fake_graph: FakeGraph) -> None:
         }
     ]
     assert "usage" not in body
-    assert fake_graph.configs == [{"metadata": {"collection_name": "configured-collection"}}]
+    assert len(fake_graph.configs) == 1
+    assert fake_graph.configs[0]["metadata"] == {"collection_name": "configured-collection"}
+    assert fake_graph.configs[0]["configurable"]["vdb_resources"] is client.app.state.vdb_resources
     assert fake_graph.payloads[0]["messages"][-1] == {"role": "user", "content": "Current question"}
 
 
@@ -189,7 +190,9 @@ def test_chat_completion_stream_contract(client, fake_graph: FakeGraph) -> None:
     assert chunks[-1]["choices"][0]["finish_reason"] == "stop"
     assert chunks[1]["choices"][0]["delta"]["content"] == "RAG "
     assert chunks[2]["choices"][0]["delta"]["content"] == "answer"
-    assert fake_graph.configs == [{"metadata": {"collection_name": "configured-collection"}}]
+    assert len(fake_graph.configs) == 1
+    assert fake_graph.configs[0]["metadata"] == {"collection_name": "configured-collection"}
+    assert fake_graph.configs[0]["configurable"]["vdb_resources"] is client.app.state.vdb_resources
 
 
 def test_responses_contract_with_string_input(client, fake_graph: FakeGraph) -> None:
@@ -224,7 +227,9 @@ def test_responses_contract_with_string_input(client, fake_graph: FakeGraph) -> 
     assert body["completed_at"] is not None
     for field, value in required_fields.items():
         assert body[field] == value
-    assert fake_graph.configs == [{"metadata": {"collection_name": "configured-collection"}}]
+    assert len(fake_graph.configs) == 1
+    assert fake_graph.configs[0]["metadata"] == {"collection_name": "configured-collection"}
+    assert fake_graph.configs[0]["configurable"]["vdb_resources"] is client.app.state.vdb_resources
 
 
 def test_responses_stream_contract(client, fake_graph: FakeGraph) -> None:
@@ -257,7 +262,9 @@ def test_responses_stream_contract(client, fake_graph: FakeGraph) -> None:
         "response.completed",
     ]
     assert response.text.endswith("\n\n")
-    assert fake_graph.configs == [{"metadata": {"collection_name": "configured-collection"}}]
+    assert len(fake_graph.configs) == 1
+    assert fake_graph.configs[0]["metadata"] == {"collection_name": "configured-collection"}
+    assert fake_graph.configs[0]["configurable"]["vdb_resources"] is client.app.state.vdb_resources
 
 
 @pytest.mark.parametrize(

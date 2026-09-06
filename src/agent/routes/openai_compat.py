@@ -3,7 +3,7 @@
 import json
 import time
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from fastapi import APIRouter
@@ -23,12 +23,17 @@ from agent.data_model.openai_compat import (
     ResponsesRequest,
     ResponsesResponse,
 )
-from agent.routes.rag import graph
-from agent.utils.config import Config
+from agent.dependencies import GraphDep, VDBResourcesDep
+
+if TYPE_CHECKING:
+    from langchain_core.runnables import RunnableConfig
+    from langgraph.graph.state import CompiledStateGraph
+
+    from agent.utils.config import Config
+    from agent.utils.vdb import VDBResources
 
 _GENERATION_NODES = {"response_synthesizer", "response_synthesizer_cohere"}
 
-settings = Config()
 router = APIRouter(prefix="/v1", tags=["OpenAI compatibility"])
 
 
@@ -65,8 +70,8 @@ class OpenAIAPIError(Exception):
         self.code = code
 
 
-def _validate_model(model: str) -> None:
-    if model != settings.openai_compatible_model:
+def _validate_model(model: str, config: "Config") -> None:
+    if model != config.openai_compatible_model:
         raise OpenAIAPIError(
             status_code=404,
             message=f"The model `{model}` does not exist or is not available.",
@@ -76,9 +81,12 @@ def _validate_model(model: str) -> None:
         )
 
 
-def _graph_config() -> dict[str, dict[str, str]]:
-    """Use the server-configured collection, independently of the public model alias."""
-    return {"metadata": {"collection_name": settings.qdrant_collection_name}}
+def _graph_config(resources: "VDBResources") -> "RunnableConfig":
+    """Use application-owned resources and the server-configured collection."""
+    return {
+        "metadata": {"collection_name": resources.config.qdrant_collection_name},
+        "configurable": {"vdb_resources": resources},
+    }
 
 
 def _answer_text(chain_result: dict[str, Any]) -> str:
@@ -99,9 +107,9 @@ def _response_messages(request: ResponsesRequest) -> list[dict[str, str]]:
     return [message.model_dump() for message in request.input]
 
 
-async def _answer(messages: list[dict[str, str]]) -> str:
+async def _answer(messages: list[dict[str, str]], *, graph: "CompiledStateGraph", resources: "VDBResources") -> str:
     try:
-        result = await graph.with_config(_graph_config()).ainvoke({"messages": messages})
+        result = await graph.with_config(_graph_config(resources)).ainvoke({"messages": messages})
         return _answer_text(result)
     except Exception as exc:
         raise OpenAIAPIError(
@@ -125,8 +133,8 @@ def _event_text_delta(event: dict[str, Any]) -> str | None:
     return content
 
 
-async def _text_deltas(messages: list[dict[str, str]]) -> AsyncIterator[str]:
-    events = graph.with_config(_graph_config()).astream_events({"messages": messages}, version="v2")
+async def _text_deltas(messages: list[dict[str, str]], *, graph: "CompiledStateGraph", resources: "VDBResources") -> AsyncIterator[str]:
+    events = graph.with_config(_graph_config(resources)).astream_events({"messages": messages}, version="v2")
     failure_in_flight = False
     try:
         async for event in events:
@@ -215,15 +223,15 @@ def _failed_response(*, response_id: str, model: str, created_at: float, message
         500: {"model": OpenAIErrorResponse, "description": "RAG pipeline failure"},
     },
 )
-async def create_chat_completion(request: ChatCompletionRequest) -> ChatCompletionResponse | StreamingResponse:
+async def create_chat_completion(request: ChatCompletionRequest, graph: GraphDep, resources: VDBResourcesDep) -> ChatCompletionResponse | StreamingResponse:
     """Create a text-only Chat Completion using the configured RAG collection."""
-    _validate_model(request.model)
+    _validate_model(request.model, resources.config)
     messages = _request_messages(request)
     completion_id = f"chatcmpl-{uuid4().hex}"
     created = int(time.time())
 
     if not request.stream:
-        answer = await _answer(messages)
+        answer = await _answer(messages, graph=graph, resources=resources)
         return ChatCompletionResponse(
             id=completion_id,
             object="chat.completion",
@@ -256,7 +264,7 @@ async def create_chat_completion(request: ChatCompletionRequest) -> ChatCompleti
                 ],
             }
         )
-        deltas = _text_deltas(messages)
+        deltas = _text_deltas(messages, graph=graph, resources=resources)
         try:
             try:
                 async for delta in deltas:
@@ -324,16 +332,16 @@ async def create_chat_completion(request: ChatCompletionRequest) -> ChatCompleti
         500: {"model": OpenAIErrorResponse, "description": "RAG pipeline failure"},
     },
 )
-async def create_response(request: ResponsesRequest) -> ResponsesResponse | StreamingResponse:
+async def create_response(request: ResponsesRequest, graph: GraphDep, resources: VDBResourcesDep) -> ResponsesResponse | StreamingResponse:
     """Create a text-only Responses API object using the configured RAG collection."""
-    _validate_model(request.model)
+    _validate_model(request.model, resources.config)
     messages = _response_messages(request)
     response_id = f"resp_{uuid4().hex}"
     message_id = f"msg_{uuid4().hex}"
     created_at = time.time()
 
     if not request.stream:
-        answer = await _answer(messages)
+        answer = await _answer(messages, graph=graph, resources=resources)
         return _response_object(
             response_id=response_id,
             model=request.model,
@@ -390,7 +398,7 @@ async def create_response(request: ResponsesRequest) -> ResponsesResponse | Stre
         sequence_number += 1
 
         text_parts: list[str] = []
-        deltas = _text_deltas(messages)
+        deltas = _text_deltas(messages, graph=graph, resources=resources)
         try:
             try:
                 async for delta in deltas:

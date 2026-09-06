@@ -5,9 +5,8 @@ from langchain_community.document_loaders import DirectoryLoader, PyPDFium2Loade
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from loguru import logger
 
-from agent.utils.config import config
 from agent.utils.embeddings import get_embedding_model
-from agent.utils.vdb import generate_collection, init_vdb
+from agent.utils.vdb import VDBResources, generate_collection, init_vdb
 
 load_dotenv()
 
@@ -15,16 +14,19 @@ load_dotenv()
 class EmbeddingManagement:
     """Wrapper for cohere llms."""
 
-    def __init__(self, collection_name: str | None) -> None:
-        """Init the Litellm Service."""
-        self.cfg = config
-
-        if collection_name:
-            self.collection_name = collection_name
+    def __init__(self, collection_name: str, resources: VDBResources) -> None:
+        """Initialize the embedding service with explicit VDB resources."""
+        self.cfg = resources.config
+        self.resources = resources
+        self.collection_name = collection_name
 
         embedding = get_embedding_model(self.cfg)
 
-        self.vector_db = init_vdb(collection_name=self.collection_name, embedding=embedding)
+        self.vector_db = init_vdb(
+            resources=self.resources,
+            collection_name=self.collection_name,
+            embedding=embedding,
+        )
 
     def embed_documents(self, directory: str, file_ending: str = ".pdf") -> None:
         """Embeds the documents in the given directory.
@@ -63,13 +65,23 @@ class EmbeddingManagement:
 
     def create_collection(self, name: str) -> bool:
         """Create a new collection in the Vector Database."""
-        generate_collection(name, self.cfg.embedding_size)
+        generate_collection(
+            client=self.resources.sync_client,
+            collection_name=name,
+            embeddings_size=self.cfg.embedding_size,
+        )
         return True
 
 
 if __name__ == "__main__":
-    query = "Was ist Attention?"
+    import asyncio
 
-    cohere_service = EmbeddingManagement(collection_name="")
+    from agent.utils.config import Config
+    from agent.utils.vdb import create_vdb_resources
 
-    cohere_service.embed_documents(directory="tests/resources/")
+    resources = create_vdb_resources(Config())
+    try:
+        service = EmbeddingManagement(collection_name="default", resources=resources)
+        service.embed_documents(directory="tests/resources/")
+    finally:
+        asyncio.run(resources.close())

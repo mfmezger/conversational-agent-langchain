@@ -6,6 +6,7 @@ from typing import Literal
 from langchain_cohere import ChatCohere
 from langchain_litellm import ChatLiteLLM
 from langgraph.graph import END, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 
 from agent.backend.nodes.generation import generate_response_cohere, generate_response_default
 from agent.backend.nodes.grading import grade_documents
@@ -19,15 +20,12 @@ GEMINI_MODEL_KEY = "gemini"
 COHERE_MODEL_KEY = "cohere_command"
 
 
-settings = Config()
-
-
 class Graph:
     """The LangGraph Graph."""
 
-    def __init__(self) -> None:
+    def __init__(self, config: Config | None = None) -> None:
         """Initialize the Graph."""
-        self.cfg = settings
+        self.cfg = config or Config()
 
         # define models
         self.llm = ChatLiteLLM(model_name=self.cfg.model_name, streaming=True)
@@ -58,7 +56,7 @@ class Graph:
         else:
             return "retriever_with_chat_history"
 
-    def build_graph(self) -> StateGraph:
+    def build_graph(self) -> CompiledStateGraph:
         """Build the graph for the agent."""
         workflow = StateGraph(state_schema=AgentState)
 

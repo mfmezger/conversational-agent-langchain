@@ -1,5 +1,8 @@
 """Main API."""
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 import pyfiglet
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -12,28 +15,42 @@ from openinference.instrumentation.langchain import LangChainInstrumentor
 from phoenix.otel import register
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from agent.backend.graph import Graph
 from agent.routes import collection, delete, embeddings, openai_compat, rag, search
 from agent.utils.config import Config
-from agent.utils.vdb import initialize_all_vector_dbs
-
-load_dotenv(override=True)
-config = Config()
+from agent.utils.vdb import create_vdb_resources, initialize_all_vector_dbs
 
 
-initialize_all_vector_dbs(config=config)
-logger.info("Startup.")
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Own application resources from startup through shutdown."""
+    load_dotenv(override=True)
+    config = Config()
+    resources = create_vdb_resources(config)
+    app.state.vdb_resources = resources
 
-# configure the Phoenix tracer
-tracer_provider = register(
-    project_name="rag",
-    endpoint=config.phoenix_collector_endpoint,
-)
+    try:
+        await initialize_all_vector_dbs(config=config, client=resources.async_client)
+        app.state.graph = Graph(config=config).build_graph()
 
-LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+        tracer_provider = register(
+            project_name="rag",
+            endpoint=config.phoenix_collector_endpoint,
+        )
+        LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
 
-# Show startup message
-f = pyfiglet.figlet_format("Conv Agent", font="alligator")
-logger.info(f"Welcome to\n\n{f}\n\n")
+        logger.info("Startup.")
+        startup_message = pyfiglet.figlet_format("Conv Agent", font="alligator")
+        logger.info(f"Welcome to\n\n{startup_message}\n\n")
+        yield
+    finally:
+        try:
+            resources.sync_client.close()
+        finally:
+            await resources.async_client.close()
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 def my_schema() -> dict:
@@ -50,7 +67,6 @@ def my_schema() -> dict:
     return app.openapi_schema
 
 
-app = FastAPI()
 app.openapi = my_schema
 
 
