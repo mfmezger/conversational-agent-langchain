@@ -5,6 +5,7 @@ from pathlib import Path
 import yaml
 
 WORKFLOW_PATH = Path(__file__).parents[2] / ".github" / "workflows" / "docker.yml"
+DOCKERIGNORE_PATH = Path(__file__).parents[2] / ".dockerignore"
 FORK_CONDITION = "github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository"
 
 
@@ -54,3 +55,18 @@ def test_dependabot_reaches_credential_preflight() -> None:
         "DOCKER_PASSWORD": "${{ secrets.DOCKER_PASSWORD }}",
     }
     assert "Dependabot secrets" in preflight["run"]
+
+
+def test_checkout_does_not_persist_credentials() -> None:
+    """Do not leave checkout credentials in the Docker build workspace."""
+    steps = load_build_job()["steps"]
+    checkout = next(step for step in steps if step.get("uses", "").startswith("actions/checkout@"))
+
+    assert checkout.get("with", {}).get("persist-credentials") is False
+
+
+def test_docker_context_excludes_git_metadata() -> None:
+    """Exclude Git metadata whether .git is a directory or a worktree file."""
+    patterns = DOCKERIGNORE_PATH.read_text(encoding="utf-8").splitlines()
+
+    assert ".git" in patterns
