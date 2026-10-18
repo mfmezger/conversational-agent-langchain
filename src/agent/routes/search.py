@@ -6,16 +6,18 @@ from loguru import logger
 
 from agent.data_model.request_data_model import SearchParams
 from agent.data_model.response_data_model import SearchResponse
+from agent.dependencies import VDBResourcesDep
 from agent.utils.retriever import get_retriever
 
 router = APIRouter()
 
 
 @router.post("/search", tags=["search"], response_model=list[SearchResponse])
-async def search(search: SearchParams) -> list[SearchResponse] | JSONResponse:
+async def search(search: SearchParams, resources: VDBResourcesDep) -> list[SearchResponse] | JSONResponse:
     """Search for documents."""
     logger.info("Searching for Documents")
     retriever = get_retriever(
+        resources=resources,
         collection_name=search.collection_name,
         k=search.k,
     )

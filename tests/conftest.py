@@ -3,7 +3,6 @@ from __future__ import annotations
 import importlib
 import os
 from collections.abc import Iterator, Mapping
-from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Literal
 from unittest.mock import patch
@@ -123,22 +122,35 @@ def block_external_http(monkeypatch: pytest.MonkeyPatch, request: pytest.Fixture
 
 @pytest.fixture(scope="session")
 def app() -> Iterator[FastAPI]:
-    """Import the FastAPI app with expensive startup side effects patched out."""
-    with ExitStack() as stack:
-        stack.enter_context(patch("agent.utils.vdb.initialize_all_vector_dbs", return_value=None))
-        stack.enter_context(patch("phoenix.otel.register", return_value=None))
-        stack.enter_context(
-            patch("openinference.instrumentation.langchain.LangChainInstrumentor.instrument", return_value=None)
-        )
-
-        module = importlib.import_module("agent.api")
-        yield module.app
+    """Import the FastAPI app without running its lifespan."""
+    module = importlib.import_module("agent.api")
+    yield module.app
 
 
 @pytest.fixture
 def client(app: FastAPI) -> Iterator[TestClient]:
-    with TestClient(app) as test_client:
-        yield test_client
+    """Run the app with process resources replaced by network-free fakes."""
+    from unittest.mock import AsyncMock, MagicMock
+
+    from agent.utils.config import Config
+    from agent.utils.vdb import VDBResources
+
+    resources = VDBResources(
+        config=Config(),
+        sync_client=MagicMock(),
+        async_client=AsyncMock(),
+        sparse_embeddings=MagicMock(),
+    )
+    with (
+        patch("agent.api.create_vdb_resources", return_value=resources),
+        patch("agent.api.initialize_all_vector_dbs", new_callable=AsyncMock),
+        patch("agent.api.Graph") as graph_cls,
+        patch("agent.api.register", return_value=None),
+        patch("agent.api.LangChainInstrumentor.instrument", return_value=None),
+    ):
+        graph_cls.return_value.build_graph.return_value = MagicMock()
+        with TestClient(app) as test_client:
+            yield test_client
 
 
 @pytest.fixture(scope="session")

@@ -38,17 +38,24 @@ async def test_post_embed_documents_success(mock_write, mock_service_cls, mock_t
     mock_file.filename = "test.pdf"
     mock_file.read = AsyncMock(return_value=b"content")
 
-    response = await post_embed_documents(collection_name="test_collection", files=[mock_file], file_ending=".pdf")
+    resources = MagicMock()
+    response = await post_embed_documents(
+        collection_name="test_collection",
+        files=[mock_file],
+        resources=resources,
+        file_ending=".pdf",
+    )
 
     assert response.status == "success"
     assert response.files == ["test.pdf"]
     mock_write.assert_called_once()
+    mock_service_cls.assert_called_once_with(collection_name="test_collection", resources=resources)
     mock_service_cls.return_value.embed_documents.assert_called_once()
 
 
 async def test_post_embed_documents_no_files() -> None:
     with pytest.raises(HTTPException) as exc:
-        await post_embed_documents(collection_name="test", files=[])
+        await post_embed_documents(collection_name="test", files=[], resources=MagicMock())
 
     assert exc.value.status_code == status.HTTP_400_BAD_REQUEST
     assert exc.value.detail == "No files were uploaded."
@@ -65,7 +72,7 @@ async def test_post_embed_documents_write_error(mock_write, mock_tmp_folder, tmp
     mock_file.read = AsyncMock(return_value=b"content")
 
     with pytest.raises(HTTPException) as exc:
-        await post_embed_documents(collection_name="test", files=[mock_file])
+        await post_embed_documents(collection_name="test", files=[mock_file], resources=MagicMock())
 
     assert exc.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert "file writing error" in exc.value.detail
@@ -85,7 +92,7 @@ async def test_post_embed_documents_embedding_error(mock_write, mock_service_cls
     mock_file.read = AsyncMock(return_value=b"content")
 
     with pytest.raises(HTTPException) as exc:
-        await post_embed_documents(collection_name="test", files=[mock_file])
+        await post_embed_documents(collection_name="test", files=[mock_file], resources=MagicMock())
 
     assert exc.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert "Failed to embed" in exc.value.detail
@@ -103,9 +110,15 @@ async def test_embedd_text_success(mock_aio_open, mock_service_cls, mock_tmp_fol
 
     request = EmbeddTextRequest(text="some text", file_name="test_doc")
 
-    response = await embedd_text(embedding=request, collection_name="test_collection")
+    resources = MagicMock()
+    response = await embedd_text(
+        embedding=request,
+        collection_name="test_collection",
+        resources=resources,
+    )
 
     assert response.status == "success"
     assert response.files == ["test_doc"]
     mock_file.write.assert_called_once_with("some text")
+    mock_service_cls.assert_called_once_with(collection_name="test_collection", resources=resources)
     mock_service_cls.return_value.embed_documents.assert_called_once()

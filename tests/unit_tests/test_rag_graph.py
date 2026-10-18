@@ -3,12 +3,24 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.documents import Document
 
+from agent.utils.config import Config
+from agent.utils.vdb import VDBResources
+
 # Patch reranker and retriever before importing Graph to prevent external connections
 with patch("agent.utils.reranker.get_reranker", return_value=lambda docs, query: docs):
     from agent.backend.graph import Graph
     from agent.backend.state import AgentState, Grade
 
 # --- Tests for Graph Class ---
+
+@pytest.fixture
+def vdb_resources():
+    return VDBResources(
+        config=Config(),
+        sync_client=MagicMock(),
+        async_client=MagicMock(),
+        sparse_embeddings=MagicMock(),
+    )
 
 @pytest.fixture
 def graph_instance():
@@ -55,23 +67,30 @@ def test_route_to_response_synthesizer_cohere(graph_instance):
     assert result == "response_synthesizer_cohere"
 
 @patch("agent.backend.nodes.retrieval.get_retriever")
-def test_retrieve_documents(mock_get_retriever, graph_instance):
+def test_retrieve_documents(mock_get_retriever, graph_instance, vdb_resources):
     mock_retriever = MagicMock()
     mock_retriever.invoke.return_value = [Document(page_content="doc1")]
     mock_get_retriever.return_value = mock_retriever
 
     state = {"messages": [HumanMessage(content="query")]}
-    config = {"metadata": {"collection_name": "test_coll"}}
+    config = {
+        "metadata": {"collection_name": "test_coll"},
+        "configurable": {"vdb_resources": vdb_resources},
+    }
 
     result = retrieve_documents(state, config, cfg=graph_instance.cfg)
 
     assert result["query"] == "query"
     assert len(result["documents"]) == 1
     assert result["documents"][0].page_content == "doc1"
-    mock_get_retriever.assert_called_with(collection_name="test_coll", k=graph_instance.cfg.retrieval_k)
+    mock_get_retriever.assert_called_with(
+        resources=vdb_resources,
+        collection_name="test_coll",
+        k=graph_instance.cfg.retrieval_k,
+    )
 
 @patch("agent.backend.nodes.retrieval.get_retriever")
-def test_retrieve_documents_with_chat_history(mock_get_retriever, graph_instance):
+def test_retrieve_documents_with_chat_history(mock_get_retriever, graph_instance, vdb_resources):
     # Mock the retriever
     mock_retriever = MagicMock()
     mock_retriever.invoke.return_value = [Document(page_content="doc1")]
@@ -121,7 +140,10 @@ def test_retrieve_documents_with_chat_history(mock_get_retriever, graph_instance
                 HumanMessage(content="followup")
             ]
         }
-        config = {"metadata": {"collection_name": "test_coll"}}
+        config = {
+            "metadata": {"collection_name": "test_coll"},
+            "configurable": {"vdb_resources": vdb_resources},
+        }
 
         result = retrieve_documents_with_chat_history(state, config, cfg=graph_instance.cfg, llm=graph_instance.llm)
 
@@ -317,8 +339,8 @@ def test_generate_response(graph_instance):
 
 # --- Tests for RAG Routes ---
 
-@patch("agent.routes.rag.graph")
-def test_rag_question_answer(mock_graph, client):
+def test_rag_question_answer(client):
+    mock_graph = client.app.state.graph
     # Mock the graph.ainvoke method
     mock_graph.with_config.return_value.ainvoke = AsyncMock(return_value={
         "documents": [Document(page_content="doc1", metadata={"source": "test"})],
@@ -337,9 +359,12 @@ def test_rag_question_answer(mock_graph, client):
     assert data["answer"] == "The answer"
     assert len(data["meta_data"]) == 1
     assert data["meta_data"][0]["document"][0] == "doc1"
+    run_config = mock_graph.with_config.call_args.args[0]
+    assert run_config["metadata"]["collection_name"] == "test"
+    assert run_config["configurable"]["vdb_resources"] is client.app.state.vdb_resources
 
-@patch("agent.routes.rag.graph")
-def test_rag_stream(mock_graph, client):
+def test_rag_stream(client):
+    mock_graph = client.app.state.graph
     # Mock the graph.astream_events method
     async def mock_stream(*args, **kwargs):
         yield {

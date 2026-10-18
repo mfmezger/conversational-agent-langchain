@@ -5,31 +5,41 @@ from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
+from langchain_core.runnables import RunnableConfig  # noqa: TC002
 
-from agent.backend.graph import Graph
 from agent.data_model.request_data_model import RAGRequest
 from agent.data_model.response_data_model import QAResponse
-
-graph = Graph().build_graph()
-
+from agent.dependencies import GraphDep, VDBResourcesDep
 
 router = APIRouter()
 
 
 @router.post("/", tags=["rag"])
-async def question_answer(rag: RAGRequest) -> QAResponse:
+async def question_answer(rag: RAGRequest, graph: GraphDep, resources: VDBResourcesDep) -> QAResponse:
     """Answering the Question."""
     messages = [dict(m) for m in rag.messages]
-    chain_result = await graph.with_config({"metadata": {"collection_name": rag.collection_name}}).ainvoke({"messages": messages})
+    run_config: RunnableConfig = {
+        "metadata": {"collection_name": rag.collection_name},
+        "configurable": {"vdb_resources": resources},
+    }
+    chain_result = await graph.with_config(run_config).ainvoke({"messages": messages})
 
     documents = [{"document": [doc.page_content], "metadata": [doc.metadata]} for doc in chain_result["documents"]]
     return QAResponse(answer=chain_result["messages"][-1].content, meta_data=documents)
 
 
 @router.post("/stream", tags=["rag"])
-async def question_answer_stream(rag: RAGRequest) -> StreamingResponse:
+async def question_answer_stream(
+    rag: RAGRequest,
+    graph: GraphDep,
+    resources: VDBResourcesDep,
+) -> StreamingResponse:
     """Stream the Answering."""
     messages = [dict(m) for m in rag.messages]
+    run_config: RunnableConfig = {
+        "metadata": {"collection_name": rag.collection_name},
+        "configurable": {"vdb_resources": resources},
+    }
 
     async def stream() -> AsyncGenerator:
         documents = []
@@ -37,7 +47,7 @@ async def question_answer_stream(rag: RAGRequest) -> StreamingResponse:
         # Yield initial status
         yield json.dumps({"type": "status", "data": "Starting request..."}) + "\n"
 
-        async for chunk in graph.with_config({"metadata": {"collection_name": rag.collection_name}}).astream_events({"messages": messages}, version="v2"):
+        async for chunk in graph.with_config(run_config).astream_events({"messages": messages}, version="v2"):
             # Status updates for Retrieval
             if chunk["event"] == "on_chain_start" and chunk["name"] in ["retriever", "retriever_with_chat_history"]:
                 yield json.dumps({"type": "status", "data": "Searching documents..."}) + "\n"

@@ -1,15 +1,20 @@
-"""Simple Upload script for test data."""
+"""Simple upload script for test data."""
+
+import asyncio
 
 from agent.backend.services.embedding_management import EmbeddingManagement
-
-# from agent.utils.vdb import generate_collection
+from agent.utils.config import Config
+from agent.utils.vdb import create_vdb_resources
 
 
 def main() -> None:
-    """Generating test collection and uploading data for testing."""
-    # generate_collection(collection_name="asdf", embeddings_size=1536)
-    vdb = EmbeddingManagement(collection_name="default")
-    vdb.embed_documents(directory="resources")
+    """Generate a test collection and upload data for testing."""
+    resources = create_vdb_resources(Config())
+    try:
+        service = EmbeddingManagement(collection_name="default", resources=resources)
+        service.embed_documents(directory="resources")
+    finally:
+        asyncio.run(resources.close())
 
 
 if __name__ == "__main__":

@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 from agent.backend.services.embedding_management import EmbeddingManagement
 from agent.data_model.request_data_model import EmbeddTextRequest
 from agent.data_model.response_data_model import EmbeddingResponse
+from agent.dependencies import VDBResourcesDep
 from agent.utils.utility import create_tmp_folder
 
 router = APIRouter()
@@ -40,6 +41,7 @@ async def _write_file_to_disk(file_path: Path, file_content: bytes) -> None:
 async def post_embed_documents(
     collection_name: str,
     files: Annotated[list[UploadFile], File(description="A list of files to be embedded.")],
+    resources: VDBResourcesDep,
     file_ending: str = ".pdf",
 ) -> EmbeddingResponse:
     """Endpoint concurrently processes and embeds multiple uploaded documents.
@@ -81,7 +83,7 @@ async def post_embed_documents(
         ) from e
 
     # Consider running this in a thread if it's a blocking CPU-bound operation
-    service = EmbeddingManagement(collection_name=collection_name)
+    service = EmbeddingManagement(collection_name=collection_name, resources=resources)
     try:
         # This part remains synchronous as per the original code.
         # If embed_documents is I/O bound, it should be made async.
@@ -104,10 +106,14 @@ async def _process_and_write_file(file: UploadFile, file_path: Path) -> None:
 
 
 @router.post("/string/", tags=["embeddings"])
-async def embedd_text(embedding: EmbeddTextRequest, collection_name: str) -> EmbeddingResponse:
+async def embedd_text(
+    embedding: EmbeddTextRequest,
+    collection_name: str,
+    resources: VDBResourcesDep,
+) -> EmbeddingResponse:
     """Embedding text."""
     logger.info("Embedding Text")
-    service = EmbeddingManagement(collection_name=collection_name)
+    service = EmbeddingManagement(collection_name=collection_name, resources=resources)
     tmp_dir = create_tmp_folder()
 
     sanitized_file_name = secure_filename(embedding.file_name + ".txt")
