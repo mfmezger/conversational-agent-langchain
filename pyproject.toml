@@ -96,6 +96,7 @@ omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 addopts = "--strict-markers --durations=20"
 xfail_strict = true
 markers = [
