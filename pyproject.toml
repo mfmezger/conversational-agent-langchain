@@ -46,6 +46,23 @@ requires = ["uv_build>=0.11.0,<0.12.0"]
 build-backend = "uv_build"
 
 
+# TEMPORARY SECURITY CONSTRAINTS: transitive dependencies, not application APIs.
+# Removal criteria and advisory references: SECURITY-CONSTRAINTS.md.
+# Remove each floor once upstream requirements enforce it; regenerate and audit
+# uv.lock before removal. Do not replace these with dependency overrides.
+[tool.uv]
+constraint-dependencies = [
+    "pyjwt>=2.15.0",
+    "urllib3>=2.8.0",
+    "cryptography>=50.0.0",
+    "pillow>=12.3.0",
+    "pyasn1>=0.6.4",
+    "h2>=4.4.1",
+    "hpack>=4.2.0",
+    "mako>=1.4.2",
+    "multidict>=6.9.1",
+]
+
 [tool.mypy]
 disallow_untyped_defs = true
 # disallow_any_unimported = true
