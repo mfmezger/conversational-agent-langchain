@@ -4,5 +4,6 @@ logs/
 data/
 ConvAgentBruno/
 .venv/
+.git
 .github/
 .vscode/
